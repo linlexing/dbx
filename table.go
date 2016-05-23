@@ -2,7 +2,6 @@ package dbx
 
 import (
 	"database/sql"
-	"dbweb/lib/mapfun"
 	"dbweb/lib/safe"
 	"fmt"
 	"log"
@@ -11,6 +10,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/linlexing/mapfun"
 
 	"github.com/jmoiron/sqlx"
 )
@@ -24,10 +25,13 @@ const (
 )
 
 type DBTableColumn struct {
-	Name       string   `db:"DBNAME"`
-	Type       string   `db:"DBTYPE"`
-	MaxLength  int      `db:"DBMAXLENGTH"`
-	Null       bool     `db:"DBNULL"`
+	Name        string `db:"DBNAME"`
+	Type        string `db:"DBTYPE"`
+	MaxLength   int    `db:"DBMAXLENGTH"`
+	Null        bool   `db:"DBNULL"`
+	TrueType    string `db:"TRUETYPE"`
+	FetchDriver string //上次获取字段信息时，数据库驱动的名称
+
 	Index      bool     `db:"-"`
 	IndexName  string   `db:"-"` //如果该字段有索引，存放数据库中索引的名称
 	FormerName []string `db:"-"`
@@ -138,11 +142,14 @@ func ParseGoType(t int) string {
 
 }
 func (c *DBTableColumn) Clone() *DBTableColumn {
-	return &DBTableColumn{c.Name, c.Type, c.MaxLength, c.Null, c.Index, c.IndexName, c.FormerName}
+	return &DBTableColumn{c.Name, c.Type, c.MaxLength, c.Null, c.TrueType, c.FetchDriver, c.Index, c.IndexName, c.FormerName}
 }
 
 //postgres修改字段，不需要名称和notnull
 func (c *DBTableColumn) DBType(driver string) string {
+	if c.FetchDriver == driver && len(c.TrueType) > 0 {
+		return c.TrueType
+	}
 	var dataType string
 	switch driver {
 	case "postgres":
@@ -994,7 +1001,15 @@ func (t *DBTable) FetchColumns() {
 						then 'BYTEA'
 						else data_type
 					end) as "DBTYPE",
-					(case when character_maximum_length is null then 0 else character_maximum_length end) as "DBMAXLENGTH"
+					(case when character_maximum_length is null then 0 else character_maximum_length end) as "DBMAXLENGTH",
+					(SELECT format_type(a.atttypid, a.atttypmod)
+						FROM pg_attribute a 
+							JOIN pg_class b ON (a.attrelid = b.relfilenode)
+							JOIN pg_namespace c ON (c.oid = b.relnamespace)
+						WHERE
+							b.relname = outa.table_name AND
+							c.nspname = outa.table_schema AND
+							a.attname = outa.column_name) as "TRUETYPE"
 				from information_schema.columns 
 				where table_schema=current_schema() and upper(table_name)=$1`
 		if err := t.Db.Select(&columns, strSql, t.Name); err != nil {
@@ -1043,7 +1058,18 @@ func (t *DBTable) FetchColumns() {
 						then 'BYTEA'
 						else data_type
 					end) as "DBTYPE",
-					CHAR_LENGTH as "DBMAXLENGTH"
+					CHAR_LENGTH as "DBMAXLENGTH",
+					data_type||
+						case
+						when data_precision is not null and nvl(data_scale,0)>0 then '('||data_precision||','||data_scale||')'
+						when data_precision is not null and nvl(data_scale,0)=0 then '('||data_precision||')'
+						when data_precision is null and data_scale is not null then '(*,'||data_scale||')'
+						when char_length>0 then '('||char_length|| case char_used 
+						                                                         when 'B' then ' Byte'
+						                                                         when 'C' then ' Char'
+						                                                         else null 
+						                                           end||')'
+						end as "TRUETYPE"
 				from USER_TAB_COLUMNS 
 				where table_name=:name 
 				order by column_id`
@@ -1067,7 +1093,8 @@ func (t *DBTable) FetchColumns() {
 				          when data_type ='blob' then 'BYTEA'
 				          when data_type in('date','datetime') then 'DATE'
 				    end) as DBTYPE,
-				    ifnull(CHARACTER_MAXIMUM_LENGTH,0) as DBMAXLENGTH
+				    ifnull(CHARACTER_MAXIMUM_LENGTH,0) as DBMAXLENGTH,
+					column_type as TRUETYPE
 				from information_schema.columns 
 				where table_name=? and table_schema= SCHEMA()
 				order by ORDINAL_POSITION`
@@ -1093,6 +1120,7 @@ func (t *DBTable) FetchColumns() {
 				Name: safe.String(row["NAME"]),
 			}
 			c.Type, c.MaxLength = sqliteType(safe.String(row["TYPE"]))
+			c.TrueType = safe.String(row["TYPE"])
 			c.Null = safe.Int(row["NOTNULL"]) != 1
 			columns = append(columns, c)
 		}
@@ -1140,6 +1168,10 @@ func (t *DBTable) FetchColumns() {
 			v.Index = true
 			v.IndexName = iname
 		}
+	}
+	//保存获取信息时的数据库驱动名称
+	for i, _ := range columns {
+		columns[i].FetchDriver = t.Db.DriverName()
 	}
 	t.columns = columns
 }

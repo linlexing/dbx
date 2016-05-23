@@ -3,7 +3,6 @@ package dbx
 import (
 	"bytes"
 	"database/sql"
-	"dbweb/lib/mapfun"
 	"dbweb/lib/safe"
 	"dbweb/lib/tempext"
 	"encoding/binary"
@@ -14,6 +13,8 @@ import (
 	"strings"
 	"text/template"
 	"time"
+
+	"github.com/linlexing/mapfun"
 
 	"github.com/jmoiron/sqlx"
 )

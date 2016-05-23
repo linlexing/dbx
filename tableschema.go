@@ -191,10 +191,13 @@ func (t *TableSchema) processColumn(oldCol, newCol *DBTableColumn) error {
 	if !oldCol.Eque(newCol) && t.NewTable.Db.DriverName() != "mysql" {
 		switch t.NewTable.Db.DriverName() {
 		case "postgres":
-			//先改类型
-			if oldCol.Type != newCol.Type ||
-				(oldCol.Type == "STR" &&
-					oldCol.MaxLength != newCol.MaxLength) {
+			//先改类型,如果都有truetype，则直接判断truetype
+			if (oldCol.FetchDriver == newCol.FetchDriver &&
+				len(oldCol.TrueType) > 0 && len(newCol.TrueType) > 0 &&
+				oldCol.TrueType != newCol.TrueType) ||
+				(oldCol.Type != newCol.Type ||
+					(oldCol.Type == "STR" &&
+						oldCol.MaxLength != newCol.MaxLength)) {
 				//去掉最后的notnull
 				strSql = fmt.Sprintf(
 					"alter table %s ALTER COLUMN %s type %s",

@@ -2,10 +2,11 @@ package dbx
 
 import (
 	"bytes"
-	"dbweb/lib/mapfun"
 	"dbweb/lib/safe"
 	"encoding/gob"
 	"fmt"
+
+	"github.com/linlexing/mapfun"
 
 	"github.com/jmoiron/sqlx"
 )
