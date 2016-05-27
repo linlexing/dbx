@@ -732,7 +732,7 @@ func NewSqlSelect(strSql string, table *DBTable, manualPage bool) *SqlSelect {
 	<<if .Where>>WHERE <<.Where>><<end>>
 	<<if .OrderBy>>ORDER BY <<.OrderBy>><<end>>
 	<<if ge .Limit 0>>LIMIT <<.Limit>><<end>>
-<<end>>`, table.Name)
+<<end>>`, table.Name())
 	return &SqlSelect{
 		sql:        strSql,
 		Table:      table,

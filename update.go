@@ -16,11 +16,11 @@ type Update struct {
 
 func (u *Update) Exec() (icount int64, err error) {
 	if len(u.Table.PrimaryKeys()) == 0 {
-		err = fmt.Errorf("table %s not primary key", u.Table.Name)
+		err = fmt.Errorf("table %s not primary key", u.Table.Name())
 		return
 	}
 	if len(u.Table.PrimaryKeys()) != len(u.DataUniqueFields) {
-		err = fmt.Errorf("table %s primary key%v <> %v", u.Table.Name, u.Table.PrimaryKeys(), u.DataUniqueFields)
+		err = fmt.Errorf("table %s primary key%v <> %v", u.Table.Name(), u.Table.PrimaryKeys(), u.DataUniqueFields)
 		return
 	}
 	params := map[string]interface{}{}
@@ -66,7 +66,7 @@ func (u *Update) Exec() (icount int64, err error) {
 		where = append(where, fmt.Sprintf("%s.%s = %s.%s", u.Table.Name, field, dataAlias, u.DataUniqueFields[i]))
 	}
 	strSql := fmt.Sprintf("update %s set %s where exists(select * from (%s) %s where %s)",
-		u.Table.Name,
+		u.Table.Name(),
 		strings.Join(sets, ","),
 		u.DataSql,
 		dataAlias,

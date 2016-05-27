@@ -297,7 +297,8 @@ func (c *DBTableColumn) GoValue(v string) interface{} {
 
 type DBTable struct {
 	Db             DB
-	Name           string
+	TableName      string
+	Schema         string //对应数据库中方案的名称
 	FormerName     []string
 	primaryKeys    []string
 	columns        []*DBTableColumn
@@ -309,41 +310,62 @@ func NewTable(db DB, tabName string) *DBTable {
 	if len(tabName) == 0 {
 		panic("table name is empty")
 	}
-	return &DBTable{
-		Db:   db,
-		Name: strings.ToUpper(tabName),
+	ns := strings.Split(tabName, ".")
+	rev := &DBTable{
+		Db: db,
+	}
+	if len(ns) > 1 {
+		rev.Schema = strings.ToUpper(ns[0])
+		rev.TableName = strings.ToUpper(ns[1])
+	} else {
+		rev.TableName = strings.ToUpper(tabName)
+	}
+	return rev
+}
+func (t *DBTable) Name() string {
+	if len(t.Schema) > 0 {
+		return t.Schema + "." + t.TableName
+	} else {
+		return t.TableName
 	}
 }
-
 func (t *DBTable) PrimaryKeys() []string {
 	if t.primaryKeys != nil {
 		return t.primaryKeys
 	}
 	result := []string{}
+	schema := t.Schema
+
 	switch t.Db.DriverName() {
 	case "postgres":
+
 		if err := t.Db.Select(&result,
 			`SELECT a.attname
 			FROM   pg_index i
 			JOIN   pg_attribute a ON a.attrelid = i.indrelid
 			        AND a.attnum = ANY(i.indkey)
 			WHERE  i.indrelid = $1::regclass
-			AND    i.indisprimary;`, t.Name); err != nil {
+			AND    i.indisprimary;`, t.Name()); err != nil {
 			panic(err)
 		}
 	case "oci8":
-		if err := t.Db.Select(&result,
+		if len(schema) == 0 {
+			schema = safe.String(MustGetSqlFun(t.Db, "select user from dual", nil))
+		}
+		if err := t.Db.Select(&result, fmt.Sprintf(
 			`SELECT cols.column_name
-			FROM user_constraints cons,user_cons_columns cols
-			WHERE cols.table_name = :tblname
+			FROM all_constraints cons,all_cons_columns cols
+			WHERE cons.owner='%s'
+			and cons.OWNER=cols.owner
+			and cols.table_name = :tblname
 			AND cons.constraint_type = 'P'
 			AND cons.constraint_name = cols.constraint_name
 			AND cons.owner = cols.owner
-			ORDER BY cols.table_name, cols.position`, t.Name); err != nil {
+			ORDER BY cols.table_name, cols.position`, schema), t.TableName); err != nil {
 			panic(err)
 		}
 	case "sqlite3":
-		strSql := fmt.Sprintf(`PRAGMA table_info(%s)`, t.Name)
+		strSql := fmt.Sprintf(`PRAGMA table_info(%s)`, t.Name())
 		r, err := QueryRecord(t.Db, strSql, nil)
 		if err != nil {
 			panic(err)
@@ -355,7 +377,7 @@ func (t *DBTable) PrimaryKeys() []string {
 		}
 	case "mysql":
 
-		strSql := fmt.Sprintf("SHOW KEYS FROM %s WHERE Key_name = 'PRIMARY'", t.Name)
+		strSql := fmt.Sprintf("SHOW KEYS FROM %s WHERE Key_name = 'PRIMARY'", t.Name())
 		rows, err := QueryRecord(t.Db, strSql, nil)
 		if err != nil {
 			panic(err)
@@ -398,7 +420,7 @@ func (t *DBTable) NotNullColumns() []string {
 func (t *DBTable) Row(pks ...interface{}) map[string]interface{} {
 	pkNames := t.PrimaryKeys()
 	if len(pkNames) != len(pks) {
-		panic(fmt.Errorf("the table %s pk values number error.table pk:%#v,pkvalues:%#v", t.Name, pkNames, pks))
+		panic(fmt.Errorf("the table %s pk values number error.table pk:%#v,pkvalues:%#v", t.Name(), pkNames, pks))
 	}
 	query := map[string]interface{}{}
 	for i, v := range pks {
@@ -443,7 +465,7 @@ func (t *DBTable) QueryRows(where string, param map[string]interface{}, columns 
 	if len(columns) > 0 {
 		columnsStr = strings.Join(columns, ",")
 	}
-	strSql := fmt.Sprintf("select %s from %s%s", columnsStr, t.Name, where)
+	strSql := fmt.Sprintf("select %s from %s%s", columnsStr, t.Name(), where)
 	var rows *sqlx.Rows
 	rows, err = t.Db.NamedQuery(strSql, param)
 	if err != nil {
@@ -484,7 +506,7 @@ func (t *DBTable) Exists(query map[string]interface{}) (result bool, err error) 
 	if len(strWhere) > 0 {
 		where = " where " + strings.Join(strWhere, " and ")
 	}
-	strSql := fmt.Sprintf("select * from %s%s", t.Name, where)
+	strSql := fmt.Sprintf("select * from %s%s", t.Name(), where)
 	var rows *sqlx.Rows
 	rows, err = t.Db.NamedQuery(strSql, newQuery)
 	if err != nil {
@@ -512,11 +534,11 @@ func (t *DBTable) Count(params ...interface{}) (int64, error) {
 	var strSql string
 	var pam map[string]interface{}
 	if len(params) == 0 {
-		strSql = "select count(*) from " + t.Name
+		strSql = "select count(*) from " + t.Name()
 	}
 	if len(params) > 0 && len(strings.TrimSpace(params[0].(string))) > 0 {
 
-		strSql = fmt.Sprintf("select count(*) from %s where %s", t.Name, params[0].(string))
+		strSql = fmt.Sprintf("select count(*) from %s where %s", t.Name(), params[0].(string))
 	}
 	if len(params) > 1 {
 		pam = params[1].(map[string]interface{})
@@ -546,15 +568,22 @@ func (t *DBTable) Rows(query map[string]interface{}, columns ...string) (record 
 	}
 	return t.QueryRows(strings.Join(strWhere, " and "), newQuery, columns...)
 }
+func (t *DBTable) checkNotNull(row map[string]interface{}) error {
+	for _, v := range t.NotNullColumns() {
+		if val, ok := row[v]; ok && val == nil {
+			return fmt.Errorf("the not null column:%s is null", v)
+		}
+	}
+	return nil
+}
 
 //检查row中是否含有非空字段的值，以及去掉多余的字段值
 func (t *DBTable) checkAndConvertRow(row map[string]interface{}) (map[string]interface{}, error) {
-	for _, v := range t.NotNullColumns() {
-		if val, ok := row[v]; !ok || val == nil {
-			return nil, fmt.Errorf("the not null column:%s is null", v)
-		}
+	rev := mapfun.Pick(row, t.Columns()...)
+	if err := t.checkNotNull(rev); err != nil {
+		return nil, err
 	}
-	return mapfun.Pick(row, t.Columns()...), nil
+	return rev, nil
 }
 
 //从一个sql语句导入数据,sql语句返回的列必须与表中数量一致
@@ -567,7 +596,7 @@ func (t *DBTable) CreateAs(dataDB DB, strSql string,
 		return
 	}
 
-	progressFunc(fmt.Sprintf("start CreateAs table %s,total %d records", t.Name, rowCount))
+	progressFunc(fmt.Sprintf("start CreateAs table %s,total %d records", t.Name(), rowCount))
 	tabDB := t.Db.(*sqlx.DB)
 	rows, err := dataDB.Queryx(strSql)
 	if err != nil {
@@ -631,7 +660,7 @@ func (t *DBTable) CreateAs(dataDB DB, strSql string,
 	//再构造insert语句
 	insertSql := fmt.Sprintf(
 		"insert into %s(%s)values(%s)",
-		t.Name, strings.Join(cols, ","),
+		t.Name(), strings.Join(cols, ","),
 		strings.Join(strings.Split(strings.Repeat("?", len(cols)), ""), ","))
 	insertSql = t.Db.Rebind(insertSql)
 	//再开始事务
@@ -709,7 +738,7 @@ func (t *DBTable) CreateAs(dataDB DB, strSql string,
 		log.Println(err)
 		return
 	}
-	progressFunc(fmt.Sprintf("%s,total %d records imported %.2fs", t.Name, icount, time.Since(beginTime).Seconds()))
+	progressFunc(fmt.Sprintf("%s,total %d records imported %.2fs", t.Name(), icount, time.Since(beginTime).Seconds()))
 
 	return
 
@@ -731,7 +760,7 @@ func (t *DBTable) InsertStmt() (stmt *sqlx.NamedStmt, colMap map[string]string, 
 	}
 	strSql := fmt.Sprintf(
 		"insert into %s(%s)values(%s)",
-		t.Name, strings.Join(columns, ","),
+		t.Name(), strings.Join(columns, ","),
 		strings.Join(pColumns, ","))
 	if stmt, err = t.Db.PrepareNamed(strSql); err != nil {
 		err = SqlError{strSql, nil, err}
@@ -739,8 +768,36 @@ func (t *DBTable) InsertStmt() (stmt *sqlx.NamedStmt, colMap map[string]string, 
 	return
 }
 
+//仅非空字段生成语句
+func (t *DBTable) insertAsPack(row map[string]interface{}) (err error) {
+	columns := []string{}
+	pColumns := []string{}
+	icount := 0
+	param := map[string]interface{}{}
+	mapfun.Pack(row)
+	for k, v := range row {
+		//字段名转换成大写
+		columns = append(columns, strings.ToUpper(k))
+		pname := fmt.Sprintf("p%d", icount)
+		param[pname] = v
+		icount++
+		pColumns = append(pColumns, ":"+pname)
+	}
+	strSql := fmt.Sprintf(
+		"insert into %s(%s)values(%s)",
+		t.Name(), strings.Join(columns, ","),
+		strings.Join(pColumns, ","))
+	if _, err = t.Db.NamedExec(strSql, param); err != nil {
+		return SqlError{strSql, param, err}
+	}
+	return
+}
+
 //插入一批记录,使用第一行数据中的字段，并没有使用表中的字段
 func (t *DBTable) Insert(rows []map[string]interface{}) (err error) {
+	if len(rows) == 1 {
+		return t.insertAsPack(rows[0])
+	}
 	//先检查并转换数据
 	data := []map[string]interface{}{}
 	for _, row := range rows {
@@ -769,7 +826,7 @@ func (t *DBTable) Insert(rows []map[string]interface{}) (err error) {
 	}
 	strSql := fmt.Sprintf(
 		"insert into %s(%s)values(%s)",
-		t.Name, strings.Join(columns, ","),
+		t.Name(), strings.Join(columns, ","),
 		strings.Join(pColumns, ","))
 	if stmt, err = t.Db.PrepareNamed(strSql); err != nil {
 		err = SqlError{strSql, nil, err}
@@ -803,6 +860,33 @@ func (t *DBTable) Delete(rows []map[string]interface{}) (err error) {
 func (t *DBTable) RemoveByKeyValues(keyValues ...interface{}) (err error) {
 	return t.Remove(mapfun.Object(t.PrimaryKeys(), keyValues))
 }
+func (t *DBTable) RemoveByQuery(query map[string]interface{}) (err error) {
+	param := map[string]interface{}{}
+	pcount := 0
+	where := []string{}
+	for keyName, keyValue := range query {
+		pname := fmt.Sprintf("p%d", pcount)
+		where = append(where, fmt.Sprintf("%s=:%s", keyName, pname))
+		param[pname] = keyValue
+	}
+	strSql := fmt.Sprintf("delete from %s where %s", t.Name(), strings.Join(where, " and "))
+
+	var sqlr sql.Result
+	if sqlr, err = t.Db.NamedExec(strSql, param); err != nil {
+		err = SqlError{strSql, param, err}
+		return
+	}
+	var rowAff int64
+	if rowAff, err = sqlr.RowsAffected(); err != nil {
+		return
+	}
+	if rowAff == 0 {
+		return fmt.Errorf("the record not found,query:%v", query)
+	}
+	return
+}
+
+//删除一个记录，必须是全指标的记录
 func (t *DBTable) Remove(row map[string]interface{}) (err error) {
 	row, err = t.checkAndConvertRow(row)
 	if err != nil {
@@ -826,7 +910,7 @@ func (t *DBTable) Remove(row map[string]interface{}) (err error) {
 		}
 	}
 	strSql := fmt.Sprintf(
-		"delete from %s where %s", t.Name, strings.Join(strWhere, " and "))
+		"delete from %s where %s", t.Name(), strings.Join(strWhere, " and "))
 	var sqlr sql.Result
 	if sqlr, err = t.Db.NamedExec(strSql, newRow); err != nil {
 		err = SqlError{strSql, newRow, err}
@@ -837,9 +921,57 @@ func (t *DBTable) Remove(row map[string]interface{}) (err error) {
 		return
 	}
 	if rowAff == 0 {
-		return fmt.Errorf("the record not found")
+		return fmt.Errorf("the record not found,row:%v", row)
 	}
 
+	return
+}
+
+//通过一个主键更新指定的字段值
+func (t *DBTable) UpdateByQuery(query map[string]interface{}, row map[string]interface{}) (err error) {
+	if len(row) == 0 {
+		return fmt.Errorf("data is null,%#v", row)
+	}
+
+	if err = t.checkNotNull(row); err != nil {
+		return err
+	}
+	param := map[string]interface{}{}
+	pcount := 0
+	where := []string{}
+	for k, v := range query {
+		pname := fmt.Sprintf("p%d", pcount)
+		where = append(where, fmt.Sprintf("%s=:%s", k, pname))
+		param[pname] = v
+		pcount++
+	}
+	set := []string{}
+	for k, v := range row {
+		pname := fmt.Sprintf("p%d", pcount)
+		set = append(set, fmt.Sprintf("%s=:%s", k, pname))
+		param[pname] = v
+		pcount++
+	}
+	whereStr := ""
+	if len(where) > 0 {
+		whereStr = "where " + strings.Join(where, " and ")
+	}
+	strSql := fmt.Sprintf("update %s set %s %s",
+		t.Name(), strings.Join(set, ","), whereStr)
+	var sqlr sql.Result
+	var rowAffe int64
+	if sqlr, err = t.Db.NamedExec(strSql, param); err != nil {
+		err = SqlError{strSql, param, err}
+		return
+	}
+	if rowAffe, err = sqlr.RowsAffected(); err != nil {
+		err = SqlError{strSql, param, err}
+		return
+	}
+	if rowAffe == 0 {
+		err = SqlError{strSql, param, sql.ErrNoRows}
+		return
+	}
 	return
 }
 
@@ -888,7 +1020,7 @@ func (t *DBTable) Update(oldData, newData map[string]interface{}) (err error) {
 	}
 	var sqlr sql.Result
 	var rowAffe int64
-	strSql := fmt.Sprintf("update %s set %s where %s", t.Name,
+	strSql := fmt.Sprintf("update %s set %s where %s", t.Name(),
 		strings.Join(set, ","), strings.Join(where, " and "))
 	if sqlr, err = t.Db.NamedExec(strSql, param); err != nil {
 		err = SqlError{strSql, param, err}
@@ -947,7 +1079,7 @@ func (t *DBTable) Save(row map[string]interface{}) error {
 	//先更新
 	var sqlr sql.Result
 	var rowAffe int64
-	strSql := fmt.Sprintf("update %s set %s where %s", t.Name,
+	strSql := fmt.Sprintf("update %s set %s where %s", t.Name(),
 		strings.Join(set, ","), strings.Join(where, " and "))
 	if sqlr, err = t.Db.NamedExec(strSql, param); err != nil {
 		return SqlError{strSql, param, err}
@@ -980,14 +1112,22 @@ func (t *DBTable) Replace(oldRows, newRows []map[string]interface{}) (err error)
 }
 
 func (t *DBTable) FetchColumns() {
-	columns := []*DBTableColumn{}
-	indexColumns := []struct {
+	type columnIndex struct {
+		Owner      string `db:"INDEXOWNER"`
 		IndexName  string `db:"INDEXNAME"`
 		ColumnName string `db:"COLUMNNAME"`
-	}{}
+	}
+	columns := []*DBTableColumn{}
+	indexColumns := []*columnIndex{}
+	var schema string
 	switch t.Db.DriverName() {
 	case "postgres":
-		strSql := `select upper(column_name) as "DBNAME",
+		if len(t.Schema) > 0 {
+			schema = t.Schema
+		} else {
+			schema = safe.String(MustGetSqlFun(t.Db, "select upper(current_schema())", nil))
+		}
+		strSql := fmt.Sprintf(`select upper(column_name) as "DBNAME",
 					(case when is_nullable='YES' then true else false end) as "DBNULL",
 					(case when data_type in ('text', 'character varying')
 						then 'STR'
@@ -1011,11 +1151,12 @@ func (t *DBTable) FetchColumns() {
 							c.nspname = outa.table_schema AND
 							a.attname = outa.column_name) as "TRUETYPE"
 				from information_schema.columns 
-				where table_schema=current_schema() and upper(table_name)=$1`
-		if err := t.Db.Select(&columns, strSql, t.Name); err != nil {
-			panic(SqlError{strSql, t.Name, err})
+				where upper(table_schema)='%s' and upper(table_name)=$1`, schema)
+		if err := t.Db.Select(&columns, strSql, t.TableName); err != nil {
+			panic(SqlError{strSql, t.TableName, err})
 		}
-		strSql = `select
+		strSql = fmt.Sprintf(`select
+					(select nspname from pg_namespace where oid=i.relnamespace) as "INDEXOWNER",
 					i.relname as "INDEXNAME",
 				    upper(min(a.attname)) as "COLUMNNAME"
 				from
@@ -1029,7 +1170,7 @@ func (t *DBTable) FetchColumns() {
 				    and i.oid = ix.indexrelid
 				    and a.attrelid = t.oid
 				    and t.relnamespace=tn.oid 
-				    and tn.nspname = current_schema()
+				    and upper(tn.nspname) = '%s'
 				    and a.attnum = ANY(ix.indkey)
 				    and t.relkind = 'r'
 				    and upper(t.relname) =$1
@@ -1039,12 +1180,17 @@ func (t *DBTable) FetchColumns() {
 				having count(*)=1
 				order by
 				    t.relname,
-				    i.relname;`
-		if err := t.Db.Select(&indexColumns, strSql, t.Name); err != nil {
-			panic(SqlError{strSql, t.Name, err})
+				    i.relname;`, schema)
+		if err := t.Db.Select(&indexColumns, strSql, t.TableName); err != nil {
+			panic(SqlError{strSql, t.TableName, err})
 		}
 	case "oci8":
-		strSql := `select column_name as "DBNAME",
+		if len(t.Schema) > 0 {
+			schema = t.Schema
+		} else {
+			schema = safe.String(MustGetSqlFun(t.Db, "select user from dual", nil))
+		}
+		strSql := fmt.Sprintf(`select column_name as "DBNAME",
 					decode(nullable,'Y',1,0) as "DBNULL",
 					(case when data_type in ('CLOB','VARCHAR', 'VARCHAR2')
 						then 'STR'
@@ -1070,22 +1216,28 @@ func (t *DBTable) FetchColumns() {
 						                                                         else null 
 						                                           end||')'
 						end as "TRUETYPE"
-				from USER_TAB_COLUMNS 
-				where table_name=:name 
-				order by column_id`
-		if err := t.Db.Select(&columns, strSql, t.Name); err != nil {
-			panic(SqlError{strSql, t.Name, err})
+				from ALL_TAB_COLUMNS 
+				where owner='%s' and table_name='%s'
+				order by column_id`, schema, t.TableName)
+		if err := t.Db.Select(&columns, strSql); err != nil {
+			panic(SqlError{strSql, nil, err})
 		}
-		strSql = `SELECT index_name as "INDEXNAME",min(column_name) as "COLUMNNAME"
-				from user_ind_columns 
-				where upper(table_name) = :name
-				group by index_name having count(*)=1`
-		if err := t.Db.Select(&indexColumns, strSql, t.Name); err != nil {
-			panic(SqlError{strSql, t.Name, err})
+		strSql = fmt.Sprintf(`SELECT min(index_owner) as "INDEXOWNER",
+					index_name as "INDEXNAME",min(column_name) as "COLUMNNAME"
+				from all_ind_columns 
+				where table_owner='%s' and table_name = :name
+				group by index_name having count(*)=1`, schema)
+		if err := t.Db.Select(&indexColumns, strSql, t.TableName); err != nil {
+			panic(SqlError{strSql, t.TableName, err})
 		}
 	case "mysql":
-		strSql := `select 
-					column_name as DBNAME,
+		if len(t.Schema) > 0 {
+			schema = t.Schema
+		} else {
+			schema = safe.String(MustGetSqlFun(t.Db, "select upper(SCHEMA())", nil))
+		}
+		strSql := fmt.Sprintf(`select 
+					upper(column_name) as DBNAME,
 				    (case when is_nullable='YES' then 1 else 0 end) as DBNULL,
 				    (case when data_type in('varchar','text','char') then 'STR'
 						  when data_type ='int' then 'INT'
@@ -1096,24 +1248,24 @@ func (t *DBTable) FetchColumns() {
 				    ifnull(CHARACTER_MAXIMUM_LENGTH,0) as DBMAXLENGTH,
 					column_type as TRUETYPE
 				from information_schema.columns 
-				where table_name=? and table_schema= SCHEMA()
-				order by ORDINAL_POSITION`
-		if err := t.Db.Select(&columns, strSql, t.Name); err != nil {
-			panic(SqlError{strSql, t.Name, err})
+				where upper(table_name)=? and upper(table_schema)= '%s'
+				order by ORDINAL_POSITION`, schema)
+		if err := t.Db.Select(&columns, strSql, t.TableName); err != nil {
+			panic(SqlError{strSql, t.TableName, err})
 		}
-		strSql = `SELECT INDEXNAME,COLUMNNAME
+		strSql = `SELECT INDEX_SCHEMA AS INDEXOWNER,INDEXNAME,COLUMNNAME
 				FROM INFORMATION_SCHEMA.STATISTICS 
-				WHERE table_schema = SCHEMA() and table_name=?
+				WHERE upper(table_schema) = '%s' and upper(table_name)=?
 				group by index_name having count(*)=1
 				ORDER BY table_name, index_name, seq_in_index`
-		if err := t.Db.Select(&indexColumns, strSql, t.Name); err != nil {
-			panic(SqlError{strSql, t.Name, err})
+		if err := t.Db.Select(&indexColumns, strSql, t.TableName); err != nil {
+			panic(SqlError{strSql, t.TableName, err})
 		}
 	case "sqlite3":
-		strSql := fmt.Sprintf(`PRAGMA table_info(%s)`, t.Name)
+		strSql := fmt.Sprintf(`PRAGMA table_info(%s)`, t.TableName)
 		result, err := QueryRecord(t.Db, strSql, nil)
 		if err != nil {
-			panic(SqlError{strSql, t.Name, err})
+			panic(SqlError{strSql, nil, err})
 		}
 		for _, row := range result {
 			c := &DBTableColumn{
@@ -1124,10 +1276,10 @@ func (t *DBTable) FetchColumns() {
 			c.Null = safe.Int(row["NOTNULL"]) != 1
 			columns = append(columns, c)
 		}
-		strSql = fmt.Sprintf("PRAGMA index_list(%s)", t.Name)
+		strSql = fmt.Sprintf("PRAGMA index_list(%s)", t.TableName)
 		result, err = QueryRecord(t.Db, strSql, nil)
 		if err != nil {
-			panic(SqlError{strSql, t.Name, err})
+			panic(SqlError{strSql, t.TableName, err})
 		}
 		for _, row := range result {
 			indexName := safe.String(row["NAME"])
@@ -1135,23 +1287,21 @@ func (t *DBTable) FetchColumns() {
 			strSql = fmt.Sprintf("PRAGMA index_info(%s)", indexName)
 			indexColumnList, err := QueryRecord(t.Db, strSql, nil)
 			if err != nil {
-				panic(SqlError{strSql, t.Name, err})
+				panic(SqlError{strSql, nil, err})
 			}
 			//只找出一个字段的索引
 			if len(indexColumnList) == 1 {
-				indexColumns = append(indexColumns, struct {
-					IndexName  string `db:"INDEXNAME"`
-					ColumnName string `db:"COLUMNNAME"`
-				}{indexName, safe.String(indexColumnList[0]["NAME"])})
+				indexColumns = append(indexColumns, &columnIndex{
+					"", indexName, safe.String(indexColumnList[0]["NAME"])})
 			}
 		}
 	default:
 		panic(fmt.Errorf("not impl FetchColumns"))
 	}
 	//注意indexColumns中可能含有非表字段的名称，例如oracle中的function index
-	indexColumnsMap := map[string]string{}
+	indexColumnsMap := map[string]*columnIndex{}
 	for _, s := range indexColumns {
-		indexColumnsMap[strings.ToUpper(s.ColumnName)] = s.IndexName
+		indexColumnsMap[strings.ToUpper(s.ColumnName)] = s
 	}
 	keyColumnsMap := map[string]bool{}
 	for _, s := range t.PrimaryKeys() {
@@ -1164,9 +1314,13 @@ func (t *DBTable) FetchColumns() {
 			continue
 		}
 
-		if iname, ok := indexColumnsMap[v.Name]; ok {
+		if s, ok := indexColumnsMap[v.Name]; ok {
 			v.Index = true
-			v.IndexName = iname
+			v.IndexName = s.IndexName
+			if len(t.Schema) > 0 || //如果是其他schema的表，则必定带上schema
+				strings.ToUpper(s.Owner) != schema { //如果index不和表在同一个schema中，也带上schema
+				v.IndexName = s.Owner + "." + v.IndexName
+			}
 		}
 	}
 	//保存获取信息时的数据库驱动名称
@@ -1178,7 +1332,7 @@ func (t *DBTable) FetchColumns() {
 
 //克隆一个table，复制结构定义
 func (t *DBTable) Clone() *DBTable {
-	result := NewTable(t.Db, t.Name)
+	result := NewTable(t.Db, t.Name())
 	cols := []*DBTableColumn{}
 	for _, v := range t.AllField() {
 		cols = append(cols, v.Clone())
@@ -1378,7 +1532,7 @@ WHEN MATCHED THEN UPDATE SET
 WHEN NOT MATCHED THEN INSERT
 	(%s)
 	values
-	(%s)`, t.Name, tabName,
+	(%s)`, t.Name(), tabName,
 			strings.Join(join, " and "),
 			strings.Join(updateSet, ",\n"),
 			strings.Join(insertColumns, ","),
@@ -1400,7 +1554,7 @@ func (t *DBTable) UpdateSchema() error {
 	if len(t.FormerName) > 0 {
 		//如果有曾用名，则需验证曾用名不能重复
 		uname := map[string]bool{
-			t.Name: true,
+			t.Name(): true,
 		}
 		for _, v := range t.FormerName {
 			if _, ok := uname[v]; ok {
@@ -1418,8 +1572,8 @@ func (t *DBTable) UpdateSchema() error {
 	}
 	//如果曾用名的表找不到，则说明数据库结构都已经更新到最新，旧表就用本来的名称
 	if sch.OldTable == nil {
-		if b, _ := TableExists(t.Db, t.Name); b {
-			sch.OldTable = NewTable(t.Db, t.Name)
+		if b, _ := TableExists(t.Db, t.Name()); b {
+			sch.OldTable = NewTable(t.Db, t.Name())
 			sch.OldTable.FetchColumns()
 		}
 	}

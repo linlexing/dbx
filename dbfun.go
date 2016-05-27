@@ -124,9 +124,6 @@ func QueryRecord(db DB, strSql string, p map[string]interface{}) (result []map[s
 
 		result = append(result, mapfun.UpperKeys(oneRecord))
 	}
-	if len(result) == 0 {
-		log.Println(strSql, pam)
-	}
 	return
 }
 func IsNull(db DB) string {
@@ -215,19 +212,41 @@ func TableRename(db DB, oldName, newName string) error {
 	return nil
 }
 func TableExists(db DB, tableName string) (bool, error) {
+	schema := ""
+	ns := strings.Split(tableName, ".")
+	tname := ""
+	if len(ns) > 1 {
+		schema = ns[0]
+		tname = ns[1]
+	} else {
+
+		tname = tableName
+	}
 	var strSql string
 	switch db.DriverName() {
 	case "postgres":
-		strSql = "SELECT count(*) FROM information_schema.tables WHERE table_schema = current_schema() and upper(table_name)=:tname"
+		if len(schema) == 0 {
+			schema = safe.String(MustGetSqlFun(db, "select current_schema()", nil))
+		}
+
+		strSql = fmt.Sprintf(
+			"SELECT count(*) FROM information_schema.tables WHERE table_schema = '%s' and upper(table_name)=:tname", schema)
 	case "oci8":
-		strSql = "SELECT count(*) FROM user_tables where table_name=:tname"
+		if len(schema) == 0 {
+			schema = safe.String(MustGetSqlFun(db, "select user from dual", nil))
+		}
+		strSql = fmt.Sprintf("SELECT count(*) FROM all_tables where owner='%s' and table_name=:tname", schema)
 	case "mysql":
-		strSql = "SELECT count(*) FROM information_schema.tables WHERE table_schema = schema() and UPPER(table_name)=:tname"
+		if len(schema) == 0 {
+			schema = safe.String(MustGetSqlFun(db, "select schema()", nil))
+		}
+		strSql = fmt.Sprintf(
+			"SELECT count(*) FROM information_schema.tables WHERE table_schema = '%s' and UPPER(table_name)=:tname", schema)
 	default:
 		return false, fmt.Errorf("not impl," + db.DriverName())
 	}
 	var iCount int64
-	p := map[string]interface{}{"tname": strings.ToUpper(tableName)}
+	p := map[string]interface{}{"tname": strings.ToUpper(tname)}
 	if err := NameGet(db, &iCount, strSql, p); err != nil {
 		return false, SqlError{strSql, p, err}
 	}
@@ -390,13 +409,22 @@ func BindSql(db DB, strSql string, params map[string]interface{}) (result string
 
 //新增单字段索引
 func CreateColumnIndex(db DB, tableName, colName string) error {
+	ns := strings.Split(tableName, ".")
+	schema := ""
+	tname := ""
+	if len(ns) > 1 {
+		schema = ns[0] + "."
+		tname = ns[1]
+	} else {
+		tname = tableName
+	}
 	var strSql string
 	switch db.DriverName() {
 	case "postgres":
 		strSql = fmt.Sprintf("create index on %s(%s)", tableName, colName)
 	case "oci8", "mysql", "sqlite3":
 		//这里会有问题，如果表名和字段名比较长就会出错
-		strSql = fmt.Sprintf("create index idx_%s_%s on %s(%s)", tableName, colName, tableName, colName)
+		strSql = fmt.Sprintf("create index %si%s%s on %s(%s)", schema, tname, colName, tableName, colName)
 	default:
 		panic("not impl " + db.DriverName())
 	}
@@ -428,12 +456,18 @@ func DropColumnIndex(db DB, tableName, indexName string) error {
 //新增主键
 func AddTablePrimaryKey(db DB, tableName string, pks []string) error {
 	var strSql string
-
+	ns := strings.Split(tableName, ".")
+	var clearTableName string
+	if len(ns) > 1 {
+		clearTableName = ns[1]
+	} else {
+		clearTableName = tableName
+	}
 	switch db.DriverName() {
 	case "postgres", "mysql":
 		strSql = fmt.Sprintf("alter table %s add primary key(%s)", tableName, strings.Join(pks, ","))
 	case "oci8":
-		strSql = fmt.Sprintf("alter table %s add constraint %s_pk primary key(%s)", tableName, tableName, strings.Join(pks, ","))
+		strSql = fmt.Sprintf("alter table %s add constraint %s_pk primary key(%s)", tableName, clearTableName, strings.Join(pks, ","))
 	default:
 		panic("not impl," + db.DriverName())
 	}
@@ -460,9 +494,18 @@ func DropTablePrimaryKey(db DB, tableName string) error {
 			return SqlError{strSql, nil, err}
 		}
 	case "oci8":
-		strSql := fmt.Sprintf(
-			"select constraint_name from user_CONSTRAINTS where table_name ='%s' and constraint_type='P'",
-			strings.ToUpper(tableName))
+		ns := strings.Split(tableName, ".")
+		var strSql string
+		if len(ns) > 1 {
+			strSql = fmt.Sprintf(
+				"select constraint_name from ALL_CONSTRAINTS where owner = '%s' and table_name ='%s' and constraint_type='P'",
+				strings.ToUpper(ns[0]),
+				strings.ToUpper(ns[1]))
+		} else {
+			strSql = fmt.Sprintf(
+				"select constraint_name from user_CONSTRAINTS where table_name ='%s' and constraint_type='P'",
+				strings.ToUpper(tableName))
+		}
 		pkCons := ""
 		if rows, err := QueryRecord(db, strSql, nil); err != nil {
 			return SqlError{strSql, nil, err}
@@ -517,4 +560,74 @@ func MustExec(db DB, strSql string, params ...interface{}) {
 		panic(SqlError{strSql, params, err})
 	}
 	return
+}
+
+//返回差集的sql
+func Minus(db DB, table1, where1, table2, where2 string, primaryKeys, cols []string) string {
+	strSql := ""
+	if len(where1) > 0 {
+		where1 = "where " + where1
+	}
+	if len(where2) > 0 {
+		where2 = "where " + where2
+	}
+
+	switch db.DriverName() {
+	case "oci8":
+		strSql = fmt.Sprintf(
+			"select %s from %s %s minus select %s from %s %s",
+			strings.Join(cols, ","),
+			table1,
+			where1,
+			strings.Join(cols, ","),
+			table2,
+			where2)
+	case "postgres":
+		strSql = fmt.Sprintf(
+			"select %s from %s %s EXCEPT select %s from %s %s",
+			strings.Join(cols, ","),
+			table1,
+			where1,
+			strings.Join(cols, ","),
+			table2,
+			where2)
+	case "mysql":
+		keyMap := map[string]bool{}
+		for _, v := range primaryKeys {
+			keyMap[v] = true
+		}
+		join := []string{}
+		cols_l := []string{}
+		for _, str := range cols {
+			cols_l = append(cols_l, fmt.Sprintf("l_a.%s", str))
+			//如果是主键，则不需要检查null
+			if _, ok := keyMap[str]; ok {
+				join = append(join, fmt.Sprintf("l_a.%[1]s=l_b.%[1]s", str))
+			} else {
+				join = append(join, fmt.Sprintf("(l_a.%s is null and l_b.%[1]s is null or l_a.%[1]s=l_b.%[1]s)", str))
+			}
+		}
+		var from1 string
+		var from2 string
+		if len(where1) > 0 {
+			from1 = fmt.Sprintf("(select * from %s %s)", table1, where1)
+		} else {
+			from1 = table1
+		}
+		if len(where2) > 0 {
+			from2 = fmt.Sprintf("(select * from %s %s)", table2, where2)
+		} else {
+			from2 = table2
+		}
+		strSql = fmt.Sprintf(
+			"select %s from %s l_a left join %s l_b on %s where %s",
+			strings.Join(cols_l, ","),
+			from1,
+			from2,
+			strings.Join(join, " and "),
+			fmt.Sprintf("l_b.%s is null", primaryKeys[0]))
+	default:
+		panic("not impl")
+	}
+	return strSql
 }

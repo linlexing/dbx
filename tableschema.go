@@ -53,11 +53,11 @@ func (t *TableSchema) Update() error {
 		if len(t.NewTable.PrimaryKeys()) > 0 {
 			strSql = fmt.Sprintf(
 				"CREATE TABLE %s(\n%s,\nCONSTRAINT %s_pkey PRIMARY KEY(%s)\n)",
-				t.NewTable.Name, strings.Join(cols, ",\n"), t.NewTable.Name, strings.Join(t.NewTable.PrimaryKeys(), ","))
+				t.NewTable.Name(), strings.Join(cols, ",\n"), t.NewTable.TableName, strings.Join(t.NewTable.PrimaryKeys(), ","))
 		} else {
 			strSql = fmt.Sprintf(
 				"CREATE TABLE %s(\n%s\n)",
-				t.NewTable.Name, strings.Join(cols, ",\n"))
+				t.NewTable.Name(), strings.Join(cols, ",\n"))
 		}
 		if _, err := t.NewTable.Db.Exec(strSql); err != nil {
 			return SqlError{strSql, nil, err}
@@ -66,7 +66,7 @@ func (t *TableSchema) Update() error {
 		//最后处理索引
 		for _, col := range t.NewTable.AllField() {
 			if col.Index {
-				if err := CreateColumnIndex(t.NewTable.Db, t.NewTable.Name, col.Name); err != nil {
+				if err := CreateColumnIndex(t.NewTable.Db, t.NewTable.Name(), col.Name); err != nil {
 					return err
 				}
 			}
@@ -77,15 +77,15 @@ func (t *TableSchema) Update() error {
 			return err
 		}
 		//处理表更名,处理过后，所有后续操作都在新表名上进行
-		if t.OldTable.Name != t.NewTable.Name {
-			if err := TableRename(t.NewTable.Db, t.OldTable.Name, t.NewTable.Name); err != nil {
+		if t.OldTable.Name() != t.NewTable.Name() {
+			if err := TableRename(t.NewTable.Db, t.OldTable.Name(), t.NewTable.Name()); err != nil {
 				return err
 			}
 		}
 		pkChanged := false
 		//如果主键变更，则需要先除去主键
 		if !reflect.DeepEqual(t.OldTable.PrimaryKeys(), t.NewTable.PrimaryKeys()) {
-			if err := DropTablePrimaryKey(t.NewTable.Db, t.NewTable.Name); err != nil {
+			if err := DropTablePrimaryKey(t.NewTable.Db, t.NewTable.Name()); err != nil {
 				return err
 			}
 			pkChanged = true
@@ -126,13 +126,13 @@ func (t *TableSchema) Update() error {
 			}
 		}
 		if len(deleteCols) > 0 {
-			if err := TableRemoveColumns(t.NewTable.Db, t.NewTable.Name, deleteCols); err != nil {
+			if err := TableRemoveColumns(t.NewTable.Db, t.NewTable.Name(), deleteCols); err != nil {
 				return err
 			}
 		}
 		//如果主键变过，则新增主键
 		if pkChanged {
-			if err := AddTablePrimaryKey(t.NewTable.Db, t.NewTable.Name, t.NewTable.PrimaryKeys()); err != nil {
+			if err := AddTablePrimaryKey(t.NewTable.Db, t.NewTable.Name(), t.NewTable.PrimaryKeys()); err != nil {
 				return err
 			}
 		}
@@ -145,7 +145,7 @@ func (t *TableSchema) processColumn(oldCol, newCol *DBTableColumn) error {
 	if oldCol == nil {
 		switch t.NewTable.Db.DriverName() {
 		case "postgres", "oci8", "mysql", "sqlite3":
-			strSql = fmt.Sprintf("alter table %s add %s", t.NewTable.Name, newCol.DBDefine(t.NewTable.Db.DriverName()))
+			strSql = fmt.Sprintf("alter table %s add %s", t.NewTable.Name(), newCol.DBDefine(t.NewTable.Db.DriverName()))
 		default:
 			panic("not impl " + t.NewTable.Db.DriverName())
 		}
@@ -155,10 +155,10 @@ func (t *TableSchema) processColumn(oldCol, newCol *DBTableColumn) error {
 		log.Println(strSql)
 		//处理索引
 		if newCol.Index {
-			if err := CreateColumnIndex(t.NewTable.Db, t.NewTable.Name, newCol.Name); err != nil {
+			if err := CreateColumnIndex(t.NewTable.Db, t.NewTable.Name(), newCol.Name); err != nil {
 				return err
 			}
-			log.Printf("table %s add column index %s\n", t.NewTable.Name, newCol.Name)
+			log.Printf("table %s add column index %s\n", t.NewTable.Name(), newCol.Name)
 		}
 		return nil
 	}
@@ -166,19 +166,19 @@ func (t *TableSchema) processColumn(oldCol, newCol *DBTableColumn) error {
 	if oldCol.Name != newCol.Name {
 		switch t.NewTable.Db.DriverName() {
 		case "postgres":
-			strSql = fmt.Sprintf("alter table %s rename %s to %s", t.NewTable.Name, oldCol.Name, newCol.Name)
+			strSql = fmt.Sprintf("alter table %s rename %s to %s", t.NewTable.Name(), oldCol.Name, newCol.Name)
 			if _, err := t.NewTable.Db.Exec(strSql); err != nil {
 				return SqlError{strSql, nil, err}
 			}
 			log.Println(strSql)
 		case "oci8":
-			strSql = fmt.Sprintf("alter table %s rename column %s to %s", t.NewTable.Name, oldCol.Name, newCol.Name)
+			strSql = fmt.Sprintf("alter table %s rename column %s to %s", t.NewTable.Name(), oldCol.Name, newCol.Name)
 			if _, err := t.NewTable.Db.Exec(strSql); err != nil {
 				return SqlError{strSql, nil, err}
 			}
 			log.Println(strSql)
 		case "mysql":
-			strSql = fmt.Sprintf("alter table %s CHANGE column %s %s", t.NewTable.Name, oldCol.Name, newCol.DBDefine(t.NewTable.Db.DriverName()))
+			strSql = fmt.Sprintf("alter table %s CHANGE column %s %s", t.NewTable.Name(), oldCol.Name, newCol.DBDefine(t.NewTable.Db.DriverName()))
 			if _, err := t.NewTable.Db.Exec(strSql); err != nil {
 				return SqlError{strSql, nil, err}
 			}
@@ -201,7 +201,7 @@ func (t *TableSchema) processColumn(oldCol, newCol *DBTableColumn) error {
 				//去掉最后的notnull
 				strSql = fmt.Sprintf(
 					"alter table %s ALTER COLUMN %s type %s",
-					t.NewTable.Name, newCol.Name, newCol.DBType(t.NewTable.Db.DriverName()))
+					t.NewTable.Name(), newCol.Name, newCol.DBType(t.NewTable.Db.DriverName()))
 				//去掉定义中的字段名，因为中间多了个type字样
 				if _, err := t.NewTable.Db.Exec(strSql); err != nil {
 					return SqlError{strSql, nil, err}
@@ -212,7 +212,7 @@ func (t *TableSchema) processColumn(oldCol, newCol *DBTableColumn) error {
 			if oldCol.Null && !newCol.Null {
 				strSql = fmt.Sprintf(
 					"alter table %s alter column %s set not null",
-					t.NewTable.Name, newCol.Name)
+					t.NewTable.Name(), newCol.Name)
 				if _, err := t.NewTable.Db.Exec(strSql); err != nil {
 					return SqlError{strSql, nil, err}
 				}
@@ -221,7 +221,7 @@ func (t *TableSchema) processColumn(oldCol, newCol *DBTableColumn) error {
 			if !oldCol.Null && newCol.Null {
 				strSql = fmt.Sprintf(
 					"alter table %s alter column %s drop not null",
-					t.NewTable.Name, newCol.Name)
+					t.NewTable.Name(), newCol.Name)
 				if _, err := t.NewTable.Db.Exec(strSql); err != nil {
 					return SqlError{strSql, nil, err}
 				}
@@ -229,17 +229,17 @@ func (t *TableSchema) processColumn(oldCol, newCol *DBTableColumn) error {
 			}
 
 		case "mysql":
-			strSql = fmt.Sprintf("alter table %s MODIFY %s", t.NewTable.Name, newCol.DBDefine(t.NewTable.Db.DriverName()))
+			strSql = fmt.Sprintf("alter table %s MODIFY %s", t.NewTable.Name(), newCol.DBDefine(t.NewTable.Db.DriverName()))
 			if _, err := t.NewTable.Db.Exec(strSql); err != nil {
 				return SqlError{strSql, nil, err}
 			}
 			log.Println(strSql)
 		case "oci8":
 			if oldCol.Null != newCol.Null {
-				strSql = fmt.Sprintf("alter table %s MODIFY %s", t.NewTable.Name, newCol.DBDefineNull(t.NewTable.Db.DriverName()))
+				strSql = fmt.Sprintf("alter table %s MODIFY %s", t.NewTable.Name(), newCol.DBDefineNull(t.NewTable.Db.DriverName()))
 
 			} else {
-				strSql = fmt.Sprintf("alter table %s MODIFY %s %s", t.NewTable.Name, newCol.Name, newCol.DBType(t.NewTable.Db.DriverName()))
+				strSql = fmt.Sprintf("alter table %s MODIFY %s %s", t.NewTable.Name(), newCol.Name, newCol.DBType(t.NewTable.Db.DriverName()))
 
 			}
 			if _, err := t.NewTable.Db.Exec(strSql); err != nil {
@@ -255,16 +255,16 @@ func (t *TableSchema) processColumn(oldCol, newCol *DBTableColumn) error {
 	//ref:http://stackoverflow.com/questions/6732896/does-rename-column-take-care-of-indexes
 	if oldCol.Index && !newCol.Index {
 		//删除索引
-		if err := DropColumnIndex(t.NewTable.Db, t.NewTable.Name, oldCol.IndexName); err != nil {
+		if err := DropColumnIndex(t.NewTable.Db, t.NewTable.Name(), oldCol.IndexName); err != nil {
 			return err
 		}
-		log.Printf("drop table %s column %s index %s\n", t.NewTable.Name, newCol.Name, oldCol.IndexName)
+		log.Printf("drop table %s column %s index %s\n", t.NewTable.Name(), newCol.Name, oldCol.IndexName)
 	} else if !oldCol.Index && newCol.Index {
 		//新增索引
-		if err := CreateColumnIndex(t.NewTable.Db, t.NewTable.Name, oldCol.Name); err != nil {
+		if err := CreateColumnIndex(t.NewTable.Db, t.NewTable.Name(), oldCol.Name); err != nil {
 			return err
 		}
-		log.Printf("create table %s column %s index\n", t.NewTable.Name, newCol.Name)
+		log.Printf("create table %s column %s index\n", t.NewTable.Name(), newCol.Name)
 	}
 	return nil
 }

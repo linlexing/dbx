@@ -36,7 +36,7 @@ func NewBill(db DB, main string, child ...string) *Bill {
 	for _, v := range child {
 		ct := NewTable(db, v)
 		//表名称会转换
-		r.Child[ct.Name] = ct
+		r.Child[ct.Name()] = ct
 	}
 	return r
 }
@@ -66,7 +66,7 @@ func (b *Bill) ChangeKeyValues(record *BillRecord, pks ...interface{}) {
 	for _, child := range b.Child {
 		childPk := child.PrimaryKeys()
 		for i, name := range b.Main.PrimaryKeys() {
-			for _, row := range record.Child[child.Name] {
+			for _, row := range record.Child[child.Name()] {
 				row[childPk[i]] = record.Main[name]
 			}
 		}
@@ -104,9 +104,9 @@ func (b *Bill) Count(where string, param map[string]interface{}) (icount int64, 
 	var strSql string
 
 	if len(where) == 0 {
-		strSql = fmt.Sprintf("select count(*) from %s", b.Main.Name)
+		strSql = fmt.Sprintf("select count(*) from %s", b.Main.Name())
 	} else {
-		strSql = fmt.Sprintf("select count(*) from %s where %s", b.Main.Name, where)
+		strSql = fmt.Sprintf("select count(*) from %s where %s", b.Main.Name(), where)
 	}
 
 	strSql = RenderSql(strSql, param)
@@ -121,9 +121,9 @@ func (b *Bill) NameQuery(where string, renderParam map[string]interface{}) (*Bil
 	var strSql string
 
 	if len(where) == 0 {
-		strSql = fmt.Sprintf("select * from %s", b.Main.Name)
+		strSql = fmt.Sprintf("select * from %s", b.Main.Name())
 	} else {
-		strSql = fmt.Sprintf("select * from %s where %s", b.Main.Name, where)
+		strSql = fmt.Sprintf("select * from %s where %s", b.Main.Name(), where)
 	}
 
 	strSql = RenderSql(strSql, renderParam)
@@ -226,7 +226,7 @@ func (b *Bill) Update(oldRecord, newRecord *BillRecord) error {
 		return nil
 	}
 	for _, v := range b.Child {
-		if err := v.Replace(oldRecord.Child[v.Name], newRecord.Child[v.Name]); err != nil {
+		if err := v.Replace(oldRecord.Child[v.Name()], newRecord.Child[v.Name()]); err != nil {
 			return err
 		}
 	}
@@ -256,7 +256,7 @@ func (b *Bill) Record(keyValues ...interface{}) (result *BillRecord, err error) 
 		if rows, err := tab.Rows(query); err != nil {
 			return nil, err
 		} else {
-			result.Child[tab.Name] = rows
+			result.Child[tab.Name()] = rows
 		}
 	}
 	return
@@ -298,7 +298,7 @@ func (b *BillRows) Record() (result *BillRecord, err error) {
 		if rows, err := tab.Rows(query); err != nil {
 			return nil, err
 		} else {
-			result.Child[tab.Name] = rows
+			result.Child[tab.Name()] = rows
 		}
 	}
 	return
