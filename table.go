@@ -927,7 +927,16 @@ func (t *DBTable) Remove(row map[string]interface{}) (err error) {
 	return
 }
 
-//通过一个主键更新指定的字段值
+//通过一个key更新记录
+func (t *DBTable) UpdateByKey(key []interface{}, row map[string]interface{}) (err error) {
+	query := map[string]interface{}{}
+	for i, v := range t.PrimaryKeys() {
+		query[v] = key[i]
+	}
+	return t.UpdateByQuery(query, row)
+}
+
+//通过一个条件更新指定的字段值
 func (t *DBTable) UpdateByQuery(query map[string]interface{}, row map[string]interface{}) (err error) {
 	if len(row) == 0 {
 		return fmt.Errorf("data is null,%#v", row)
@@ -940,10 +949,14 @@ func (t *DBTable) UpdateByQuery(query map[string]interface{}, row map[string]int
 	pcount := 0
 	where := []string{}
 	for k, v := range query {
-		pname := fmt.Sprintf("p%d", pcount)
-		where = append(where, fmt.Sprintf("%s=:%s", k, pname))
-		param[pname] = v
-		pcount++
+		if v == nil {
+			where = append(where, fmt.Sprintf("%s is null", k))
+		} else {
+			pname := fmt.Sprintf("p%d", pcount)
+			where = append(where, fmt.Sprintf("%s=:%s", k, pname))
+			param[pname] = v
+			pcount++
+		}
 	}
 	set := []string{}
 	for k, v := range row {
