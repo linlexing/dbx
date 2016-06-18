@@ -230,7 +230,7 @@ func TableExists(db DB, tableName string) (bool, error) {
 		}
 
 		strSql = fmt.Sprintf(
-			"SELECT count(*) FROM information_schema.tables WHERE table_schema = '%s' and upper(table_name)=:tname", schema)
+			"SELECT count(*) FROM information_schema.tables WHERE table_schema ilike '%s' and table_name ilike :tname", schema)
 	case "oci8":
 		if len(schema) == 0 {
 			schema = safe.String(MustGetSqlFun(db, "select user from dual", nil))

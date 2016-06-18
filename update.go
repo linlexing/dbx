@@ -63,7 +63,7 @@ func (u *Update) Exec() (icount int64, err error) {
 	where := []string{}
 	dataAlias := "datasql_"
 	for i, field := range u.Table.PrimaryKeys() {
-		where = append(where, fmt.Sprintf("%s.%s = %s.%s", u.Table.Name, field, dataAlias, u.DataUniqueFields[i]))
+		where = append(where, fmt.Sprintf("%s.%s = %s.%s", u.Table.Name(), field, dataAlias, u.DataUniqueFields[i]))
 	}
 	strSql := fmt.Sprintf("update %s set %s where exists(select * from (%s) %s where %s)",
 		u.Table.Name(),

@@ -1,8 +1,10 @@
 package dbx
 
 import (
+	"bytes"
 	"database/sql"
 	"dbweb/lib/safe"
+	"encoding/gob"
 	"fmt"
 	"log"
 	"reflect"
@@ -458,6 +460,8 @@ func (t *DBTable) ConvertToTrueType(row map[string]interface{}) map[string]inter
 
 //查询返回记录，返回记录字段名是大写，且数据类型正确转换
 func (t *DBTable) QueryRows(where string, param map[string]interface{}, columns ...string) (record []map[string]interface{}, err error) {
+	//使字段信息先收集，防止后面多个游标造成内存问题
+	t.AllField()
 	if len(where) > 0 {
 		where = " where " + where
 	}
@@ -791,6 +795,43 @@ func (t *DBTable) insertAsPack(row map[string]interface{}) (err error) {
 		return SqlError{strSql, param, err}
 	}
 	return
+}
+
+//编码key值，如果是复合主键，则用gob序列化
+func (t *DBTable) EncodeKey(keys ...interface{}) []byte {
+	if len(keys) == 1 {
+		switch tv := keys[0].(type) {
+		case string:
+			return []byte(tv)
+		case []byte:
+			return tv
+		}
+	}
+	out := bytes.NewBuffer(nil)
+	if err := gob.NewEncoder(out).Encode(keys); err != nil {
+		panic(err)
+	}
+	return out.Bytes()
+
+}
+
+//解开主键
+func (t *DBTable) DecodeKey(key []byte) []interface{} {
+	keycols := t.PrimaryKeys()
+	if len(keycols) == 1 {
+		switch t.Field(keycols[0]).GoType() {
+		case TypeBytea:
+			return []interface{}{key}
+		case TypeString:
+			return []interface{}{string(key)}
+		}
+	}
+	in := bytes.NewBuffer(key)
+	rev := []interface{}{}
+	if err := gob.NewDecoder(in).Decode(&rev); err != nil {
+		panic(err)
+	}
+	return rev
 }
 
 //插入一批记录,使用第一行数据中的字段，并没有使用表中的字段
@@ -1163,10 +1204,10 @@ func (t *DBTable) FetchColumns() {
 							b.relname = outa.table_name AND
 							c.nspname = outa.table_schema AND
 							a.attname = outa.column_name) as "TRUETYPE"
-				from information_schema.columns 
-				where upper(table_schema)='%s' and upper(table_name)=$1`, schema)
-		if err := t.Db.Select(&columns, strSql, t.TableName); err != nil {
-			panic(SqlError{strSql, t.TableName, err})
+				from information_schema.columns outa
+				where table_schema ilike '%s' and table_name ilike '%s'`, schema, t.TableName)
+		if err := t.Db.Select(&columns, strSql); err != nil {
+			panic(SqlError{strSql, nil, err})
 		}
 		strSql = fmt.Sprintf(`select
 					(select nspname from pg_namespace where oid=i.relnamespace) as "INDEXOWNER",
@@ -1189,6 +1230,7 @@ func (t *DBTable) FetchColumns() {
 				    and upper(t.relname) =$1
 				group by
 				   t.relname,
+				   i.relnamespace,
 				   i.relname
 				having count(*)=1
 				order by
