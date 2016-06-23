@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"database/sql"
 	"dbweb/lib/safe"
+	"encoding/base64"
 	"encoding/gob"
 	"fmt"
 	"log"
@@ -51,6 +52,78 @@ func (field *DBTableColumn) Eque(src *DBTableColumn) bool {
 			field.MaxLength <= 0 && src.MaxLength <= 0) &&
 		field.Null == src.Null
 }
+func (f *DBTableColumn) ToJson(v interface{}) (interface{}, error) {
+	if v == nil {
+		return nil, nil
+	}
+	switch f.GoType() {
+	case TypeBytea: //base64
+		return base64.RawStdEncoding.EncodeToString(safe.Bytea(v)), nil
+	case TypeDatetime: //RFC3339
+		if tv, ok := v.(time.Time); ok {
+			return tv.Format(time.RFC3339), nil
+		} else {
+			return nil, fmt.Errorf("the column %s value %v not is time", f.Name, v)
+		}
+	case TypeFloat:
+		if tv, ok := v.(float64); ok {
+			return tv, nil
+		} else {
+			return nil, fmt.Errorf("the column %s value %#v not is float64", f.Name, v)
+		}
+	case TypeInt:
+		if tv, ok := v.(int64); ok {
+			return tv, nil
+		} else {
+			return nil, fmt.Errorf("the column %s value %v not is int64", f.Name, v)
+		}
+	case TypeString:
+		return safe.String(v), nil
+	default:
+		return nil, fmt.Errorf("the column %s type error", f.Name)
+	}
+}
+
+func (f *DBTableColumn) FromJson(v interface{}) (interface{}, error) {
+	if v == nil {
+		return nil, nil
+	}
+	switch f.GoType() {
+	case TypeBytea: //base64
+		if tv, ok := v.(string); ok {
+			return base64.RawStdEncoding.DecodeString(tv)
+		} else {
+			return nil, fmt.Errorf("the column %s json value %v not is base64 string", f.Name, v)
+		}
+		return base64.RawStdEncoding.EncodeToString(safe.Bytea(v)), nil
+	case TypeDatetime: //RFC3339
+		if tv, ok := v.(string); ok {
+			return time.Parse(time.RFC3339, tv)
+		} else {
+			return nil, fmt.Errorf("the column %s json value %v not is time string", f.Name, v)
+		}
+	case TypeFloat:
+		if tv, ok := v.(float64); ok {
+			return tv, nil
+		} else {
+			return nil, fmt.Errorf("the column %s json value %v not is float64", f.Name, v)
+		}
+	case TypeInt:
+		if tv, ok := v.(string); ok {
+			return strconv.ParseInt(tv, 10, 64)
+		} else {
+			return nil, fmt.Errorf("the column %s json value %v not is int64 string", f.Name, v)
+		}
+	case TypeString:
+		if tv, ok := v.(string); ok {
+			return tv, nil
+		} else {
+			return nil, fmt.Errorf("the column %s json value %v not is string", f.Name, v)
+		}
+	default:
+		return nil, fmt.Errorf("the column %s type error", f.Name)
+	}
+}
 func (field *DBTableColumn) ConvertToTrueType(v interface{}) (result interface{}) {
 	//nil代表null，不需要转换，否则会出错
 	if v == nil {
@@ -88,6 +161,10 @@ func (field *DBTableColumn) ConvertToTrueType(v interface{}) (result interface{}
 	case TypeInt:
 		//如果是nil会出错，所以在本函数的开头加了判断
 		result = safe.Int(v)
+	case TypeBytea:
+		result = safe.Bytea(v)
+	case TypeFloat:
+		result = safe.Float64(v)
 	default:
 		result = v
 	}
@@ -306,6 +383,7 @@ type DBTable struct {
 	columns        []*DBTableColumn
 	notnullColumns []string
 	columnsNames   []string
+	columnsMap     map[string]*DBTableColumn //用于快速查询
 }
 
 func NewTable(db DB, tabName string) *DBTable {
@@ -393,6 +471,7 @@ func (t *DBTable) PrimaryKeys() []string {
 	for i, v := range result {
 		result[i] = strings.ToUpper(v)
 	}
+	t.primaryKeys = result
 	return result
 }
 func (t *DBTable) Columns() (result []string) {
@@ -436,6 +515,43 @@ func (t *DBTable) Row(pks ...interface{}) map[string]interface{} {
 		return nil
 	}
 	return rows[0]
+}
+
+//将一行数据转换成json,日期、二进制、int64数据转换成文本
+func (t *DBTable) ToJsonRow(row map[string]interface{}) (map[string]interface{}, error) {
+	transRecord := map[string]interface{}{}
+	for k, v := range row {
+		k = strings.ToUpper(k)
+		if field := t.Field(k); field != nil {
+			if sv, err := field.ToJson(v); err != nil {
+				return nil, err
+			} else {
+				transRecord[k] = sv
+			}
+		} else {
+			return nil, fmt.Errorf("can't find the column %s to json", k)
+		}
+	}
+	return transRecord, nil
+}
+
+//将一个json数据转换回row
+func (t *DBTable) FromJsonRow(row map[string]interface{}) (map[string]interface{}, error) {
+	transRecord := map[string]interface{}{}
+
+	for k, v := range row {
+		k = strings.ToUpper(k)
+		if field := t.Field(k); field != nil {
+			if sv, err := field.FromJson(v); err != nil {
+				return nil, err
+			} else {
+				transRecord[k] = sv
+			}
+		} else {
+			return nil, fmt.Errorf("can't find the column %s at fromjson", k)
+		}
+	}
+	return transRecord, nil
 }
 
 //将一行数据转换成实际的数据类型，根据字段名从表中查出类型
@@ -899,7 +1015,7 @@ func (t *DBTable) Delete(rows []map[string]interface{}) (err error) {
 }
 
 func (t *DBTable) RemoveByKeyValues(keyValues ...interface{}) (err error) {
-	return t.Remove(mapfun.Object(t.PrimaryKeys(), keyValues))
+	return t.RemoveByQuery(mapfun.Object(t.PrimaryKeys(), keyValues))
 }
 func (t *DBTable) RemoveByQuery(query map[string]interface{}) (err error) {
 	param := map[string]interface{}{}
@@ -980,7 +1096,7 @@ func (t *DBTable) UpdateByKey(key []interface{}, row map[string]interface{}) (er
 //通过一个条件更新指定的字段值
 func (t *DBTable) UpdateByQuery(query map[string]interface{}, row map[string]interface{}) (err error) {
 	if len(row) == 0 {
-		return fmt.Errorf("data is null,%#v", row)
+		panic(fmt.Errorf("data is null,row:%v,query:%v", row, query))
 	}
 
 	if err = t.checkNotNull(row); err != nil {
@@ -1383,6 +1499,13 @@ func (t *DBTable) FetchColumns() {
 		columns[i].FetchDriver = t.Db.DriverName()
 	}
 	t.columns = columns
+	t.refreshColumnsMap()
+}
+func (t *DBTable) refreshColumnsMap() {
+	t.columnsMap = map[string]*DBTableColumn{}
+	for _, col := range t.columns {
+		t.columnsMap[col.Name] = col
+	}
 }
 
 //克隆一个table，复制结构定义
@@ -1433,12 +1556,11 @@ func sqliteType(typeName string) (string, int) {
 	return "FLOAT", 0
 }
 func (t *DBTable) Field(name string) *DBTableColumn {
-	for _, v := range t.AllField() {
-		if v.Name == strings.ToUpper(name) {
-			return v
-		}
+	if col, ok := t.columnsMap[name]; ok {
+		return col
+	} else {
+		return nil
 	}
-	return nil
 }
 
 //采用脚本的方式定义表，如下：
@@ -1549,6 +1671,7 @@ func (t *DBTable) Define(columns []*DBTableColumn, pk []string) {
 	t.columns = columns
 
 	t.primaryKeys = pk
+	t.refreshColumnsMap()
 }
 func (t *DBTable) Create() error {
 	sch := &TableSchema{
