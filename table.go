@@ -1038,7 +1038,8 @@ func (t *DBTable) RemoveByQuery(query map[string]interface{}) (err error) {
 		return
 	}
 	if rowAff == 0 {
-		return fmt.Errorf("the record not found,query:%v", query)
+		return sql.ErrNoRows
+		//return fmt.Errorf("the record not found,query:%v", query)
 	}
 	return
 }
@@ -1500,6 +1501,7 @@ func (t *DBTable) FetchColumns() {
 	}
 	t.columns = columns
 	t.refreshColumnsMap()
+	t.columnsNames = nil
 }
 func (t *DBTable) refreshColumnsMap() {
 	t.columnsMap = map[string]*DBTableColumn{}
