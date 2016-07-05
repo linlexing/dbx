@@ -1558,6 +1558,9 @@ func sqliteType(typeName string) (string, int) {
 	return "FLOAT", 0
 }
 func (t *DBTable) Field(name string) *DBTableColumn {
+	if len(t.columnsMap) == 0 {
+		t.FetchColumns()
+	}
 	if col, ok := t.columnsMap[name]; ok {
 		return col
 	} else {
