@@ -1574,7 +1574,7 @@ func (t *DBTable) Field(name string) *DBTableColumn {
 //  c date not null index
 //  primary key(a,c)
 func (t *DBTable) DefineScript(src string) {
-	lineReg, err := regexp.Compile(`([\p{Han}_a-zA-Z0-9]+)(\s+bytea|\s+date|\s+float|\s+int|\s+str\([0-9]+\)|\s+str|)(\s+null|\s+not null|)(\s+index|)`)
+	lineReg, err := regexp.Compile(`(?i)([\p{Han}_a-zA-Z0-9]+)(\s+bytea|\s+date|\s+float|\s+int|\s+str\([0-9]+\)|\s+str|)(\s+null|\s+not null|)(\s+index|)`)
 	if err != nil {
 		panic(err)
 	}
@@ -1582,7 +1582,8 @@ func (t *DBTable) DefineScript(src string) {
 	columns := []*DBTableColumn{}
 	var prevColumn *DBTableColumn
 	for i, line := range strings.Split(strings.Replace(src, "\r\n", "\n", -1), "\n") {
-		line = strings.ToLower(strings.TrimSpace(line))
+		//这里全部转换成小写，后面的字段变更判断就需要增加大小写忽略的逻辑
+		line = strings.TrimSpace(line)
 		if len(line) == 0 {
 			continue
 		}
@@ -1614,12 +1615,12 @@ func (t *DBTable) DefineScript(src string) {
 					continue
 				}
 			}
-			dataType := strings.TrimSpace(lineList[1])
+			dataType := strings.ToLower(strings.TrimSpace(lineList[1]))
 			notNull := false
 			index := false
 			var maxLength int64 = -1
 			if len(lineList) > 2 {
-				switch str := strings.TrimSpace(lineList[2]); str {
+				switch str := strings.ToLower(strings.TrimSpace(lineList[2])); str {
 				case "not null":
 					notNull = true
 				case "null":
@@ -1630,7 +1631,7 @@ func (t *DBTable) DefineScript(src string) {
 				}
 			}
 			if len(lineList) > 3 {
-				switch str := strings.TrimSpace(lineList[3]); str {
+				switch str := strings.ToLower(strings.TrimSpace(lineList[3])); str {
 				case "index":
 					index = true
 				case "":
