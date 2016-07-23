@@ -4,15 +4,17 @@ import (
 	"bytes"
 	"database/sql"
 	"dbweb/lib/safe"
+
 	"encoding/base64"
 	"encoding/gob"
 	"fmt"
-	"log"
 	"reflect"
 	"regexp"
 	"strconv"
 	"strings"
 	"time"
+
+	log "github.com/Sirupsen/logrus"
 
 	"github.com/linlexing/mapfun"
 
@@ -125,6 +127,15 @@ func (f *DBTableColumn) FromJson(v interface{}) (interface{}, error) {
 	}
 }
 func (field *DBTableColumn) ConvertToTrueType(v interface{}) (result interface{}) {
+	defer func() {
+		if r := recover(); r != nil {
+			log.WithFields(log.Fields{
+				"column": field.Name,
+				"type":   field.Type,
+			}).Error(r)
+			panic(r)
+		}
+	}()
 	//nil代表null，不需要转换，否则会出错
 	if v == nil {
 		return nil
@@ -626,8 +637,8 @@ func (t *DBTable) Exists(query map[string]interface{}) (result bool, err error) 
 	if len(strWhere) > 0 {
 		where = " where " + strings.Join(strWhere, " and ")
 	}
-	strSql := fmt.Sprintf("select * from %s%s", t.Name(), where)
 	var rows *sqlx.Rows
+	strSql := fmt.Sprintf("select 1 from %s%s", t.Name(), where)
 	rows, err = t.Db.NamedQuery(strSql, newQuery)
 	if err != nil {
 		err = SqlError{strSql, newQuery, err}
@@ -1425,7 +1436,9 @@ func (t *DBTable) FetchColumns() {
 		if err := t.Db.Select(&columns, strSql, t.TableName); err != nil {
 			panic(SqlError{strSql, t.TableName, err})
 		}
-		strSql = `SELECT INDEX_SCHEMA AS INDEXOWNER,INDEXNAME,COLUMNNAME
+		strSql = `SELECT INDEX_SCHEMA AS INDEXOWNER,
+					INDEX_NAME as INDEXNAME,
+					COLUMN_NAME AS COLUMNNAME
 				FROM INFORMATION_SCHEMA.STATISTICS 
 				WHERE upper(table_schema) = '%s' and upper(table_name)=?
 				group by index_name having count(*)=1

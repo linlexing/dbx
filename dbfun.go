@@ -621,10 +621,10 @@ func Minus(db DB, table1, where1, table2, where2 string, primaryKeys, cols []str
 		}
 		strSql = fmt.Sprintf(
 			"select %s from %s l_a left join %s l_b on %s where %s",
-			strings.Join(cols_l, ","),
+			strings.Join(cols_l, ",\n"),
 			from1,
 			from2,
-			strings.Join(join, " and "),
+			strings.Join(join, " and\n"),
 			fmt.Sprintf("l_b.%s is null", primaryKeys[0]))
 	default:
 		panic("not impl")
