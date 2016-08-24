@@ -266,6 +266,8 @@ func (c *ConditionLine) GetExpress(db DB, dataType int) (strSql string) {
 	default:
 		panic(fmt.Errorf("the opt:%s not impl", c.Operators))
 	}
+	//加上括号
+	strSql = fmt.Sprintf("%s%s%s", c.LeftBrackets, strSql, c.RightBrackets)
 	return
 }
 func (c *SqlCondition) BuildWhere(db DB, table *DBTable) string {

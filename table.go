@@ -100,7 +100,7 @@ func (f *DBTableColumn) FromJson(v interface{}) (interface{}, error) {
 		return base64.RawStdEncoding.EncodeToString(safe.Bytea(v)), nil
 	case TypeDatetime: //RFC3339
 		if tv, ok := v.(string); ok {
-			return time.Parse(time.RFC3339, tv)
+			return safe.StrToDate(tv)
 		} else {
 			return nil, fmt.Errorf("the column %s json value %v not is time string", f.Name, v)
 		}
@@ -136,6 +136,7 @@ func (field *DBTableColumn) ConvertToTrueType(v interface{}) (result interface{}
 			panic(r)
 		}
 	}()
+
 	//nil代表null，不需要转换，否则会出错
 	if v == nil {
 		return nil
@@ -155,17 +156,9 @@ func (field *DBTableColumn) ConvertToTrueType(v interface{}) (result interface{}
 		case nil:
 			result = tv
 		case string:
-			if tm, err := time.Parse("2006-01-02 15:04:05.999999999", tv); err != nil {
-				panic(err)
-			} else {
-				result = tm
-			}
+			result = safe.Date(tv)
 		case []byte:
-			if tm, err := time.Parse("2006-01-02 15:04:05.999999999", string(tv)); err != nil {
-				panic(err)
-			} else {
-				result = tm
-			}
+			result = safe.Date(string(tv))
 		default:
 			panic(fmt.Errorf("error type,%T", v))
 		}
@@ -1407,8 +1400,11 @@ func (t *DBTable) FetchColumns() {
 		}
 		strSql = fmt.Sprintf(`SELECT min(index_owner) as "INDEXOWNER",
 					index_name as "INDEXNAME",min(column_name) as "COLUMNNAME"
-				from all_ind_columns 
-				where table_owner='%s' and table_name = :name
+				from all_ind_columns a
+				where table_owner='%s' and table_name = :name and
+					exists(select 1 from all_indexes b where 
+						a.index_owner=b.owner and a.index_name =b.index_name and 
+						UNIQUENESS ='NONUNIQUE')
 				group by index_name having count(*)=1`, schema)
 		if err := t.Db.Select(&indexColumns, strSql, t.TableName); err != nil {
 			panic(SqlError{strSql, t.TableName, err})
@@ -1495,9 +1491,10 @@ func (t *DBTable) FetchColumns() {
 	for _, v := range columns {
 		v.Name = strings.ToUpper(v.Name)
 		//对于主键，统一不赋予索引标识
-		if _, ok := keyColumnsMap[v.Name]; ok {
-			continue
-		}
+		//if _, ok := keyColumnsMap[v.Name]; ok {
+		//	continue
+		//}
+		//组合主键，有时需要单字段索引
 
 		if s, ok := indexColumnsMap[v.Name]; ok {
 			v.Index = true
