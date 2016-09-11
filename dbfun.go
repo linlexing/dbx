@@ -7,12 +7,14 @@ import (
 	"dbweb/lib/tempext"
 	"encoding/binary"
 	"fmt"
-	"log"
+
 	"math/rand"
 	"sort"
 	"strings"
 	"text/template"
 	"time"
+
+	log "github.com/Sirupsen/logrus"
 
 	"github.com/linlexing/mapfun"
 
@@ -86,11 +88,11 @@ func TableNames(db DB) (names []string) {
 	case "mysql":
 		strSql = "SELECT table_name FROM information_schema.tables WHERE table_schema = schema()"
 	default:
-		panic("not impl," + db.DriverName())
+		log.Panic("not impl," + db.DriverName())
 	}
 	names = []string{}
 	if err := db.Select(&names, strSql); err != nil {
-		panic(err)
+		log.Panic(err)
 	}
 	for i, v := range names {
 		names[i] = strings.ToUpper(v)
@@ -135,8 +137,8 @@ func IsNull(db DB) string {
 	case "mysql", "sqlite3":
 		return "ifnull"
 	default:
-		panic("not impl")
-
+		log.Panic("not impl")
+		return ""
 	}
 
 }
@@ -166,7 +168,7 @@ func CreateTableAs(db DB, tableName, strSql string, pks []string) error {
 			return SqlError{s, nil, err}
 		}
 	default:
-		panic("not impl create table as")
+		log.Panic("not impl create table as")
 	}
 	return nil
 }
@@ -274,14 +276,14 @@ func MustGetSqlFun(db DB, strSql string, p map[string]interface{}) (result inter
 	var err error
 	if result, err = GetSqlFun(db, strSql, p); err != nil {
 		log.Printf("sql err:%s\n%s\n", err, strSql)
-		panic(err)
+		log.Panic(err)
 	}
 	return
 }
 func MustQueryRecord(db DB, strSql string, p map[string]interface{}) (result []map[string]interface{}) {
 	var err error
 	if result, err = QueryRecord(db, strSql, p); err != nil {
-		panic(err)
+		log.Panic(err)
 	}
 	return
 }
@@ -289,10 +291,10 @@ func MustRow(db DB, strSql string, p map[string]interface{}) map[string]interfac
 	var err error
 	result, err := QueryRecord(db, strSql, p)
 	if err != nil {
-		panic(err)
+		log.Panic(err)
 	}
 	if len(result) == 0 {
-		panic(SqlError{strSql, p, sql.ErrNoRows})
+		log.Panic(SqlError{strSql, p, sql.ErrNoRows})
 	}
 	return result[0]
 }
@@ -356,12 +358,12 @@ func RenderSql(strSql string, renderArgs interface{}) string {
 	var err error
 	var t *template.Template
 	if t, err = template.New("sql").Funcs(tempext.GetFuncMap()).Parse(strSql); err != nil {
-		panic(&RenderSqlError{strSql, nil, renderArgs, err})
+		log.Panic(&RenderSqlError{strSql, nil, renderArgs, err})
 	}
 
 	out := bytes.NewBuffer(nil)
 	if err = t.Execute(out, renderArgs); err != nil {
-		panic(&RenderSqlError{strSql, nil, renderArgs, err})
+		log.Panic(&RenderSqlError{strSql, nil, renderArgs, err})
 	}
 	strSql = out.String()
 	return strSql
@@ -395,11 +397,11 @@ func BindSql(db DB, strSql string, params map[string]interface{}) (result string
 	//转换in的条件
 	sql, pam, err := sqlx.Named(strSql, params)
 	if err != nil {
-		panic(&SqlError{strSql, params, err})
+		log.Panic(&SqlError{strSql, params, err})
 	}
 	sql, pam, err = sqlx.In(sql, pam...)
 	if err != nil {
-		panic(&SqlError{strSql, params, err})
+		log.Panic(&SqlError{strSql, params, err})
 	}
 
 	result = db.Rebind(sql)
@@ -426,7 +428,7 @@ func CreateColumnIndex(db DB, tableName, colName string) error {
 		//这里会有问题，如果表名和字段名比较长就会出错
 		strSql = fmt.Sprintf("create index %si%s%s on %s(%s)", schema, tname, colName, tableName, colName)
 	default:
-		panic("not impl " + db.DriverName())
+		log.Panic("not impl " + db.DriverName())
 	}
 	if _, err := db.Exec(strSql); err != nil {
 		return SqlError{strSql, nil, err}
@@ -445,7 +447,7 @@ func DropColumnIndex(db DB, tableName, indexName string) error {
 	case "mysql":
 		strSql = fmt.Sprintf("drop index %s on %s", indexName, tableName)
 	default:
-		panic("not impl," + db.DriverName())
+		log.Panic("not impl," + db.DriverName())
 	}
 	if _, err := db.Exec(strSql); err != nil {
 		return SqlError{strSql, nil, err}
@@ -469,7 +471,7 @@ func AddTablePrimaryKey(db DB, tableName string, pks []string) error {
 	case "oci8":
 		strSql = fmt.Sprintf("alter table %s add constraint %s_pk primary key(%s)", tableName, clearTableName, strings.Join(pks, ","))
 	default:
-		panic("not impl," + db.DriverName())
+		log.Panic("not impl," + db.DriverName())
 	}
 	if _, err := db.Exec(strSql); err != nil {
 		return SqlError{strSql, nil, err}
@@ -526,7 +528,7 @@ func DropTablePrimaryKey(db DB, tableName string) error {
 			return SqlError{strSql, nil, err}
 		}
 	default:
-		panic("not impl," + db.DriverName())
+		log.Panic("not impl," + db.DriverName())
 	}
 	return nil
 }
@@ -546,18 +548,21 @@ func ValueExpress(db DB, dataType int, value string) string {
 			} else if len(value) == 19 {
 				return fmt.Sprintf("to_date(%s,'yyyy-mm-dd hh24:mi:ss')", safe.SignString(value))
 			} else {
-				panic(fmt.Errorf("invalid datetime:%s", value))
+				log.Panic(fmt.Errorf("invalid datetime:%s", value))
+				return ""
 			}
 		default:
-			panic(fmt.Errorf("not impl datetime,dbtype:%s", db.DriverName()))
+			log.Panic(fmt.Errorf("not impl datetime,dbtype:%s", db.DriverName()))
+			return ""
 		}
 	default:
-		panic(fmt.Errorf("not impl ValueExpress,type:%d", dataType))
+		log.Panic(fmt.Errorf("not impl ValueExpress,type:%d", dataType))
+		return ""
 	}
 }
 func MustExec(db DB, strSql string, params ...interface{}) {
 	if _, err := db.Exec(strSql, params...); err != nil {
-		panic(SqlError{strSql, params, err})
+		log.Panic(SqlError{strSql, params, err})
 	}
 	return
 }
@@ -627,7 +632,7 @@ func Minus(db DB, table1, where1, table2, where2 string, primaryKeys, cols []str
 			strings.Join(join, " and\n"),
 			fmt.Sprintf("l_b.%s is null", primaryKeys[0]))
 	default:
-		panic("not impl")
+		log.Panic("not impl")
 	}
 	return strSql
 }

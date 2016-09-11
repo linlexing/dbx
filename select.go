@@ -10,6 +10,8 @@ import (
 	"text/template"
 	"time"
 
+	log "github.com/Sirupsen/logrus"
+
 	"github.com/jmoiron/sqlx"
 )
 
@@ -62,25 +64,25 @@ func StringToFieldValue(str string, dataType int) (val interface{}) {
 
 	switch dataType {
 	case TypeBytea:
-		panic("the bytea not impl")
+		log.Panic("the bytea not impl")
 	case TypeDatetime:
 		if val, err = time.Parse("2006-01-02 15:04:05", str); err != nil {
-			panic(err)
+			log.Panic(err)
 		}
 	case TypeFloat:
 		if val, err = strconv.ParseFloat(str, 64); err != nil {
-			panic(err)
+			log.Panic(err)
 		}
 
 	case TypeInt:
 		if val, err = strconv.ParseInt(str, 10, 64); err != nil {
-			panic(err)
+			log.Panic(err)
 		}
 
 	case TypeString:
 		val = str
 	default:
-		panic("not impl StringToFieldValue")
+		log.Panic("not impl StringToFieldValue")
 	}
 	return
 }
@@ -167,7 +169,7 @@ func (c *ConditionLine) GetExpress(db DB, dataType int) (strSql string) {
 		} else {
 			//在列表简化起见，不再类型化
 			if array, err := csv.NewReader(strings.NewReader(c.Value)).Read(); err != nil {
-				panic(err)
+				log.Panic(err)
 			} else {
 				list := []string{}
 				for _, v := range array {
@@ -183,7 +185,7 @@ func (c *ConditionLine) GetExpress(db DB, dataType int) (strSql string) {
 		} else {
 			//在列表简化起见，不再类型化
 			if array, err := csv.NewReader(strings.NewReader(c.Value)).Read(); err != nil {
-				panic(err)
+				log.Panic(err)
 			} else {
 				list := []string{}
 				for _, v := range array {
@@ -204,7 +206,7 @@ func (c *ConditionLine) GetExpress(db DB, dataType int) (strSql string) {
 			case "mysql":
 				strSql = fmt.Sprintf("%s REGEXP %s", c.ColumnName, ValueExpress(db, dataType, c.Value))
 			default:
-				panic("not impl GetExpress")
+				log.Panic("not impl GetExpress")
 			}
 		}
 	case "!~": //非正则
@@ -219,7 +221,7 @@ func (c *ConditionLine) GetExpress(db DB, dataType int) (strSql string) {
 			case "mysql":
 				strSql = fmt.Sprintf("%s not REGEXP %s", c.ColumnName, ValueExpress(db, dataType, c.Value))
 			default:
-				panic("not impl GetExpress")
+				log.Panic("not impl GetExpress")
 			}
 		}
 	case "e": //为空
@@ -233,7 +235,7 @@ func (c *ConditionLine) GetExpress(db DB, dataType int) (strSql string) {
 		case "mysql":
 			strSql = fmt.Sprintf("char_length(%s) = %s", c.ColumnName, c.Value)
 		default:
-			panic("not impl GetExpress")
+			log.Panic("not impl GetExpress")
 		}
 	case "!_": //长度不等于
 		switch db.DriverName() {
@@ -242,7 +244,7 @@ func (c *ConditionLine) GetExpress(db DB, dataType int) (strSql string) {
 		case "mysql":
 			strSql = fmt.Sprintf("char_length(%s) <> %s", c.ColumnName, c.Value)
 		default:
-			panic("not impl GetExpress")
+			log.Panic("not impl GetExpress")
 		}
 	case "_>": //长度大于
 		switch db.DriverName() {
@@ -251,7 +253,7 @@ func (c *ConditionLine) GetExpress(db DB, dataType int) (strSql string) {
 		case "mysql":
 			strSql = fmt.Sprintf("char_length(%s) > %s", c.ColumnName, c.Value)
 		default:
-			panic("not impl GetExpress")
+			log.Panic("not impl GetExpress")
 		}
 
 	case "_<": //长度小于
@@ -261,10 +263,10 @@ func (c *ConditionLine) GetExpress(db DB, dataType int) (strSql string) {
 		case "mysql":
 			strSql = fmt.Sprintf("char_length(%s) < %s", c.ColumnName, c.Value)
 		default:
-			panic("not impl GetExpress")
+			log.Panic("not impl GetExpress")
 		}
 	default:
-		panic(fmt.Errorf("the opt:%s not impl", c.Operators))
+		log.Panic(fmt.Errorf("the opt:%s not impl", c.Operators))
 	}
 	//加上括号
 	strSql = fmt.Sprintf("%s%s%s", c.LeftBrackets, strSql, c.RightBrackets)
@@ -387,7 +389,7 @@ func (s *SqlSelect) BuildSql(db DB) (strSql string) {
 	var renderSql string
 	renderSql = s.renderSql()
 	if len(renderSql) == 0 {
-		panic("sql is empty")
+		log.Panic("sql is empty")
 	}
 
 	whereList := []string{}
@@ -401,7 +403,7 @@ func (s *SqlSelect) BuildSql(db DB) (strSql string) {
 			var err error
 			strSql, err = renderManualPageSql(db, renderSql, nil, nil, nil, s.Limit)
 			if err != nil {
-				panic(err)
+				log.Panic(err)
 			}
 		} else {
 			strSql = renderSql
@@ -448,7 +450,7 @@ func (s *SqlSelect) BuildSql(db DB) (strSql string) {
 
 	if s.ManualPage {
 		if str, err := renderManualPageSql(db, renderSql, s.Columns, whereList, orderList, s.Limit); err != nil {
-			panic(err)
+			log.Panic(err)
 		} else {
 			strSql = str
 		}
@@ -476,7 +478,7 @@ func (s *SqlSelect) BuildSql(db DB) (strSql string) {
 				strSql = fmt.Sprintf("select %s from (%s) wholesql %s%s limit %d",
 					sel, renderSql, where, orderby, s.Limit)
 			default:
-				panic("not impl BuildSql")
+				log.Panic("not impl BuildSql")
 			}
 
 		} else {
@@ -557,7 +559,7 @@ func (s *SqlSelect) QueryRows(db DB) (result []map[string]interface{}, cols []*S
 				case string, []byte, nil: //nil作为str处理
 					v.Type = "STR"
 				default:
-					panic("not impl QueryRows")
+					log.Panic("not impl QueryRows")
 				}
 			}
 		}
@@ -647,7 +649,7 @@ func (s *SqlSelect) BuildTotalSql(db DB, cols ...string) (strSql string, err err
 func (s *SqlSelect) BuildRowCountSql(db DB) (strSql string) {
 	renderSql := s.renderSql()
 	if len(renderSql) == 0 {
-		panic("sql is empty")
+		log.Panic("sql is empty")
 	}
 
 	var where string
@@ -663,7 +665,7 @@ func (s *SqlSelect) BuildRowCountSql(db DB) (strSql string) {
 	}
 	if s.ManualPage {
 		if str, err := renderManualPageSql(db, renderSql, []string{"COUNT(*)"}, whereList, nil, -1); err != nil {
-			panic(err)
+			log.Panic(err)
 		} else {
 			strSql = str
 		}
@@ -715,7 +717,7 @@ func NewSqlSelect(strSql string, table *DBTable, manualPage bool) *SqlSelect {
 		}
 	}
 	if table == nil {
-		panic("no table")
+		log.Panic("no table")
 	}
 	strSql = fmt.Sprintf(`<<if eq "oci8" .Driver>>
 	<<if ge .Limit 0>>

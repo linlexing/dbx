@@ -133,7 +133,7 @@ func (field *DBTableColumn) ConvertToTrueType(v interface{}) (result interface{}
 				"column": field.Name,
 				"type":   field.Type,
 			}).Error(r)
-			panic(r)
+			log.Panic(r)
 		}
 	}()
 
@@ -160,7 +160,7 @@ func (field *DBTableColumn) ConvertToTrueType(v interface{}) (result interface{}
 		case []byte:
 			result = safe.Date(string(tv))
 		default:
-			panic(fmt.Errorf("error type,%T", v))
+			log.Panic(fmt.Errorf("error type,%T", v))
 		}
 	case TypeInt:
 		//如果是nil会出错，所以在本函数的开头加了判断
@@ -188,7 +188,8 @@ func (c *DBTableColumn) ChineseType() string {
 	case "BYTEA":
 		return "二进制"
 	default:
-		panic("invalid type:" + c.Type)
+		log.Panic("invalid type:" + c.Type)
+		return ""
 	}
 }
 func (c *DBTableColumn) GoType() int {
@@ -204,7 +205,8 @@ func (c *DBTableColumn) GoType() int {
 	case "BYTEA":
 		return TypeBytea
 	default:
-		panic("invalid type:" + c.Type)
+		log.Panic("invalid type:" + c.Type)
+		return -1
 	}
 }
 func ParseGoType(t int) string {
@@ -220,7 +222,8 @@ func ParseGoType(t int) string {
 	case TypeBytea:
 		return "BYTEA"
 	default:
-		panic(fmt.Sprintf("invalid type:%d", t))
+		log.Panic(fmt.Sprintf("invalid type:%d", t))
+		return ""
 	}
 
 }
@@ -252,7 +255,7 @@ func (c *DBTableColumn) DBType(driver string) string {
 				dataType = fmt.Sprintf("character varying(%d)", c.MaxLength)
 			}
 		default:
-			panic("not impl DBType")
+			log.Panic("not impl DBType")
 
 		}
 	case "oci8":
@@ -277,7 +280,7 @@ func (c *DBTableColumn) DBType(driver string) string {
 
 			}
 		default:
-			panic("not impl DBType")
+			log.Panic("not impl DBType")
 
 		}
 	case "sqlite3":
@@ -297,7 +300,7 @@ func (c *DBTableColumn) DBType(driver string) string {
 				dataType = fmt.Sprintf("TEXT(%d)", c.MaxLength)
 			}
 		default:
-			panic("not impl DBType")
+			log.Panic("not impl DBType")
 		}
 	case "mysql":
 		switch c.GoType() {
@@ -316,11 +319,11 @@ func (c *DBTableColumn) DBType(driver string) string {
 				dataType = fmt.Sprintf("VARCHAR(%d)", c.MaxLength)
 			}
 		default:
-			panic("not impl DBType")
+			log.Panic("not impl DBType")
 		}
 
 	default:
-		panic("not impl DBType")
+		log.Panic("not impl DBType")
 	}
 	return dataType
 }
@@ -349,7 +352,8 @@ func (c *DBTableColumn) GoValue(v string) interface{} {
 		return v
 	case TypeInt:
 		if i, err := strconv.ParseInt(v, 10, 64); err != nil {
-			panic(err)
+			log.Panic(err)
+			return nil
 		} else {
 			return i
 		}
@@ -362,19 +366,22 @@ func (c *DBTableColumn) GoValue(v string) interface{} {
 			t, err = time.Parse("2006-01-02", v)
 		}
 		if err != nil {
-			panic(err)
+			log.Panic(err)
+			return -1
 		}
 		return t
 	case TypeBytea:
 		return []byte(v)
 	case TypeFloat:
 		if f, err := strconv.ParseFloat(v, 64); err != nil {
-			panic(err)
+			log.Panic(err)
+			return nil
 		} else {
 			return f
 		}
 	default:
-		panic("not impl")
+		log.Panic("not impl")
+		return nil
 	}
 }
 
@@ -392,7 +399,7 @@ type DBTable struct {
 
 func NewTable(db DB, tabName string) *DBTable {
 	if len(tabName) == 0 {
-		panic("table name is empty")
+		log.Panic("table name is empty")
 	}
 	ns := strings.Split(tabName, ".")
 	rev := &DBTable{
@@ -430,7 +437,7 @@ func (t *DBTable) PrimaryKeys() []string {
 			        AND a.attnum = ANY(i.indkey)
 			WHERE  i.indrelid = $1::regclass
 			AND    i.indisprimary;`, t.Name()); err != nil {
-			panic(err)
+			log.Panic(err)
 		}
 	case "oci8":
 		if len(schema) == 0 {
@@ -446,13 +453,13 @@ func (t *DBTable) PrimaryKeys() []string {
 			AND cons.constraint_name = cols.constraint_name
 			AND cons.owner = cols.owner
 			ORDER BY cols.table_name, cols.position`, schema), t.TableName); err != nil {
-			panic(err)
+			log.Panic(err)
 		}
 	case "sqlite3":
 		strSql := fmt.Sprintf(`PRAGMA table_info(%s)`, t.Name())
 		r, err := QueryRecord(t.Db, strSql, nil)
 		if err != nil {
-			panic(err)
+			log.Panic(err)
 		}
 		for _, row := range r {
 			if safe.Int(row["PK"]) == 1 {
@@ -464,13 +471,13 @@ func (t *DBTable) PrimaryKeys() []string {
 		strSql := fmt.Sprintf("SHOW KEYS FROM %s WHERE Key_name = 'PRIMARY'", t.Name())
 		rows, err := QueryRecord(t.Db, strSql, nil)
 		if err != nil {
-			panic(err)
+			log.Panic(err)
 		}
 		for _, row := range rows {
 			result = append(result, safe.String(row["COLUMN_NAME"]))
 		}
 	default:
-		panic(fmt.Errorf("not impl"))
+		log.Panic(fmt.Errorf("not impl"))
 	}
 	for i, v := range result {
 		result[i] = strings.ToUpper(v)
@@ -505,7 +512,7 @@ func (t *DBTable) NotNullColumns() []string {
 func (t *DBTable) Row(pks ...interface{}) map[string]interface{} {
 	pkNames := t.PrimaryKeys()
 	if len(pkNames) != len(pks) {
-		panic(fmt.Errorf("the table %s pk values number error.table pk:%#v,pkvalues:%#v", t.Name(), pkNames, pks))
+		log.Panic(fmt.Errorf("the table %s pk values number error.table pk:%#v,pkvalues:%#v", t.Name(), pkNames, pks))
 	}
 	query := map[string]interface{}{}
 	for i, v := range pks {
@@ -513,7 +520,7 @@ func (t *DBTable) Row(pks ...interface{}) map[string]interface{} {
 	}
 	rows, err := t.Rows(query)
 	if err != nil {
-		panic(err)
+		log.Panic(err)
 	}
 	if len(rows) == 0 {
 		return nil
@@ -649,7 +656,8 @@ func (t *DBTable) KeyValues(row map[string]interface{}) []interface{} {
 //参数可以传入string,map[string]interface{}
 func (t *DBTable) MustCount(params ...interface{}) int64 {
 	if i, err := t.Count(params...); err != nil {
-		panic(err)
+		log.Panic(err)
+		return -1
 	} else {
 		return i
 	}
@@ -668,7 +676,7 @@ func (t *DBTable) Count(params ...interface{}) (int64, error) {
 		pam = params[1].(map[string]interface{})
 	}
 	if len(params) > 2 {
-		panic("error number params")
+		log.Panic("error number params")
 	}
 	r, err := GetSqlFun(t.Db, strSql, pam)
 	if err != nil {
@@ -929,7 +937,7 @@ func (t *DBTable) EncodeKey(keys ...interface{}) []byte {
 	}
 	out := bytes.NewBuffer(nil)
 	if err := gob.NewEncoder(out).Encode(keys); err != nil {
-		panic(err)
+		log.Panic(err)
 	}
 	return out.Bytes()
 
@@ -949,7 +957,7 @@ func (t *DBTable) DecodeKey(key []byte) []interface{} {
 	in := bytes.NewBuffer(key)
 	rev := []interface{}{}
 	if err := gob.NewDecoder(in).Decode(&rev); err != nil {
-		panic(err)
+		log.Panic(err)
 	}
 	return rev
 }
@@ -1101,7 +1109,7 @@ func (t *DBTable) UpdateByKey(key []interface{}, row map[string]interface{}) (er
 //通过一个条件更新指定的字段值
 func (t *DBTable) UpdateByQuery(query map[string]interface{}, row map[string]interface{}) (err error) {
 	if len(row) == 0 {
-		panic(fmt.Errorf("data is null,row:%v,query:%v", row, query))
+		log.Panic(fmt.Errorf("data is null,row:%v,query:%v", row, query))
 	}
 
 	if err = t.checkNotNull(row); err != nil {
@@ -1328,7 +1336,7 @@ func (t *DBTable) FetchColumns() {
 				from information_schema.columns outa
 				where table_schema ilike '%s' and table_name ilike '%s'`, schema, t.TableName)
 		if err := t.Db.Select(&columns, strSql); err != nil {
-			panic(SqlError{strSql, nil, err})
+			log.Panic(SqlError{strSql, nil, err})
 		}
 		strSql = fmt.Sprintf(`select
 					(select nspname from pg_namespace where oid=i.relnamespace) as "INDEXOWNER",
@@ -1358,7 +1366,7 @@ func (t *DBTable) FetchColumns() {
 				    t.relname,
 				    i.relname;`, schema)
 		if err := t.Db.Select(&indexColumns, strSql, t.TableName); err != nil {
-			panic(SqlError{strSql, t.TableName, err})
+			log.Panic(SqlError{strSql, t.TableName, err})
 		}
 	case "oci8":
 		if len(t.Schema) > 0 {
@@ -1396,7 +1404,7 @@ func (t *DBTable) FetchColumns() {
 				where owner='%s' and table_name='%s'
 				order by column_id`, schema, t.TableName)
 		if err := t.Db.Select(&columns, strSql); err != nil {
-			panic(SqlError{strSql, nil, err})
+			log.Panic(SqlError{strSql, nil, err})
 		}
 		strSql = fmt.Sprintf(`SELECT min(index_owner) as "INDEXOWNER",
 					index_name as "INDEXNAME",min(column_name) as "COLUMNNAME"
@@ -1407,7 +1415,7 @@ func (t *DBTable) FetchColumns() {
 						UNIQUENESS ='NONUNIQUE')
 				group by index_name having count(*)=1`, schema)
 		if err := t.Db.Select(&indexColumns, strSql, t.TableName); err != nil {
-			panic(SqlError{strSql, t.TableName, err})
+			log.Panic(SqlError{strSql, t.TableName, err})
 		}
 	case "mysql":
 		if len(t.Schema) > 0 {
@@ -1430,7 +1438,7 @@ func (t *DBTable) FetchColumns() {
 				where upper(table_name)=? and upper(table_schema)= '%s'
 				order by ORDINAL_POSITION`, schema)
 		if err := t.Db.Select(&columns, strSql, t.TableName); err != nil {
-			panic(SqlError{strSql, t.TableName, err})
+			log.Panic(SqlError{strSql, t.TableName, err})
 		}
 		strSql = `SELECT INDEX_SCHEMA AS INDEXOWNER,
 					INDEX_NAME as INDEXNAME,
@@ -1440,13 +1448,13 @@ func (t *DBTable) FetchColumns() {
 				group by index_name having count(*)=1
 				ORDER BY table_name, index_name, seq_in_index`
 		if err := t.Db.Select(&indexColumns, strSql, t.TableName); err != nil {
-			panic(SqlError{strSql, t.TableName, err})
+			log.Panic(SqlError{strSql, t.TableName, err})
 		}
 	case "sqlite3":
 		strSql := fmt.Sprintf(`PRAGMA table_info(%s)`, t.TableName)
 		result, err := QueryRecord(t.Db, strSql, nil)
 		if err != nil {
-			panic(SqlError{strSql, nil, err})
+			log.Panic(SqlError{strSql, nil, err})
 		}
 		for _, row := range result {
 			c := &DBTableColumn{
@@ -1460,7 +1468,7 @@ func (t *DBTable) FetchColumns() {
 		strSql = fmt.Sprintf("PRAGMA index_list(%s)", t.TableName)
 		result, err = QueryRecord(t.Db, strSql, nil)
 		if err != nil {
-			panic(SqlError{strSql, t.TableName, err})
+			log.Panic(SqlError{strSql, t.TableName, err})
 		}
 		for _, row := range result {
 			indexName := safe.String(row["NAME"])
@@ -1468,7 +1476,7 @@ func (t *DBTable) FetchColumns() {
 			strSql = fmt.Sprintf("PRAGMA index_info(%s)", indexName)
 			indexColumnList, err := QueryRecord(t.Db, strSql, nil)
 			if err != nil {
-				panic(SqlError{strSql, nil, err})
+				log.Panic(SqlError{strSql, nil, err})
 			}
 			//只找出一个字段的索引
 			if len(indexColumnList) == 1 {
@@ -1477,7 +1485,7 @@ func (t *DBTable) FetchColumns() {
 			}
 		}
 	default:
-		panic(fmt.Errorf("not impl FetchColumns"))
+		log.Panic(fmt.Errorf("not impl FetchColumns"))
 	}
 	//注意indexColumns中可能含有非表字段的名称，例如oracle中的function index
 	indexColumnsMap := map[string]*columnIndex{}
@@ -1586,7 +1594,7 @@ func (t *DBTable) Field(name string) *DBTableColumn {
 func (t *DBTable) DefineScript(src string) {
 	lineReg, err := regexp.Compile(`(?i)([\p{Han}_a-zA-Z0-9]+)(\s+bytea|\s+date|\s+float|\s+int|\s+str\([0-9]+\)|\s+str|)(\s+null|\s+not null|)(\s+index|)`)
 	if err != nil {
-		panic(err)
+		log.Panic(err)
 	}
 	pks := []string{}
 	columns := []*DBTableColumn{}
@@ -1605,18 +1613,18 @@ func (t *DBTable) DefineScript(src string) {
 		} else {
 			lineList := lineReg.FindStringSubmatch(line)
 			if len(lineList) == 0 {
-				panic(fmt.Errorf("line %d:%s error", i, line))
+				log.Panic(fmt.Errorf("line %d:%s error", i, line))
 			}
 			//第一个是整行，需要去除
 			lineList = lineList[1:]
 			if len(lineList) == 0 {
-				panic(fmt.Errorf("line %d:%s error", i, line))
+				log.Panic(fmt.Errorf("line %d:%s error", i, line))
 			}
 			colName := lineList[0]
 			if len(strings.TrimSpace(lineList[1])) == 0 {
 				//如果只有列名，则自动从上一个字段取出数据类型等定义
 				if prevColumn == nil {
-					panic(fmt.Errorf("line %d:%s not data type", i, line))
+					log.Panic(fmt.Errorf("line %d:%s not data type", i, line))
 				} else {
 					col := prevColumn.Clone()
 					col.Name = colName
@@ -1637,7 +1645,7 @@ func (t *DBTable) DefineScript(src string) {
 					notNull = false
 				case "":
 				default:
-					panic(fmt.Errorf("line %d:%s ,error define %s", i, line, str))
+					log.Panic(fmt.Errorf("line %d:%s ,error define %s", i, line, str))
 				}
 			}
 			if len(lineList) > 3 {
@@ -1646,13 +1654,13 @@ func (t *DBTable) DefineScript(src string) {
 					index = true
 				case "":
 				default:
-					panic(fmt.Errorf("line %d:%s ,error define %s", i, line, str))
+					log.Panic(fmt.Errorf("line %d:%s ,error define %s", i, line, str))
 				}
 			}
 			if strings.HasPrefix(dataType, "str(") {
 				maxLength, err = strconv.ParseInt(dataType[4:len(dataType)-1], 10, 64)
 				if err != nil {
-					panic(err)
+					log.Panic(err)
 				}
 				dataType = "STR"
 			} else {
@@ -1735,7 +1743,7 @@ WHEN NOT MATCHED THEN INSERT
 			return SqlError{strSql, nil, err}
 		}
 	default:
-		panic("not impl Merge")
+		log.Panic("not impl Merge")
 	}
 	return nil
 }

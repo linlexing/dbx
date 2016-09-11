@@ -2,9 +2,10 @@ package dbx
 
 import (
 	"fmt"
-	"log"
 	"reflect"
 	"strings"
+
+	log "github.com/Sirupsen/logrus"
 )
 
 //该结构完成表结构的调整，自动处理
@@ -147,7 +148,7 @@ func (t *TableSchema) processColumn(oldCol, newCol *DBTableColumn) error {
 		case "postgres", "oci8", "mysql", "sqlite3":
 			strSql = fmt.Sprintf("alter table %s add %s", t.NewTable.Name(), newCol.DBDefine(t.NewTable.Db.DriverName()))
 		default:
-			panic("not impl " + t.NewTable.Db.DriverName())
+			log.Panic("not impl " + t.NewTable.Db.DriverName())
 		}
 		if _, err := t.NewTable.Db.Exec(strSql); err != nil {
 			return SqlError{strSql, nil, err}
@@ -184,7 +185,7 @@ func (t *TableSchema) processColumn(oldCol, newCol *DBTableColumn) error {
 			}
 			log.Println(strSql)
 		default:
-			panic("not impl " + t.NewTable.Db.DriverName())
+			log.Panic("not impl " + t.NewTable.Db.DriverName())
 		}
 	}
 	//如果字段定义不相等且不是mysql则需要再次修改字段定义
@@ -248,7 +249,7 @@ func (t *TableSchema) processColumn(oldCol, newCol *DBTableColumn) error {
 			log.Println(strSql)
 
 		default:
-			panic("not impl " + t.NewTable.Db.DriverName())
+			log.Panic("not impl " + t.NewTable.Db.DriverName())
 		}
 	}
 	//处理索引,字段更名的操作，oracle、postgres、mysql都是安全的，所以不需处理

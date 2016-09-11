@@ -8,6 +8,7 @@ import (
 
 	"github.com/linlexing/mapfun"
 
+	log "github.com/Sirupsen/logrus"
 	"github.com/jmoiron/sqlx"
 )
 
@@ -27,7 +28,7 @@ type BillRecord struct {
 
 func NewBill(db DB, main string, child ...string) *Bill {
 	if len(main) == 0 {
-		panic("not main table")
+		log.Panic("not main table")
 	}
 	r := &Bill{
 		Main:  NewTable(db, main),
