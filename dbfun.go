@@ -66,7 +66,7 @@ type DB interface {
 func Columns(db DB, strSql string, pam map[string]interface{}) ([]string, error) {
 	rows, err := db.NamedQuery(strSql, pam)
 	if err != nil {
-		return nil, err
+		return nil, SqlError{strSql, pam, err}
 	}
 	defer rows.Close()
 	r, err := rows.Columns()
