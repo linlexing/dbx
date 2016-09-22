@@ -72,8 +72,11 @@ func (u *Update) Exec() (icount int64, err error) {
 		dataAlias,
 		strings.Join(where, " and "),
 	)
-	str := RenderSql(strSql, u.SqlRenderArgs)
 
+	str, err := RenderSql(strSql, u.SqlRenderArgs)
+	if err != nil {
+		return
+	}
 	if sr, e := u.Table.Db.NamedExec(str, params); e != nil {
 		err = SqlError{str, params, e}
 		return

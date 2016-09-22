@@ -110,7 +110,9 @@ func (b *Bill) Count(where string, param map[string]interface{}) (icount int64, 
 		strSql = fmt.Sprintf("select count(*) from %s where %s", b.Main.Name(), where)
 	}
 
-	strSql = RenderSql(strSql, param)
+	if strSql, err = RenderSql(strSql, param); err != nil {
+		return
+	}
 
 	vCount, err := GetSqlFun(b.Main.Db, strSql, nil)
 	if err != nil {
@@ -126,8 +128,10 @@ func (b *Bill) NameQuery(where string, renderParam map[string]interface{}) (*Bil
 	} else {
 		strSql = fmt.Sprintf("select * from %s where %s", b.Main.Name(), where)
 	}
-
-	strSql = RenderSql(strSql, renderParam)
+	var err error
+	if strSql, err = RenderSql(strSql, renderParam); err != nil {
+		return nil, err
+	}
 
 	strSql, sqlParam := BindSql(b.Main.Db, strSql, nil)
 	rows, err := b.Main.Db.Queryx(strSql, sqlParam...)

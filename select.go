@@ -386,8 +386,10 @@ func renderManualPageSql(db DB, strSql string, columnList, whereList, orderbyLis
 //构造sql语句，和相应的参数值
 func (s *SqlSelect) BuildSql(db DB) (strSql string) {
 
-	var renderSql string
-	renderSql = s.renderSql()
+	renderSql, err := s.renderSql()
+	if err != nil {
+		log.Panic(err)
+	}
 	if len(renderSql) == 0 {
 		log.Panic("sql is empty")
 	}
@@ -568,7 +570,7 @@ func (s *SqlSelect) QueryRows(db DB) (result []map[string]interface{}, cols []*S
 }
 
 //渲染sql
-func (s *SqlSelect) renderSql() (strSql string) {
+func (s *SqlSelect) renderSql() (strSql string, err error) {
 	return RenderSql(s.sql, s.SqlRenderArgs)
 }
 
@@ -612,7 +614,10 @@ func (s *SqlSelect) BuildTotalSql(db DB, cols ...string) (strSql string, err err
 		return
 	}
 
-	renderSql := s.renderSql()
+	renderSql, err := s.renderSql()
+	if err != nil {
+		return
+	}
 	if len(renderSql) == 0 {
 		err = fmt.Errorf("sql is empty")
 		return
@@ -647,7 +652,10 @@ func (s *SqlSelect) BuildTotalSql(db DB, cols ...string) (strSql string, err err
 
 }
 func (s *SqlSelect) BuildRowCountSql(db DB) (strSql string) {
-	renderSql := s.renderSql()
+	renderSql, err := s.renderSql()
+	if err != nil {
+		log.Panic(err)
+	}
 	if len(renderSql) == 0 {
 		log.Panic("sql is empty")
 	}
