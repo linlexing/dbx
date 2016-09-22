@@ -636,3 +636,48 @@ func Minus(db DB, table1, where1, table2, where2 string, primaryKeys, cols []str
 	}
 	return strSql
 }
+func CreateIndexIfNotExists(db DB, indexName, tableName, express string) error {
+	var strSql string
+	switch db.DriverName() {
+	case "oci8":
+		strSql = fmt.Sprintf(`
+		DECLARE
+		  COUNT_INDEXES INTEGER;
+		BEGIN
+		  SELECT COUNT(*) INTO COUNT_INDEXES
+		    FROM USER_INDEXES
+		    WHERE INDEX_NAME = '%s';
+
+		  IF COUNT_INDEXES = 0 THEN
+		    EXECUTE IMMEDIATE 'create index %[1]s on %s(%s)';
+		  END IF;
+		END;`, indexName, tableName, express)
+	default:
+		return fmt.Errorf("invalid driver")
+	}
+	if _, err := db.Exec(strSql); err != nil {
+		return SqlError{strSql, nil, err}
+	}
+	return nil
+}
+
+//在一个事务中运行，自动处理commit 和rollback
+func RunAtTx(db *sqlx.DB, callback func(DB) error) (err error) {
+	var tx *sqlx.Tx
+	if tx, err = db.Beginx(); err != nil {
+		return err
+	}
+	defer func() {
+		if err != nil {
+			tx.Rollback()
+			return
+		}
+		if r := recover(); r != nil {
+			tx.Rollback()
+			log.Panic(r)
+		}
+		err = tx.Commit()
+	}()
+	err = callback(tx)
+	return
+}
