@@ -11,6 +11,7 @@ type Update struct {
 	DataUniqueFields []string
 	Sets             map[string]string
 	AdditionSet      string
+	AdditionWhere    string
 	SqlRenderArgs    interface{}
 }
 
@@ -61,6 +62,9 @@ func (u *Update) Exec() (icount int64, err error) {
 		sets = append(sets, u.AdditionSet)
 	}
 	where := []string{}
+	if len(u.AdditionWhere) > 0 {
+		where = append(where, u.AdditionWhere)
+	}
 	dataAlias := "datasql_"
 	for i, field := range u.Table.PrimaryKeys() {
 		where = append(where, fmt.Sprintf("%s.%s = %s.%s", u.Table.Name(), field, dataAlias, u.DataUniqueFields[i]))
