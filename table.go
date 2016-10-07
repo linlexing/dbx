@@ -585,8 +585,8 @@ func (t *DBTable) ConvertToTrueType(row map[string]interface{}) map[string]inter
 	return transRecord
 }
 
-//查询返回记录，返回记录字段名是大写，且数据类型正确转换
-func (t *DBTable) QueryRows(where string, param map[string]interface{}, columns ...string) (record []map[string]interface{}, err error) {
+//查询返回排序记录，返回记录字段名是大写，且数据类型正确转换
+func (t *DBTable) QueryRowsOrder(where string, param map[string]interface{}, orderby []string, columns ...string) (record []map[string]interface{}, err error) {
 	//使字段信息先收集，防止后面多个游标造成内存问题
 	t.AllField()
 	if len(where) > 0 {
@@ -596,7 +596,11 @@ func (t *DBTable) QueryRows(where string, param map[string]interface{}, columns 
 	if len(columns) > 0 {
 		columnsStr = strings.Join(columns, ",")
 	}
-	strSql := fmt.Sprintf("select %s from %s%s", columnsStr, t.Name(), where)
+	str_orderby := ""
+	if len(orderby) > 0 {
+		str_orderby = " order by " + strings.Join(orderby, ",")
+	}
+	strSql := fmt.Sprintf("select %s from %s%s%s", columnsStr, t.Name(), where, str_orderby)
 	var rows *sqlx.Rows
 	rows, err = t.Db.NamedQuery(strSql, param)
 	if err != nil {
@@ -613,7 +617,11 @@ func (t *DBTable) QueryRows(where string, param map[string]interface{}, columns 
 		record = append(record, t.ConvertToTrueType(oneRecord))
 	}
 	return
+}
 
+//查询返回记录，返回记录字段名是大写，且数据类型正确转换
+func (t *DBTable) QueryRows(where string, param map[string]interface{}, columns ...string) (record []map[string]interface{}, err error) {
+	return t.QueryRowsOrder(where, param, nil, columns...)
 }
 
 //检查一个主键是否存在
