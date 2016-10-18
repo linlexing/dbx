@@ -45,7 +45,7 @@ func (e SqlError) Error() string {
 		}
 		content = strings.Join(list, "\n")
 	}
-	return fmt.Sprintf("%s\n[%s]\nparams len is %d,content is:\n%s", e.Err, e.Sql, l, content)
+	return fmt.Sprintf("%s\n%s\nparams len is %d,content is:\n%s", e.Err, e.Sql, l, content)
 }
 
 type DB interface {
