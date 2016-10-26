@@ -41,7 +41,13 @@ func (e SqlError) Error() string {
 		l = len(tv)
 		list := []string{}
 		for k, v := range tv {
-			list = append(list, fmt.Sprintf("%s(%T):%#v", k, v, v))
+			switch subtv := v.(type) {
+			case time.Time:
+				list = append(list, fmt.Sprintf("%s(time):%s", k, subtv.Format(time.RFC3339)))
+			default:
+				list = append(list, fmt.Sprintf("%s(%T):%#v", k, v, v))
+			}
+
 		}
 		content = strings.Join(list, "\n")
 	}

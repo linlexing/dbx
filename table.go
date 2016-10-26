@@ -718,8 +718,16 @@ func (t *DBTable) checkNotNull(row map[string]interface{}) error {
 }
 
 //检查row中是否含有非空字段的值，以及去掉多余的字段值
+//如果是oracle，则需要去除时间中的时区，以免触发ORA-01878错误
 func (t *DBTable) checkAndConvertRow(row map[string]interface{}) (map[string]interface{}, error) {
 	rev := mapfun.Pick(row, t.Columns()...)
+	if t.Db.DriverName() == "oci8" {
+		for k, v := range rev {
+			if t.Field(k).Type == "DATE" {
+				rev[k] = safe.TruncateTimeZone(safe.Date(v))
+			}
+		}
+	}
 	if err := t.checkNotNull(rev); err != nil {
 		return nil, err
 	}
@@ -973,7 +981,12 @@ func (t *DBTable) DecodeKey(key []byte) []interface{} {
 //插入一批记录,使用第一行数据中的字段，并没有使用表中的字段
 func (t *DBTable) Insert(rows []map[string]interface{}) (err error) {
 	if len(rows) == 1 {
-		return t.insertAsPack(rows[0])
+		if one, e := t.checkAndConvertRow(rows[0]); e != nil {
+			err = e
+			return
+		} else {
+			return t.insertAsPack(one)
+		}
 	}
 	//先检查并转换数据
 	data := []map[string]interface{}{}
