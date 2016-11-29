@@ -723,7 +723,7 @@ func (t *DBTable) checkAndConvertRow(row map[string]interface{}) (map[string]int
 	rev := mapfun.Pick(row, t.Columns()...)
 	if t.Db.DriverName() == "oci8" {
 		for k, v := range rev {
-			if t.Field(k).Type == "DATE" {
+			if t.Field(k).Type == "DATE" && v != nil {
 				rev[k] = safe.TruncateTimeZone(safe.Date(v))
 			}
 		}
@@ -1203,8 +1203,9 @@ func (t *DBTable) Update(oldData, newData map[string]interface{}) (err error) {
 	for k, v := range oldData {
 		pname := fmt.Sprintf("p%d", icount)
 		icount++
-		//如果是没有长度的string，即text，以及bytea则不参与where条件
-		if fld := t.Field(k); fld.GoType() != TypeBytea && (fld.GoType() != TypeString || fld.MaxLength > 0) {
+		//如果是没有长度的string，即text，以及bytea、datetime则不参与where条件
+		//datetime由于有时区和精度的问题，参与的话会比较复杂
+		if fld := t.Field(k); fld.GoType() != TypeDatetime && fld.GoType() != TypeBytea && (fld.GoType() != TypeString || fld.MaxLength > 0) {
 			if v == nil {
 				where = append(where, fmt.Sprintf("%s is null", k))
 			} else {
