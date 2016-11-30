@@ -141,6 +141,10 @@ func (field *DBTableColumn) ConvertToTrueType(v interface{}) (result interface{}
 	if v == nil {
 		return nil
 	}
+	//空字符串当null处理
+	if v == "" {
+		return nil
+	}
 	switch field.GoType() {
 	case TypeString:
 		switch tv := v.(type) {
