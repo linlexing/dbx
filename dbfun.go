@@ -108,11 +108,17 @@ func TableNames(db DB) (names []string) {
 }
 func NameGet(db DB, d interface{}, strSql string, p map[string]interface{}) error {
 	str, pam := BindSql(db, strSql, p)
-	return db.Get(d, str, pam...)
+	if err := db.Get(d, str, pam...); err != nil {
+		return SqlError{str, p, err}
+	}
+	return nil
 }
 func NameSelect(db DB, d interface{}, strSql string, p map[string]interface{}) error {
 	str, pam := BindSql(db, strSql, p)
-	return db.Select(d, str, pam...)
+	if err := db.Select(d, str, pam...); err != nil {
+		return SqlError{str, p, err}
+	}
+	return nil
 }
 func QueryRecord(db DB, strSql string, p map[string]interface{}) (result []map[string]interface{}, err error) {
 	var rows *sqlx.Rows
