@@ -109,14 +109,14 @@ func TableNames(db DB) (names []string) {
 func NameGet(db DB, d interface{}, strSql string, p map[string]interface{}) error {
 	str, pam := BindSql(db, strSql, p)
 	if err := db.Get(d, str, pam...); err != nil {
-		return SqlError{str, p, err}
+		return SqlError{strSql, p, err}
 	}
 	return nil
 }
 func NameSelect(db DB, d interface{}, strSql string, p map[string]interface{}) error {
 	str, pam := BindSql(db, strSql, p)
 	if err := db.Select(d, str, pam...); err != nil {
-		return SqlError{str, p, err}
+		return SqlError{strSql, p, err}
 	}
 	return nil
 }
