@@ -124,6 +124,7 @@ func QueryRecord(db DB, strSql string, p map[string]interface{}) (result []map[s
 	var rows *sqlx.Rows
 	str, pam := BindSql(db, strSql, p)
 	if rows, err = db.Queryx(str, pam...); err != nil {
+		log.Println(str)
 		err = SqlError{strSql, p, err}
 		return
 	}
