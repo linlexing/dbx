@@ -21,16 +21,21 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-var (
-	PKValuesNumberError = fmt.Errorf("the pk values number error")
-)
-
+//SqlError 表示一个sql语句执行出错
 type SqlError struct {
 	Sql    string
 	Params interface{}
 	Err    error
 }
 
+//NewSQLError 构造
+func NewSQLError(sql string, params interface{}, err error) SqlError {
+	return SqlError{
+		Sql:    sql,
+		Params: params,
+		Err:    err,
+	}
+}
 func (e SqlError) Error() string {
 	l := 0
 	content := fmt.Sprintf("%#v", e.Params)
