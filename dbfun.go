@@ -191,7 +191,7 @@ func CreateTableAs(db DB, tableName, strSql string, pks []string) error {
 	return nil
 }
 
-//删除表字段
+//TableRemoveColumns 删除表字段
 func TableRemoveColumns(db DB, tabName string, cols []string) error {
 	var strSql string
 	switch db.DriverName() {
@@ -214,7 +214,36 @@ func TableRemoveColumns(db DB, tabName string, cols []string) error {
 
 }
 
-//表更名
+//GetSlice 返回一个字符串数组
+func GetSlice(db DB, strSQL string, params map[string]interface{}) ([]string, error) {
+	s, p := BindSql(db, strSQL, params)
+	rev := []string{}
+	if err := db.Select(&rev, s, p...); err != nil {
+		return nil, NewSQLError(strSQL, p, err)
+	}
+	return rev, nil
+}
+
+//MustGetSlice 返回一个字符串数组，如果有错误则发生异常
+func MustGetSlice(db DB, strSQL string, params map[string]interface{}) []string {
+	rev, err := GetSlice(db, strSQL, params)
+	if err != nil {
+		log.Panic(err)
+	}
+	return rev
+}
+
+//MustGetSliceAndSort 返回一个字符串数组，其值自动排序,如果有错误则发生异常
+func MustGetSliceAndSort(db DB, strSQL string, params map[string]interface{}) []string {
+	rev, err := GetSlice(db, strSQL, params)
+	if err != nil {
+		log.Panic(err)
+	}
+	sort.Strings(rev)
+	return rev
+}
+
+//TableRename 表更名
 func TableRename(db DB, oldName, newName string) error {
 	var strSql string
 	switch db.DriverName() {
