@@ -47,6 +47,9 @@ func (b *Bill) SetDB(db DB) {
 		v.Db = db
 	}
 }
+func (b *Bill) DB() DB {
+	return b.Main.Db
+}
 func (b *Bill) KeyValues(record *BillRecord) []interface{} {
 	return mapfun.Values(mapfun.Pick(record.Main, b.Main.PrimaryKeys()...))
 }

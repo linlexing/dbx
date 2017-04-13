@@ -111,10 +111,19 @@ func (f *DBTableColumn) FromJson(v interface{}) (interface{}, error) {
 			return nil, fmt.Errorf("the column %s json value %v not is float64", f.Name, v)
 		}
 	case TypeInt:
-		if tv, ok := v.(string); ok {
+		switch tv := v.(type) {
+		case string:
 			return strconv.ParseInt(tv, 10, 64)
-		} else {
-			return nil, fmt.Errorf("the column %s json value %v not is int64 string", f.Name, v)
+		case int:
+			return int64(tv), nil
+		case int64:
+			return tv, nil
+		case float32:
+			return int64(tv), nil
+		case float64:
+			return int64(tv), nil
+		default:
+			return nil, fmt.Errorf("the column %s json value %v (%T) not is int64 string", f.Name, v, v)
 		}
 	case TypeString:
 		if tv, ok := v.(string); ok {
@@ -461,7 +470,7 @@ func (t *DBTable) PrimaryKeys() []string {
 		}
 	case "sqlite3":
 		strSql := fmt.Sprintf(`PRAGMA table_info(%s)`, t.Name())
-		r, err := QueryRecord(t.Db, strSql, nil)
+		r, _, err := QueryRecord(t.Db, strSql, nil)
 		if err != nil {
 			log.Panic(err)
 		}
@@ -473,7 +482,7 @@ func (t *DBTable) PrimaryKeys() []string {
 	case "mysql":
 
 		strSql := fmt.Sprintf("SHOW KEYS FROM %s WHERE Key_name = 'PRIMARY'", t.Name())
-		rows, err := QueryRecord(t.Db, strSql, nil)
+		rows, _, err := QueryRecord(t.Db, strSql, nil)
 		if err != nil {
 			log.Panic(err)
 		}
@@ -667,19 +676,19 @@ func (t *DBTable) KeyValues(row map[string]interface{}) []interface{} {
 //统计记录数
 //参数可以传入string,map[string]interface{}
 func (t *DBTable) MustCount(params ...interface{}) int64 {
-	if i, err := t.Count(params...); err != nil {
+	i, err := t.Count(params...)
+	if err != nil {
 		log.Panic(err)
 		return -1
-	} else {
-		return i
+
 	}
+	return i
+
 }
 func (t *DBTable) Count(params ...interface{}) (int64, error) {
 	var strSql string
 	var pam map[string]interface{}
-	if len(params) == 0 {
-		strSql = "select count(*) from " + t.Name()
-	}
+	strSql = "select count(*) from " + t.Name()
 	if len(params) > 0 && len(strings.TrimSpace(params[0].(string))) > 0 {
 
 		strSql = fmt.Sprintf("select count(*) from %s where %s", t.Name(), params[0].(string))
@@ -1478,7 +1487,7 @@ func (t *DBTable) FetchColumns() {
 		}
 	case "sqlite3":
 		strSql := fmt.Sprintf(`PRAGMA table_info(%s)`, t.TableName)
-		result, err := QueryRecord(t.Db, strSql, nil)
+		result, _, err := QueryRecord(t.Db, strSql, nil)
 		if err != nil {
 			log.Panic(SqlError{strSql, nil, err})
 		}
@@ -1492,7 +1501,7 @@ func (t *DBTable) FetchColumns() {
 			columns = append(columns, c)
 		}
 		strSql = fmt.Sprintf("PRAGMA index_list(%s)", t.TableName)
-		result, err = QueryRecord(t.Db, strSql, nil)
+		result, _, err = QueryRecord(t.Db, strSql, nil)
 		if err != nil {
 			log.Panic(SqlError{strSql, t.TableName, err})
 		}
@@ -1500,7 +1509,7 @@ func (t *DBTable) FetchColumns() {
 			indexName := safe.String(row["NAME"])
 			//每个索引再去找定义
 			strSql = fmt.Sprintf("PRAGMA index_info(%s)", indexName)
-			indexColumnList, err := QueryRecord(t.Db, strSql, nil)
+			indexColumnList, _, err := QueryRecord(t.Db, strSql, nil)
 			if err != nil {
 				log.Panic(SqlError{strSql, nil, err})
 			}
@@ -1719,9 +1728,17 @@ func (t *DBTable) Define(columns []*DBTableColumn, pk []string) {
 		}
 	}
 	t.columns = columns
-
-	t.primaryKeys = pk
 	t.refreshColumnsMap()
+	//检查主键是否合法
+	for _, col := range pk {
+		if t.Field(col) == nil {
+			log.WithFields(log.Fields{
+				"table": t.TableName,
+				"col":   col,
+			}).Panic("primary key column not exists")
+		}
+	}
+	t.primaryKeys = pk
 }
 func (t *DBTable) Create() error {
 	sch := &TableSchema{

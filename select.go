@@ -50,12 +50,6 @@ type SqlSelect struct {
 	SqlRenderArgs interface{} //sql语句在查询前，还会用template进行一次渲染，这里传入渲染的参数
 }
 
-//查询返回的字段信息，含有数据类型
-type SqlSelectColumn struct {
-	Name string
-	Type string
-}
-
 func FieldValueToString(val interface{}) string {
 	return safe.String(val)
 }
@@ -487,6 +481,13 @@ func (s *SqlSelect) BuildSql(db DB) (strSql string) {
 			strSql = fmt.Sprintf("select %s from (%s) wholesql %s%s", sel, renderSql, where, orderby)
 		}
 	}
+	//在最后返回前，还需要一次render，防止条件中引用了模板
+	if s, err := RenderSql(strSql, s.SqlRenderArgs); err != nil {
+		log.Panic(err)
+	} else {
+		strSql = s
+	}
+
 	return
 }
 func (s *SqlSelect) convertRow(row map[string]interface{}) map[string]interface{} {
@@ -506,21 +507,21 @@ func (s *SqlSelect) convertRow(row map[string]interface{}) map[string]interface{
 		return transRecord
 	}
 }
-func (s *SqlSelect) QueryRows(db DB) (result []map[string]interface{}, cols []*SqlSelectColumn, err error) {
-	strSql := s.BuildSql(db)
+func (s *SqlSelect) QueryRows(db DB) (result []map[string]interface{}, cols []*ColumnType, err error) {
+	strSQL := s.BuildSql(db)
 	var rows *sqlx.Rows
-	if rows, err = db.Queryx(strSql); err != nil {
-		err = SqlError{strSql, nil, err}
+	if rows, err = db.Queryx(strSQL); err != nil {
+		err = SqlError{strSQL, nil, err}
 		return
 	}
 	var columns []string
 	if columns, err = rows.Columns(); err != nil {
 		return
 	}
-	cols = []*SqlSelectColumn{}
+	cols = []*ColumnType{}
 	//先根据预置的表获取对应的字段类型
 	for _, v := range columns {
-		col := &SqlSelectColumn{
+		col := &ColumnType{
 			Name: strings.ToUpper(v),
 		}
 		if s.Table != nil {
@@ -540,7 +541,7 @@ func (s *SqlSelect) QueryRows(db DB) (result []map[string]interface{}, cols []*S
 	for rows.Next() {
 		oneRecord := map[string]interface{}{}
 		if err = rows.MapScan(oneRecord); err != nil {
-			err = SqlError{strSql, nil, err}
+			err = SqlError{strSQL, nil, err}
 			return
 		}
 		result = append(result, s.convertRow(oneRecord))
@@ -574,36 +575,6 @@ func (s *SqlSelect) renderSql() (strSql string, err error) {
 	return RenderSql(s.sql, s.SqlRenderArgs)
 }
 
-/*
-//先取出一行数据，用以获取字段名和数据类型
-//bug:如果有nil值，则还是判断不了数据类型
-func (s *SqlSelect) queryFirstRow(db DB) (firstRow map[string]interface{}, err error) {
-	var pam []interface{}
-	strSql, p := s.BuildSql(db)
-	strSql, pam = BindSql(db, strSql, p)
-	var rows *sqlx.Rows
-	if rows, err = db.Queryx(strSql, pam...); err != nil {
-		err = SqlError{strSql, p, err}
-		return
-	}
-	columns := []string{}
-	if columns, err = rows.Columns(); err != nil {
-		return
-	}
-	for i, v := range columns {
-		columns[i] = strings.ToUpper(v)
-	}
-	firstRow = map[string]interface{}{}
-	defer rows.Close()
-	if rows.Next() {
-		if err = rows.MapScan(firstRow); err != nil {
-			err = SqlError{strSql, nil, err}
-			return
-		}
-	}
-	return
-}
-*/
 //如果没有数值字段或者没有记录，则返回空sql
 func (s *SqlSelect) BuildTotalSql(db DB, cols ...string) (strSql string, err error) {
 	totalCoumns := []string{}
@@ -647,7 +618,7 @@ func (s *SqlSelect) BuildTotalSql(db DB, cols ...string) (strSql string, err err
 		}
 		strSql = fmt.Sprintf("select %s from (%s) wholesql %s", strings.Join(totalCoumns, ","), renderSql, where)
 	}
-
+	strSql, err = RenderSql(strSql, s.SqlRenderArgs)
 	return
 
 }
@@ -683,6 +654,11 @@ func (s *SqlSelect) BuildRowCountSql(db DB) (strSql string) {
 		}
 		strSql = fmt.Sprintf("select count(*) from (%s) wholesql %s", renderSql, where)
 	}
+	if s, err := RenderSql(strSql, s.SqlRenderArgs); err != nil {
+		log.Panic(err)
+	} else {
+		strSql = s
+	}
 
 	return
 }
@@ -693,7 +669,7 @@ func (s *SqlSelect) Total(db DB, cols ...string) (result map[string]interface{},
 	if err != nil || len(strSql) == 0 {
 		return
 	}
-	rows, err := QueryRecord(db, strSql, nil)
+	rows, _, err := QueryRecord(db, strSql, nil)
 	if err != nil {
 		return
 	}

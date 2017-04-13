@@ -74,8 +74,10 @@ type DB interface {
 	Get(dest interface{}, query string, args ...interface{}) error
 }
 
-func Columns(db DB, strSql string, pam map[string]interface{}) ([]string, error) {
-	rows, err := db.NamedQuery(strSql, pam)
+func Columns(db DB, strSql string, p map[string]interface{}) ([]string, error) {
+	str, pam := BindSql(db, strSql, p)
+	rows, err := db.Queryx(str, pam...)
+
 	if err != nil {
 		return nil, SqlError{strSql, pam, err}
 	}
@@ -125,7 +127,10 @@ func NameSelect(db DB, d interface{}, strSql string, p map[string]interface{}) e
 	}
 	return nil
 }
-func QueryRecord(db DB, strSql string, p map[string]interface{}) (result []map[string]interface{}, err error) {
+
+//QueryRecord 返回一个结果集，并返回字段名称列表（转换为大写）
+func QueryRecord(db DB, strSql string, p map[string]interface{}) (result []map[string]interface{},
+	cols []string, err error) {
 	var rows *sqlx.Rows
 	str, pam := BindSql(db, strSql, p)
 	if rows, err = db.Queryx(str, pam...); err != nil {
@@ -135,6 +140,12 @@ func QueryRecord(db DB, strSql string, p map[string]interface{}) (result []map[s
 	}
 	result = []map[string]interface{}{}
 	defer rows.Close()
+	cols, err = rows.Columns()
+	if err == nil {
+		for i, v := range cols {
+			cols[i] = strings.ToUpper(v)
+		}
+	}
 	for rows.Next() {
 		oneRecord := map[string]interface{}{}
 		if err = rows.MapScan(oneRecord); err != nil {
@@ -146,6 +157,7 @@ func QueryRecord(db DB, strSql string, p map[string]interface{}) (result []map[s
 	}
 	return
 }
+
 func IsNull(db DB) string {
 	switch db.DriverName() {
 	case "oci8":
@@ -327,23 +339,23 @@ func MustGetSqlFun(db DB, strSql string, p map[string]interface{}) (result inter
 	}
 	return
 }
-func MustQueryRecord(db DB, strSql string, p map[string]interface{}) (result []map[string]interface{}) {
+func MustQueryRecord(db DB, strSql string, p map[string]interface{}) (result []map[string]interface{}, cols []string) {
 	var err error
-	if result, err = QueryRecord(db, strSql, p); err != nil {
+	if result, cols, err = QueryRecord(db, strSql, p); err != nil {
 		log.Panic(err)
 	}
 	return
 }
-func MustRow(db DB, strSql string, p map[string]interface{}) map[string]interface{} {
+func MustRow(db DB, strSql string, p map[string]interface{}) (map[string]interface{}, []string) {
 	var err error
-	result, err := QueryRecord(db, strSql, p)
+	result, cols, err := QueryRecord(db, strSql, p)
 	if err != nil {
 		log.Panic(err)
 	}
 	if len(result) == 0 {
 		log.Panic(SqlError{strSql, p, sql.ErrNoRows})
 	}
-	return result[0]
+	return result[0], cols
 }
 
 //获取一个临时表名
@@ -528,6 +540,9 @@ func AddTablePrimaryKey(db DB, tableName string, pks []string) error {
 
 //删除主键
 func DropTablePrimaryKey(db DB, tableName string) error {
+	log.WithFields(log.Fields{
+		"table": tableName,
+	}).Debug("dropkey")
 	switch db.DriverName() {
 	case "postgres":
 		//先获取主键索引的名称，然后删除索引
@@ -556,7 +571,7 @@ func DropTablePrimaryKey(db DB, tableName string) error {
 				strings.ToUpper(tableName))
 		}
 		pkCons := ""
-		if rows, err := QueryRecord(db, strSql, nil); err != nil {
+		if rows, _, err := QueryRecord(db, strSql, nil); err != nil {
 			return SqlError{strSql, nil, err}
 		} else {
 			if len(rows) > 0 {
@@ -683,7 +698,7 @@ func Minus(db DB, table1, where1, table2, where2 string, primaryKeys, cols []str
 	}
 	return strSql
 }
-func DropIndexIfNotExists(db DB, indexName string) error {
+func DropIndexIfExists(db DB, indexName string) error {
 	var strSql string
 	switch db.DriverName() {
 	case "oci8":
