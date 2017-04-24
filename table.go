@@ -376,6 +376,16 @@ func (c *DBTableColumn) GoValue(v string) interface{} {
 			t, err = time.Parse("2006-01-02T15:04:05", v)
 		}
 		if err != nil {
+			t, err = time.Parse("2006-01-02 15:04:05.999999999 -0700 MST", v)
+		}
+		if err != nil {
+			t, err = time.Parse(time.RFC3339, v)
+		}
+		if err != nil {
+			t, err = time.Parse(time.RFC3339Nano, v)
+		}
+
+		if err != nil {
 			t, err = time.Parse("2006-01-02", v)
 		}
 		if err != nil {
