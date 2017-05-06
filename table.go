@@ -1757,8 +1757,9 @@ func (t *DBTable) Create() error {
 	return sch.Update()
 }
 
-//将另一个表中的数据合并进本表，要求两个表的主键相同,相同主键的被覆盖
-func (t *DBTable) Merge(tabName string) error {
+//Merge 将另一个表中的数据合并进本表，要求两个表的主键相同,相同主键的被覆盖
+//skipColumns指定跳过update的字段清单
+func (t *DBTable) Merge(tabName string, skipUpdateColumns ...string) error {
 	join := []string{}
 	updateSet := []string{}
 	insertColumns := []string{}
@@ -1771,7 +1772,18 @@ func (t *DBTable) Merge(tabName string) error {
 	for _, field := range t.AllField() {
 		//非主键的才更新
 		if _, ok := pkMap[field.Name]; !ok {
-			updateSet = append(updateSet, fmt.Sprintf("dest.%s = src.%s", field.Name, field.Name))
+			bfound := false
+
+			for _, one := range skipUpdateColumns {
+				if one == field.Name {
+					bfound = true
+					break
+				}
+			}
+			//只有不是跳过的，才update
+			if !bfound {
+				updateSet = append(updateSet, fmt.Sprintf("dest.%s = src.%s", field.Name, field.Name))
+			}
 		}
 		insertColumns = append(insertColumns, fmt.Sprintf("dest.%s", field.Name))
 		insertValues = append(insertValues, fmt.Sprintf("src.%s", field.Name))
