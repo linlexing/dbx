@@ -699,10 +699,10 @@ func Minus(db DB, table1, where1, table2, where2 string, primaryKeys, cols []str
 	return strSql
 }
 func DropIndexIfExists(db DB, indexName string) error {
-	var strSql string
+	var strSQL string
 	switch db.DriverName() {
 	case "oci8":
-		strSql = fmt.Sprintf(`
+		strSQL = fmt.Sprintf(`
 		DECLARE
 		  COUNT_INDEXES INTEGER;
 		BEGIN
@@ -715,20 +715,22 @@ func DropIndexIfExists(db DB, indexName string) error {
 		  END IF;
 		END;`, indexName,
 			safe.SignString(fmt.Sprintf("drop index %s", indexName)))
+	case "sqlite3", "postgres":
+		strSQL = fmt.Sprintf("drop index if exists %s", indexName)
 	default:
 		return fmt.Errorf("invalid driver")
 	}
-	if _, err := db.Exec(strSql); err != nil {
-		return SqlError{strSql, nil, err}
+	if _, err := db.Exec(strSQL); err != nil {
+		return SqlError{strSQL, nil, err}
 	}
 	return nil
 }
 
 func CreateIndexIfNotExists(db DB, indexName, tableName, express string) error {
-	var strSql string
+	var strSQL string
 	switch db.DriverName() {
 	case "oci8":
-		strSql = fmt.Sprintf(`
+		strSQL = fmt.Sprintf(`
 		DECLARE
 		  COUNT_INDEXES INTEGER;
 		BEGIN
@@ -741,11 +743,13 @@ func CreateIndexIfNotExists(db DB, indexName, tableName, express string) error {
 		  END IF;
 		END;`, indexName,
 			safe.SignString(fmt.Sprintf("create index %s on %s(%s)", indexName, tableName, express)))
+	case "sqlite3", "postgres":
+		strSQL = fmt.Sprintf("create index if not exists %s on %s(%s)", indexName, tableName, express)
 	default:
 		return fmt.Errorf("invalid driver")
 	}
-	if _, err := db.Exec(strSql); err != nil {
-		return SqlError{strSql, nil, err}
+	if _, err := db.Exec(strSQL); err != nil {
+		return SqlError{strSQL, nil, err}
 	}
 	return nil
 }
