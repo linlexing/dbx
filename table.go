@@ -403,7 +403,7 @@ func (c *DBTableColumn) GoValue(v string) interface{} {
 			return f
 		}
 	default:
-		log.Panic("not impl")
+		log.Panic("not impl gotype", c)
 		return nil
 	}
 }
@@ -485,7 +485,7 @@ func (t *DBTable) PrimaryKeys() []string {
 			log.Panic(err)
 		}
 		for _, row := range r {
-			if safe.Int(row["PK"]) == 1 {
+			if safe.Int(row["PK"]) > 0 {
 				result = append(result, safe.String(row["NAME"]))
 			}
 		}
@@ -1310,6 +1310,12 @@ func (t *DBTable) Save(row map[string]interface{}) error {
 	strSql := fmt.Sprintf("update %s set %s where %s", t.Name(),
 		strings.Join(set, ","), strings.Join(where, " and "))
 	if sqlr, err = t.Db.NamedExec(strSql, param); err != nil {
+
+		log.WithFields(log.Fields{
+			"sql":   strSql,
+			"param": param,
+			"err":   err.Error(),
+		}).Debug("sql error")
 		return SqlError{strSql, param, err}
 	}
 	if rowAffe, err = sqlr.RowsAffected(); err != nil {
@@ -1523,8 +1529,9 @@ func (t *DBTable) FetchColumns() {
 			if err != nil {
 				log.Panic(SqlError{strSql, nil, err})
 			}
-			//只找出一个字段的索引
-			if len(indexColumnList) == 1 {
+			//只找出一个字段的索引,并且不是主键索引
+			if len(indexColumnList) == 1 && (len(t.PrimaryKeys()) > 1 ||
+				safe.String(indexColumnList[0]["NAME"]) != t.PrimaryKeys()[0]) {
 				indexColumns = append(indexColumns, &columnIndex{
 					"", indexName, safe.String(indexColumnList[0]["NAME"])})
 			}
@@ -1603,7 +1610,7 @@ func sqliteType(typeName string) (string, int) {
 	if strings.Contains(typeName, "CHAR") ||
 		strings.Contains(typeName, "CLOB") ||
 		strings.Contains(typeName, "TEXT") {
-		length := "300"
+		length := "-1"
 		if ts := strings.Split(typeName, "("); len(ts) > 1 {
 			length = ts[1]
 			length = length[:len(length)-1]
@@ -1839,7 +1846,11 @@ func (t *DBTable) UpdateSchema() error {
 	}
 	//如果曾用名的表找不到，则说明数据库结构都已经更新到最新，旧表就用本来的名称
 	if sch.OldTable == nil {
-		if b, _ := TableExists(t.Db, t.Name()); b {
+		b, err := TableExists(t.Db, t.Name())
+		if err != nil {
+			return err
+		}
+		if b {
 			sch.OldTable = NewTable(t.Db, t.Name())
 			sch.OldTable.FetchColumns()
 		}

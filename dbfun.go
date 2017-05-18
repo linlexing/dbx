@@ -303,6 +303,8 @@ func TableExists(db DB, tableName string) (bool, error) {
 		}
 		strSql = fmt.Sprintf(
 			"SELECT count(*) FROM information_schema.tables WHERE table_schema = '%s' and UPPER(table_name)=:tname", schema)
+	case "sqlite3":
+		strSql = fmt.Sprintf("SELECT count(*) FROM sqlite_master WHERE type='table' AND name='%s'", tname)
 	default:
 		return false, fmt.Errorf("not impl," + db.DriverName())
 	}
@@ -760,17 +762,19 @@ func RunAtTx(db *sqlx.DB, callback func(DB) error) (err error) {
 	if tx, err = db.Beginx(); err != nil {
 		return err
 	}
+	finish := false
 	defer func() {
-		if err != nil {
+		//如果没有设置，说明是中途跳出，发生了异常
+		//这里不捕获异常是要保留现场
+		if !finish {
 			tx.Rollback()
-			return
 		}
-		if r := recover(); r != nil {
-			tx.Rollback()
-			log.Panic(r)
-		}
-		err = tx.Commit()
 	}()
-	err = callback(tx)
+	if err = callback(tx); err != nil {
+		err = tx.Rollback()
+	} else {
+		err = tx.Commit()
+	}
+	finish = true
 	return
 }

@@ -193,6 +193,9 @@ func (b *Bill) Save(record *BillRecord) error {
 	if err := b.Main.Save(record.Main); err != nil {
 		return err
 	}
+	if len(b.Child) == 0 {
+		return nil
+	}
 	//明细表取出主键进行判断
 	//删除库中多余的记录
 	//然后逐个save

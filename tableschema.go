@@ -86,6 +86,11 @@ func (t *TableSchema) Update() error {
 		pkChanged := false
 		//如果主键变更，则需要先除去主键
 		if !reflect.DeepEqual(t.OldTable.PrimaryKeys(), t.NewTable.PrimaryKeys()) {
+			log.WithFields(log.Fields{
+				"table": t.OldTable.TableName,
+				"oldpk": t.OldTable.PrimaryKeys(),
+				"newpk": t.NewTable.PrimaryKeys(),
+			}).Info("pk change")
 			if err := DropTablePrimaryKey(t.NewTable.Db, t.NewTable.Name()); err != nil {
 				return err
 			}
@@ -249,7 +254,15 @@ func (t *TableSchema) processColumn(oldCol, newCol *DBTableColumn) error {
 			log.Println(strSql)
 
 		default:
-			log.Panic("not impl " + t.NewTable.Db.DriverName())
+			log.WithFields(log.Fields{
+				"table":  t.OldTable.TableName,
+				"column": oldCol.Name,
+				"old":    oldCol,
+				"new":    newCol,
+				"olddef": oldCol.DBDefineNull(t.NewTable.Db.DriverName()),
+				"newdef": newCol.DBDefineNull(t.NewTable.Db.DriverName()),
+				"driver": t.NewTable.Db.DriverName(),
+			}).Panic("change column define not impl")
 		}
 	}
 	//处理索引,字段更名的操作，oracle、postgres、mysql都是安全的，所以不需处理
