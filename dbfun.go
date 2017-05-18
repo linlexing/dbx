@@ -229,11 +229,21 @@ func TableRemoveColumns(db DB, tabName string, cols []string) error {
 //GetSlice 返回一个字符串数组
 func GetSlice(db DB, strSQL string, params map[string]interface{}) ([]string, error) {
 	s, p := BindSql(db, strSQL, params)
-	rev := []string{}
+
+	rev := []sql.NullString{}
 	if err := db.Select(&rev, s, p...); err != nil {
+		println(err)
 		return nil, NewSQLError(strSQL, p, err)
 	}
-	return rev, nil
+	strList := []string{}
+	for _, one := range rev {
+		if one.Valid {
+			strList = append(strList, one.String)
+		} else {
+			strList = append(strList, "")
+		}
+	}
+	return strList, nil
 }
 
 //MustGetSlice 返回一个字符串数组，如果有错误则发生异常
