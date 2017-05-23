@@ -159,18 +159,7 @@ func QueryRecord(db DB, strSql string, p map[string]interface{}) (result []map[s
 }
 
 func IsNull(db DB) string {
-	switch db.DriverName() {
-	case "oci8":
-		return "nvl"
-	case "postgres":
-		return "COALESCE"
-	case "mysql", "sqlite3":
-		return "ifnull"
-	default:
-		log.Panic("not impl")
-		return ""
-	}
-
+	return Meta(db).IsNull()
 }
 func Exists(db DB, strSql string, p map[string]interface{}) (result bool, err error) {
 	str, pam := BindSql(db, strSql, p)
