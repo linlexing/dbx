@@ -770,7 +770,7 @@ func RunAtTx(db *sqlx.DB, callback func(DB) error) (err error) {
 		}
 	}()
 	if err = callback(tx); err != nil {
-		err = tx.Rollback()
+		tx.Rollback()
 	} else {
 		err = tx.Commit()
 	}
