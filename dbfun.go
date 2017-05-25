@@ -21,22 +21,22 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-//SqlError 表示一个sql语句执行出错
-type SqlError struct {
-	Sql    string
+//SQLError 表示一个sql语句执行出错
+type SQLError struct {
+	SQL    string
 	Params interface{}
 	Err    error
 }
 
 //NewSQLError 构造
-func NewSQLError(sql string, params interface{}, err error) SqlError {
-	return SqlError{
-		Sql:    sql,
+func NewSQLError(sql string, params interface{}, err error) SQLError {
+	return SQLError{
+		SQL:    sql,
 		Params: params,
 		Err:    err,
 	}
 }
-func (e SqlError) Error() string {
+func (e SQLError) Error() string {
 	l := 0
 	content := fmt.Sprintf("%#v", e.Params)
 	switch tv := e.Params.(type) {
@@ -56,9 +56,11 @@ func (e SqlError) Error() string {
 		}
 		content = strings.Join(list, "\n")
 	}
-	return fmt.Sprintf("%s\n%s\nparams len is %d,content is:\n%s", e.Err, e.Sql, l, content)
+	return fmt.Sprintf("%s\n%s\nparams len is %d,content is:\n%s", e.Err, e.SQL, l, content)
 }
 
+//DB 接口表示一个数据库操作，主要用来统一DBConnection 和 DBTrans的方法
+//使得函数可以接收两种参数传入，依赖于sqlx包
 type DB interface {
 	Select(dest interface{}, query string, args ...interface{}) error
 	NamedQuery(query string, arg interface{}) (*sqlx.Rows, error)
@@ -74,12 +76,13 @@ type DB interface {
 	Get(dest interface{}, query string, args ...interface{}) error
 }
 
-func Columns(db DB, strSql string, p map[string]interface{}) ([]string, error) {
-	str, pam := BindSql(db, strSql, p)
+//Columns 返回一个SQL语句执行后应该返回的列名清单
+func Columns(db DB, strSQL string, p map[string]interface{}) ([]string, error) {
+	str, pam := BindSQL(db, strSQL, p)
 	rows, err := db.Queryx(str, pam...)
 
 	if err != nil {
-		return nil, SqlError{strSql, pam, err}
+		return nil, NewSQLError(strSQL, pam, err)
 	}
 	defer rows.Close()
 	r, err := rows.Columns()
@@ -91,51 +94,39 @@ func Columns(db DB, strSql string, p map[string]interface{}) ([]string, error) {
 
 	return r, err
 }
-func TableNames(db DB) (names []string) {
-	var strSql string
-	switch db.DriverName() {
-	case "postgres":
-		strSql = "SELECT table_name FROM information_schema.tables WHERE table_schema = current_schema()"
-	case "oci8":
-		strSql = "SELECT table_name FROM user_tables"
-	case "mysql":
-		strSql = "SELECT table_name FROM information_schema.tables WHERE table_schema = schema()"
-	default:
-		log.Panic("not impl," + db.DriverName())
-	}
-	names = []string{}
-	if err := db.Select(&names, strSql); err != nil {
-		log.Panic(err)
-	}
-	for i, v := range names {
-		names[i] = strings.ToUpper(v)
-	}
-	sort.Strings(names)
-	return
+
+//TableNames 返回一个数据库所有的表名
+func TableNames(db DB) (names []string, err error) {
+	return Meta(db).TableNames(db)
 }
-func NameGet(db DB, d interface{}, strSql string, p map[string]interface{}) error {
-	str, pam := BindSql(db, strSql, p)
+
+//NameGet 类似Get，不过可以用命名参数
+func NameGet(db DB, d interface{}, strSQL string, p map[string]interface{}) error {
+	str, pam := BindSQL(db, strSQL, p)
 	if err := db.Get(d, str, pam...); err != nil {
-		return SqlError{strSql, p, err}
+		return NewSQLError(strSQL, p, err)
 	}
 	return nil
 }
-func NameSelect(db DB, d interface{}, strSql string, p map[string]interface{}) error {
-	str, pam := BindSql(db, strSql, p)
+
+//NameSelect 类似Select
+func NameSelect(db DB, d interface{}, strSQL string, p map[string]interface{}) error {
+	str, pam := BindSQL(db, strSQL, p)
 	if err := db.Select(d, str, pam...); err != nil {
-		return SqlError{strSql, p, err}
+		return NewSQLError(strSQL, p, err)
 	}
 	return nil
 }
 
 //QueryRecord 返回一个结果集，并返回字段名称列表（转换为大写）
-func QueryRecord(db DB, strSql string, p map[string]interface{}) (result []map[string]interface{},
+func QueryRecord(db DB, strSQL string, p map[string]interface{}) (result []map[string]interface{},
 	cols []string, err error) {
 	var rows *sqlx.Rows
-	str, pam := BindSql(db, strSql, p)
+	str, pam := BindSQL(db, strSQL, p)
 	if rows, err = db.Queryx(str, pam...); err != nil {
 		log.Println(str)
-		err = SqlError{strSql, p, err}
+		err = NewSQLError(strSQL, p, err)
+
 		return
 	}
 	result = []map[string]interface{}{}
@@ -149,7 +140,7 @@ func QueryRecord(db DB, strSql string, p map[string]interface{}) (result []map[s
 	for rows.Next() {
 		oneRecord := map[string]interface{}{}
 		if err = rows.MapScan(oneRecord); err != nil {
-			err = SqlError{strSql, p, err}
+			err = NewSQLError(strSQL, p, err)
 			return
 		}
 
@@ -158,15 +149,18 @@ func QueryRecord(db DB, strSql string, p map[string]interface{}) (result []map[s
 	return
 }
 
+//IsNull 返回数据库isnull函数的名称，因为不同的数据库使用不同的名称，而这个函数又非常常用
 func IsNull(db DB) string {
 	return Meta(db).IsNull()
 }
-func Exists(db DB, strSql string, p map[string]interface{}) (result bool, err error) {
-	str, pam := BindSql(db, strSql, p)
+
+//Exists 返回sql语句有没有返回值，性能比较快
+func Exists(db DB, strSQL string, p map[string]interface{}) (result bool, err error) {
+	str, pam := BindSQL(db, strSQL, p)
 
 	var rows *sqlx.Rows
 	if rows, err = db.Queryx(str, pam...); err != nil {
-		err = SqlError{strSql, p, err}
+		err = NewSQLError(strSQL, p, err)
 		return
 	}
 	defer rows.Close()
@@ -174,50 +168,19 @@ func Exists(db DB, strSql string, p map[string]interface{}) (result bool, err er
 	return
 }
 
-//执行create table as select语句
-func CreateTableAs(db DB, tableName, strSql string, pks []string) error {
-	switch db.DriverName() {
-	case "postgres", "mysql", "oci8":
-		s := fmt.Sprintf("CREATE TABLE %s as %s", tableName, strSql)
-		if _, err := db.Exec(s); err != nil {
-			return SqlError{s, nil, err}
-		}
-		s = fmt.Sprintf("ALTER TABLE %s ADD PRIMARY KEY(%s)", tableName, strings.Join(pks, ","))
-		if _, err := db.Exec(s); err != nil {
-			return SqlError{s, nil, err}
-		}
-	default:
-		log.Panic("not impl create table as")
-	}
-	return nil
+//CreateTableAs 执行create table as select语句
+func CreateTableAs(db DB, tableName, strSQL string, pks []string) error {
+	return Meta(db).CreateTableAs(db, tableName, strSQL, pks)
 }
 
-//TableRemoveColumns 删除表字段
-func TableRemoveColumns(db DB, tabName string, cols []string) error {
-	var strSql string
-	switch db.DriverName() {
-	case "postgres", "mysql":
-		strList := []string{}
-		for _, v := range cols {
-			strList = append(strList, "DROP COLUMN "+v)
-		}
-		strSql = fmt.Sprintf("ALTER table %s %s", tabName, strings.Join(strList, ","))
-	case "oci8":
-		strSql = fmt.Sprintf("ALTER table %s drop(%s)", tabName, strings.Join(cols, ","))
-	default:
-		return fmt.Errorf("not impl," + db.DriverName())
-	}
-	log.Println(strSql)
-	if _, err := db.Exec(strSql); err != nil {
-		return SqlError{strSql, nil, err}
-	}
-	return nil
-
+//RemoveColumns 删除表字段
+func RemoveColumns(db DB, tabName string, cols []string) error {
+	return Meta(db).RemoveColumns(db, tabName, cols)
 }
 
 //GetSlice 返回一个字符串数组
 func GetSlice(db DB, strSQL string, params map[string]interface{}) ([]string, error) {
-	s, p := BindSql(db, strSQL, params)
+	s, p := BindSQL(db, strSQL, params)
 
 	rev := []sql.NullString{}
 	if err := db.Select(&rev, s, p...); err != nil {
@@ -256,111 +219,70 @@ func MustGetSliceAndSort(db DB, strSQL string, params map[string]interface{}) []
 
 //TableRename 表更名
 func TableRename(db DB, oldName, newName string) error {
-	var strSql string
-	switch db.DriverName() {
-	case "postgres", "sqlite3":
-		strSql = fmt.Sprintf("ALTER table %s RENAME TO %s", oldName, newName)
-	case "oci8", "mysql":
-		strSql = fmt.Sprintf("rename table %s TO %s", oldName, newName)
-	default:
-		return fmt.Errorf("not impl," + db.DriverName())
-	}
-	log.Println(strSql)
-	if _, err := db.Exec(strSql); err != nil {
-		return SqlError{strSql, nil, err}
-	}
-	return nil
+	return Meta(db).TableRename(db, oldName, newName)
 }
+
+//TableExists 返回一个表是否存在
 func TableExists(db DB, tableName string) (bool, error) {
-	schema := ""
-	ns := strings.Split(tableName, ".")
-	tname := ""
-	if len(ns) > 1 {
-		schema = ns[0]
-		tname = ns[1]
-	} else {
-
-		tname = tableName
-	}
-	var strSql string
-	switch db.DriverName() {
-	case "postgres":
-		if len(schema) == 0 {
-			schema = safe.String(MustGetSqlFun(db, "select current_schema()", nil))
-		}
-
-		strSql = fmt.Sprintf(
-			"SELECT count(*) FROM information_schema.tables WHERE table_schema ilike '%s' and table_name ilike :tname", schema)
-	case "oci8":
-		if len(schema) == 0 {
-			schema = safe.String(MustGetSqlFun(db, "select user from dual", nil))
-		}
-		strSql = fmt.Sprintf("SELECT count(*) FROM all_tables where owner='%s' and table_name=:tname", schema)
-	case "mysql":
-		if len(schema) == 0 {
-			schema = safe.String(MustGetSqlFun(db, "select schema()", nil))
-		}
-		strSql = fmt.Sprintf(
-			"SELECT count(*) FROM information_schema.tables WHERE table_schema = '%s' and UPPER(table_name)=:tname", schema)
-	case "sqlite3":
-		strSql = fmt.Sprintf("SELECT count(*) FROM sqlite_master WHERE type='table' AND name='%s'", tname)
-	default:
-		return false, fmt.Errorf("not impl," + db.DriverName())
-	}
-	var iCount int64
-	p := map[string]interface{}{"tname": strings.ToUpper(tname)}
-	if err := NameGet(db, &iCount, strSql, p); err != nil {
-		return false, SqlError{strSql, p, err}
-	}
-	return iCount > 0, nil
+	return Meta(db).TableExists(db, tableName)
 }
-func GetSqlFun(db DB, strSql string, p map[string]interface{}) (result interface{}, err error) {
-	str, pam := BindSql(db, strSql, p)
+
+//GetSQLFun 返回第一列第一行的值，如果没有结果，返回nil，不出错
+func GetSQLFun(db DB, strSQL string, p map[string]interface{}) (result interface{}, err error) {
+	str, pam := BindSQL(db, strSQL, p)
 
 	var rows *sqlx.Rows
 	if rows, err = db.Queryx(str, pam...); err != nil {
-		err = SqlError{strSql, p, err}
+		err = NewSQLError(strSQL, p, err)
 		return
 	}
 	defer rows.Close()
 	if rows.Next() {
 		if err = rows.Scan(&result); err != nil {
-			err = SqlError{strSql, p, err}
+			err = NewSQLError(strSQL, p, err)
 			return
 		}
 	}
 	return
 }
 
-func MustGetSqlFun(db DB, strSql string, p map[string]interface{}) (result interface{}) {
+//MustGetSQLFun 类似GetSQLFun，不过出错会抛出异常
+func MustGetSQLFun(db DB, strSQL string, p map[string]interface{}) (result interface{}) {
 	var err error
-	if result, err = GetSqlFun(db, strSql, p); err != nil {
-		log.Printf("sql err:%s\n%s\n", err, strSql)
+	if result, err = GetSQLFun(db, strSQL, p); err != nil {
+		log.Printf("sql err:%s\n%s\n", err, strSQL)
 		log.Panic(err)
 	}
 	return
 }
-func MustQueryRecord(db DB, strSql string, p map[string]interface{}) (result []map[string]interface{}, cols []string) {
+
+//MustQueryRecord 类似QueryRecord，出错换成异常
+func MustQueryRecord(db DB, strSQL string, p map[string]interface{}) (result []map[string]interface{}, cols []string) {
 	var err error
-	if result, cols, err = QueryRecord(db, strSql, p); err != nil {
+	if result, cols, err = QueryRecord(db, strSQL, p); err != nil {
 		log.Panic(err)
 	}
 	return
 }
-func MustRow(db DB, strSql string, p map[string]interface{}) (map[string]interface{}, []string) {
+
+//MustRow 类似Row，出错换成异常
+func MustRow(db DB, strSQL string, p map[string]interface{}) (map[string]interface{}, []string) {
 	var err error
-	result, cols, err := QueryRecord(db, strSql, p)
+	result, cols, err := QueryRecord(db, strSQL, p)
 	if err != nil {
 		log.Panic(err)
 	}
 	if len(result) == 0 {
-		log.Panic(SqlError{strSql, p, sql.ErrNoRows})
+		log.Panic(NewSQLError(strSQL, p, sql.ErrNoRows))
 	}
 	return result[0], cols
 }
 
-//获取一个临时表名
+//GetTempTableName 获取一个临时表名
 func GetTempTableName(db DB, prev string) (string, error) {
+	if len(prev) == 0 {
+		return "", fmt.Errorf("prev can't empty")
+	}
 	//确定名称
 	tableName := ""
 	rand.Seed(time.Now().UnixNano())
@@ -382,9 +304,9 @@ func GetTempTableName(db DB, prev string) (string, error) {
 	return tableName, nil
 }
 
-//批量执行，分号换行的会被分开执行
-func BatchExec(db DB, strSql string, params map[string]interface{}) error {
-	for _, v := range strings.Split(strSql, ";\n") {
+//BatchExec 批量执行，分号换行的会被分开执行
+func BatchExec(db DB, strSQL string, params map[string]interface{}) error {
+	for _, v := range strings.Split(strSQL, ";\n") {
 		if len(strings.TrimSpace(v)) == 0 {
 			continue
 		}
@@ -396,56 +318,61 @@ func BatchExec(db DB, strSql string, params map[string]interface{}) error {
 	return nil
 }
 
-type RenderSqlError struct {
+//RenderSQLError 表示一个SQL语句渲染错误
+type RenderSQLError struct {
 	Template   string
-	SqlParam   map[string]interface{}
+	SQLParam   map[string]interface{}
 	RenderArgs interface{}
 	Err        error
 }
 
-func (r *RenderSqlError) Error() string {
-	return fmt.Sprintf("Template:\n%s\nSqlParam:\n%#v\nRenderArgs:\n%#v\nError:\n%s", r.Template, r.SqlParam, r.RenderArgs, r.Err)
+func (r *RenderSQLError) Error() string {
+	return fmt.Sprintf("Template:\n%s\nSqlParam:\n%#v\nRenderArgs:\n%#v\nError:\n%s", r.Template, r.SQLParam, r.RenderArgs, r.Err)
 }
 
-//修改{{P}}的语法，因为后期的交叉汇总等需要sql传递的功能，生成参数就无法实现了，改成内嵌的字符串
+//RenderSQL 修改{{P}}的语法，因为后期的交叉汇总等需要sql传递的功能，生成参数就无法实现了，改成内嵌的字符串
 //×渲染一个sql，可以用{{P val}}的语法加入一个参数，就不用考虑字符串转义了
 //后期如果速度慢，可以加入一个模板缓存
-func RenderSql(strSql string, renderArgs interface{}) (string, error) {
+func RenderSQL(strSQL string, renderArgs interface{}) (string, error) {
 
-	if len(strSql) == 0 {
-		return strSql, nil
+	if len(strSQL) == 0 {
+		return strSQL, nil
 	}
 	var err error
 	var t *template.Template
-	if t, err = template.New("sql").Funcs(tempext.GetFuncMap()).Parse(strSql); err != nil {
-		return "", &RenderSqlError{strSql, nil, renderArgs, err}
+	if t, err = template.New("sql").Funcs(tempext.GetFuncMap()).Parse(strSQL); err != nil {
+		return "", &RenderSQLError{strSQL, nil, renderArgs, err}
 	}
 
 	out := bytes.NewBuffer(nil)
 	if err = t.Execute(out, renderArgs); err != nil {
-		return "", &RenderSqlError{strSql, nil, renderArgs, err}
+		return "", &RenderSQLError{strSQL, nil, renderArgs, err}
 	}
-	strSql = out.String()
-	return strSql, nil
+	strSQL = out.String()
+	return strSQL, nil
 }
-func Count(db DB, strSql string, params map[string]interface{}) (result int64, err error) {
-	v, err := GetSqlFun(db, fmt.Sprintf("SELECT COUNT(*) FROM (%s) count_sql", strSql), params)
+
+//Count 统计一个SQL语句的返回行数，采用外套select count(*) from() 的方式
+func Count(db DB, strSQL string, params map[string]interface{}) (result int64, err error) {
+	v, err := GetSQLFun(db, fmt.Sprintf("SELECT COUNT(*) FROM (%s) count_sql", strSQL), params)
 	if err != nil {
 		return
 	}
 	result = safe.Int(v)
 	return
 }
-func BindSqlWithError(db DB, strSql string, params map[string]interface{}) (result string, paramsValues []interface{}, err error) {
+
+//BindSQLWithError 类似BindSQL，返回错误，不抛出异常
+func BindSQLWithError(db DB, strSQL string, params map[string]interface{}) (result string, paramsValues []interface{}, err error) {
 	//转换in的条件
-	sql, pam, err := sqlx.Named(strSql, params)
+	sql, pam, err := sqlx.Named(strSQL, params)
 	if err != nil {
-		err = &SqlError{strSql, params, err}
+		err = NewSQLError(strSQL, params, err)
 		return
 	}
 	sql, pam, err = sqlx.In(sql, pam...)
 	if err != nil {
-		err = &SqlError{strSql, params, err}
+		err = NewSQLError(strSQL, params, err)
 		return
 	}
 
@@ -453,15 +380,17 @@ func BindSqlWithError(db DB, strSql string, params map[string]interface{}) (resu
 	paramsValues = pam
 	return
 }
-func BindSql(db DB, strSql string, params map[string]interface{}) (result string, paramsValues []interface{}) {
+
+//BindSQL 转换绑定命名语法至常规，出错返回异常
+func BindSQL(db DB, strSQL string, params map[string]interface{}) (result string, paramsValues []interface{}) {
 	//转换in的条件
-	sql, pam, err := sqlx.Named(strSql, params)
+	sql, pam, err := sqlx.Named(strSQL, params)
 	if err != nil {
-		log.Panic(&SqlError{strSql, params, err})
+		log.Panic(NewSQLError(strSQL, params, err))
 	}
 	sql, pam, err = sqlx.In(sql, pam...)
 	if err != nil {
-		log.Panic(&SqlError{strSql, params, err})
+		log.Panic(NewSQLError(strSQL, params, err))
 	}
 
 	result = db.Rebind(sql)
@@ -469,50 +398,14 @@ func BindSql(db DB, strSql string, params map[string]interface{}) (result string
 	return
 }
 
-//新增单字段索引
+//CreateColumnIndex 新增单字段索引
 func CreateColumnIndex(db DB, tableName, colName string) error {
-	ns := strings.Split(tableName, ".")
-	schema := ""
-	tname := ""
-	if len(ns) > 1 {
-		schema = ns[0] + "."
-		tname = ns[1]
-	} else {
-		tname = tableName
-	}
-	var strSql string
-	switch db.DriverName() {
-	case "postgres":
-		strSql = fmt.Sprintf("create index on %s(%s)", tableName, colName)
-	case "oci8", "mysql", "sqlite3":
-		//这里会有问题，如果表名和字段名比较长就会出错
-		strSql = fmt.Sprintf("create index %si%s%s on %s(%s)", schema, tname, colName, tableName, colName)
-	default:
-		log.Panic("not impl " + db.DriverName())
-	}
-	if _, err := db.Exec(strSql); err != nil {
-		return SqlError{strSql, nil, err}
-	}
-	log.Println(strSql)
-	return nil
+	return Meta(db).CreateColumnIndex(db, tableName, colName)
 }
 
-//删除单字段索引
+//DropColumnIndex 删除单字段索引
 func DropColumnIndex(db DB, tableName, indexName string) error {
-	var strSql string
-
-	switch db.DriverName() {
-	case "postgres", "oci8", "sqlite3":
-		strSql = fmt.Sprintf("drop index %s", indexName)
-	case "mysql":
-		strSql = fmt.Sprintf("drop index %s on %s", indexName, tableName)
-	default:
-		log.Panic("not impl," + db.DriverName())
-	}
-	if _, err := db.Exec(strSql); err != nil {
-		return SqlError{strSql, nil, err}
-	}
-	return nil
+	return Meta(db).DropColumnIndex(db, tableName, indexName)
 }
 
 //新增主键
@@ -534,7 +427,7 @@ func AddTablePrimaryKey(db DB, tableName string, pks []string) error {
 		log.Panic("not impl," + db.DriverName())
 	}
 	if _, err := db.Exec(strSql); err != nil {
-		return SqlError{strSql, nil, err}
+		return NewSQLError(strSql, nil, err)
 	}
 	return nil
 }
@@ -552,11 +445,11 @@ func DropTablePrimaryKey(db DB, tableName string) error {
 			tableName)
 		pkCons := ""
 		if err := db.Get(&pkCons, strSql); err != nil {
-			return SqlError{strSql, nil, err}
+			return NewSQLError(strSql, nil, err)
 		}
 		strSql = fmt.Sprintf("ALTER TABLE %s DROP CONSTRAINT %s", tableName, pkCons)
 		if _, err := db.Exec(strSql); err != nil {
-			return SqlError{strSql, nil, err}
+			return NewSQLError(strSql, nil, err)
 		}
 	case "oci8":
 		ns := strings.Split(tableName, ".")
@@ -573,7 +466,7 @@ func DropTablePrimaryKey(db DB, tableName string) error {
 		}
 		pkCons := ""
 		if rows, _, err := QueryRecord(db, strSql, nil); err != nil {
-			return SqlError{strSql, nil, err}
+			return NewSQLError(strSql, nil, err)
 		} else {
 			if len(rows) > 0 {
 				pkCons = rows[0]["CONSTRAINT_NAME"].(string)
@@ -583,12 +476,12 @@ func DropTablePrimaryKey(db DB, tableName string) error {
 		}
 		strSql = fmt.Sprintf("ALTER TABLE %s DROP CONSTRAINT %s", tableName, pkCons)
 		if _, err := db.Exec(strSql); err != nil {
-			return SqlError{strSql, nil, err}
+			return NewSQLError(strSql, nil, err)
 		}
 	case "mysql":
 		strSql := fmt.Sprintf("ALTER TABLE %s DROP PRIMARY KEY", tableName)
 		if _, err := db.Exec(strSql); err != nil {
-			return SqlError{strSql, nil, err}
+			return NewSQLError(strSql, nil, err)
 		}
 	default:
 		log.Panic("not impl," + db.DriverName())
@@ -625,7 +518,7 @@ func ValueExpress(db DB, dataType int, value string) string {
 }
 func MustExec(db DB, strSql string, params ...interface{}) {
 	if _, err := db.Exec(strSql, params...); err != nil {
-		log.Panic(SqlError{strSql, params, err})
+		log.Panic(NewSQLError(strSql, params, err))
 	}
 	return
 }
@@ -722,7 +615,7 @@ func DropIndexIfExists(db DB, indexName string) error {
 		return fmt.Errorf("invalid driver")
 	}
 	if _, err := db.Exec(strSQL); err != nil {
-		return SqlError{strSQL, nil, err}
+		return NewSQLError(strSQL, nil, err)
 	}
 	return nil
 }
@@ -750,7 +643,7 @@ func CreateIndexIfNotExists(db DB, indexName, tableName, express string) error {
 		return fmt.Errorf("invalid driver")
 	}
 	if _, err := db.Exec(strSQL); err != nil {
-		return SqlError{strSQL, nil, err}
+		return NewSQLError(strSQL, nil, err)
 	}
 	return nil
 }

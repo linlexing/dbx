@@ -482,7 +482,7 @@ func (s *SqlSelect) BuildSql(db DB) (strSql string) {
 		}
 	}
 	//在最后返回前，还需要一次render，防止条件中引用了模板
-	if s, err := RenderSql(strSql, s.SqlRenderArgs); err != nil {
+	if s, err := RenderSQL(strSql, s.SqlRenderArgs); err != nil {
 		log.Panic(err)
 	} else {
 		strSql = s
@@ -511,7 +511,7 @@ func (s *SqlSelect) QueryRows(db DB) (result []map[string]interface{}, cols []*C
 	strSQL := s.BuildSql(db)
 	var rows *sqlx.Rows
 	if rows, err = db.Queryx(strSQL); err != nil {
-		err = SqlError{strSQL, nil, err}
+		err = NewSQLError(strSQL, nil, err)
 		return
 	}
 	var columns []string
@@ -541,7 +541,7 @@ func (s *SqlSelect) QueryRows(db DB) (result []map[string]interface{}, cols []*C
 	for rows.Next() {
 		oneRecord := map[string]interface{}{}
 		if err = rows.MapScan(oneRecord); err != nil {
-			err = SqlError{strSQL, nil, err}
+			err = NewSQLError(strSQL, nil, err)
 			return
 		}
 		result = append(result, s.convertRow(oneRecord))
@@ -572,7 +572,7 @@ func (s *SqlSelect) QueryRows(db DB) (result []map[string]interface{}, cols []*C
 
 //渲染sql
 func (s *SqlSelect) renderSql() (strSql string, err error) {
-	return RenderSql(s.sql, s.SqlRenderArgs)
+	return RenderSQL(s.sql, s.SqlRenderArgs)
 }
 
 //如果没有数值字段或者没有记录，则返回空sql
@@ -618,11 +618,11 @@ func (s *SqlSelect) BuildTotalSql(db DB, cols ...string) (strSql string, err err
 		}
 		strSql = fmt.Sprintf("select %s from (%s) wholesql %s", strings.Join(totalCoumns, ","), renderSql, where)
 	}
-	strSql, err = RenderSql(strSql, s.SqlRenderArgs)
+	strSql, err = RenderSQL(strSql, s.SqlRenderArgs)
 	return
 
 }
-func (s *SqlSelect) BuildRowCountSql(db DB) (strSql string) {
+func (s *SqlSelect) BuildRowCountSql(db DB) (strSQL string) {
 	renderSql, err := s.renderSql()
 	if err != nil {
 		log.Panic(err)
@@ -646,18 +646,18 @@ func (s *SqlSelect) BuildRowCountSql(db DB) (strSql string) {
 		if str, err := renderManualPageSql(db, renderSql, []string{"COUNT(*)"}, whereList, nil, -1); err != nil {
 			log.Panic(err)
 		} else {
-			strSql = str
+			strSQL = str
 		}
 	} else {
 		if len(whereList) > 0 {
 			where = " where " + strings.Join(whereList, " and ")
 		}
-		strSql = fmt.Sprintf("select count(*) from (%s) wholesql %s", renderSql, where)
+		strSQL = fmt.Sprintf("select count(*) from (%s) wholesql %s", renderSql, where)
 	}
-	if s, err := RenderSql(strSql, s.SqlRenderArgs); err != nil {
+	if s, err := RenderSQL(strSQL, s.SqlRenderArgs); err != nil {
 		log.Panic(err)
 	} else {
-		strSql = s
+		strSQL = s
 	}
 
 	return
@@ -685,7 +685,7 @@ func (s *SqlSelect) RowCount(db DB) (r int64, err error) {
 
 	strSql := s.BuildRowCountSql(db)
 	if err = db.Get(&r, strSql); err != nil {
-		err = SqlError{strSql, nil, err}
+		err = NewSQLError(strSql, nil, err)
 	}
 	return
 

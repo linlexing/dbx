@@ -12,7 +12,7 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-//这里的bill就是一个简单的主表-明细表的集合，提供了读写的方法
+//Bill 这里的bill就是一个简单的主表-明细表的集合，提供了读写的方法
 type Bill struct {
 	Main  *DBTable
 	Child map[string]*DBTable
@@ -113,33 +113,33 @@ func (b *Bill) Count(where string, param map[string]interface{}) (icount int64, 
 		strSql = fmt.Sprintf("select count(*) from %s where %s", b.Main.Name(), where)
 	}
 
-	if strSql, err = RenderSql(strSql, param); err != nil {
+	if strSql, err = RenderSQL(strSql, param); err != nil {
 		return
 	}
 
-	vCount, err := GetSqlFun(b.Main.Db, strSql, nil)
+	vCount, err := GetSQLFun(b.Main.Db, strSql, nil)
 	if err != nil {
-		return -1, SqlError{strSql, nil, err}
+		return -1, NewSQLError(strSql, nil, err)
 	}
 	return safe.Int(vCount), nil
 }
 func (b *Bill) NameQuery(where string, renderParam map[string]interface{}) (*BillRows, error) {
-	var strSql string
+	var strSQL string
 
 	if len(where) == 0 {
-		strSql = fmt.Sprintf("select * from %s", b.Main.Name())
+		strSQL = fmt.Sprintf("select * from %s", b.Main.Name())
 	} else {
-		strSql = fmt.Sprintf("select * from %s where %s", b.Main.Name(), where)
+		strSQL = fmt.Sprintf("select * from %s where %s", b.Main.Name(), where)
 	}
 	var err error
-	if strSql, err = RenderSql(strSql, renderParam); err != nil {
+	if strSQL, err = RenderSQL(strSQL, renderParam); err != nil {
 		return nil, err
 	}
 
-	strSql, sqlParam := BindSql(b.Main.Db, strSql, nil)
-	rows, err := b.Main.Db.Queryx(strSql, sqlParam...)
+	strSQL, sqlParam := BindSQL(b.Main.Db, strSQL, nil)
+	rows, err := b.Main.Db.Queryx(strSQL, sqlParam...)
 	if err != nil {
-		return nil, SqlError{strSql, sqlParam, err}
+		return nil, NewSQLError(strSQL, sqlParam, err)
 	}
 	return &BillRows{b, rows}, nil
 }
