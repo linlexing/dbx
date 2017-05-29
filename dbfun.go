@@ -16,62 +16,38 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 
+	"github.com/linlexing/dbx/common"
 	"github.com/linlexing/mapfun"
 
 	"github.com/jmoiron/sqlx"
 )
 
-//SQLError 表示一个sql语句执行出错
-type SQLError struct {
-	SQL    string
-	Params interface{}
-	Err    error
+//Driver 代表一个驱动
+type Driver interface {
+	DriverName() string
 }
 
-//NewSQLError 构造
-func NewSQLError(sql string, params interface{}, err error) SQLError {
-	return SQLError{
-		SQL:    sql,
-		Params: params,
-		Err:    err,
-	}
-}
-func (e SQLError) Error() string {
-	l := 0
-	content := fmt.Sprintf("%#v", e.Params)
-	switch tv := e.Params.(type) {
-	case []interface{}:
-		l = len(tv)
-	case map[string]interface{}:
-		l = len(tv)
-		list := []string{}
-		for k, v := range tv {
-			switch subtv := v.(type) {
-			case time.Time:
-				list = append(list, fmt.Sprintf("%s(time):%s", k, subtv.Format(time.RFC3339)))
-			default:
-				list = append(list, fmt.Sprintf("%s(%T):%#v", k, v, v))
-			}
-
-		}
-		content = strings.Join(list, "\n")
-	}
-	return fmt.Sprintf("%s\n%s\nparams len is %d,content is:\n%s", e.Err, e.SQL, l, content)
+//ColumnType 用于传递列类型与名称，仅仅用于CreateTable 中
+type ColumnType struct {
+	Name string
+	Type datatype.DataType
 }
 
 //DB 接口表示一个数据库操作，主要用来统一DBConnection 和 DBTrans的方法
 //使得函数可以接收两种参数传入，依赖于sqlx包
 type DB interface {
+	common.Execer
+	common.Driver
+	common.Queryer
 	Select(dest interface{}, query string, args ...interface{}) error
 	NamedQuery(query string, arg interface{}) (*sqlx.Rows, error)
 	NamedExec(query string, arg interface{}) (sql.Result, error)
 	PrepareNamed(query string) (*sqlx.NamedStmt, error)
-	DriverName() string
+
 	QueryRowx(query string, args ...interface{}) *sqlx.Row
 	Queryx(query string, args ...interface{}) (*sqlx.Rows, error)
 	Rebind(string) string
 	BindNamed(string, interface{}) (string, []interface{}, error)
-	Exec(string, ...interface{}) (sql.Result, error)
 	MustExec(string, ...interface{}) sql.Result
 	Get(dest interface{}, query string, args ...interface{}) error
 }
@@ -93,11 +69,6 @@ func Columns(db DB, strSQL string, p map[string]interface{}) ([]string, error) {
 	}
 
 	return r, err
-}
-
-//TableNames 返回一个数据库所有的表名
-func TableNames(db DB) (names []string, err error) {
-	return Meta(db).TableNames(db)
 }
 
 //NameGet 类似Get，不过可以用命名参数
@@ -149,11 +120,6 @@ func QueryRecord(db DB, strSQL string, p map[string]interface{}) (result []map[s
 	return
 }
 
-//IsNull 返回数据库isnull函数的名称，因为不同的数据库使用不同的名称，而这个函数又非常常用
-func IsNull(db DB) string {
-	return Meta(db).IsNull()
-}
-
 //Exists 返回sql语句有没有返回值，性能比较快
 func Exists(db DB, strSQL string, p map[string]interface{}) (result bool, err error) {
 	str, pam := BindSQL(db, strSQL, p)
@@ -166,16 +132,6 @@ func Exists(db DB, strSQL string, p map[string]interface{}) (result bool, err er
 	defer rows.Close()
 	result = rows.Next()
 	return
-}
-
-//CreateTableAs 执行create table as select语句
-func CreateTableAs(db DB, tableName, strSQL string, pks []string) error {
-	return Meta(db).CreateTableAs(db, tableName, strSQL, pks)
-}
-
-//RemoveColumns 删除表字段
-func RemoveColumns(db DB, tabName string, cols []string) error {
-	return Meta(db).RemoveColumns(db, tabName, cols)
 }
 
 //GetSlice 返回一个字符串数组
@@ -215,16 +171,6 @@ func MustGetSliceAndSort(db DB, strSQL string, params map[string]interface{}) []
 	}
 	sort.Strings(rev)
 	return rev
-}
-
-//TableRename 表更名
-func TableRename(db DB, oldName, newName string) error {
-	return Meta(db).TableRename(db, oldName, newName)
-}
-
-//TableExists 返回一个表是否存在
-func TableExists(db DB, tableName string) (bool, error) {
-	return Meta(db).TableExists(db, tableName)
 }
 
 //GetSQLFun 返回第一列第一行的值，如果没有结果，返回nil，不出错
@@ -291,7 +237,7 @@ func GetTempTableName(db DB, prev string) (string, error) {
 	for {
 		binary.BigEndian.PutUint32(bys, rand.Uint32())
 		tableName = fmt.Sprintf("%s%X", prev, bys)
-		if exists, err := TableExists(db, tableName); err != nil {
+		if exists, err := Meta(db).TableExists(db, tableName); err != nil {
 			return "", err
 		} else if !exists {
 			break
@@ -396,125 +342,6 @@ func BindSQL(db DB, strSQL string, params map[string]interface{}) (result string
 	result = db.Rebind(sql)
 	paramsValues = pam
 	return
-}
-
-//CreateColumnIndex 新增单字段索引
-func CreateColumnIndex(db DB, tableName, colName string) error {
-	return Meta(db).CreateColumnIndex(db, tableName, colName)
-}
-
-//DropColumnIndex 删除单字段索引
-func DropColumnIndex(db DB, tableName, indexName string) error {
-	return Meta(db).DropColumnIndex(db, tableName, indexName)
-}
-
-//新增主键
-func AddTablePrimaryKey(db DB, tableName string, pks []string) error {
-	var strSql string
-	ns := strings.Split(tableName, ".")
-	var clearTableName string
-	if len(ns) > 1 {
-		clearTableName = ns[1]
-	} else {
-		clearTableName = tableName
-	}
-	switch db.DriverName() {
-	case "postgres", "mysql":
-		strSql = fmt.Sprintf("alter table %s add primary key(%s)", tableName, strings.Join(pks, ","))
-	case "oci8":
-		strSql = fmt.Sprintf("alter table %s add constraint %s_pk primary key(%s)", tableName, clearTableName, strings.Join(pks, ","))
-	default:
-		log.Panic("not impl," + db.DriverName())
-	}
-	if _, err := db.Exec(strSql); err != nil {
-		return NewSQLError(strSql, nil, err)
-	}
-	return nil
-}
-
-//删除主键
-func DropTablePrimaryKey(db DB, tableName string) error {
-	log.WithFields(log.Fields{
-		"table": tableName,
-	}).Debug("dropkey")
-	switch db.DriverName() {
-	case "postgres":
-		//先获取主键索引的名称，然后删除索引
-		strSql := fmt.Sprintf(
-			"select b.relname from  pg_index a inner join pg_class b on a.indexrelid =b.oid where indisprimary and indrelid='%s'::regclass",
-			tableName)
-		pkCons := ""
-		if err := db.Get(&pkCons, strSql); err != nil {
-			return NewSQLError(strSql, nil, err)
-		}
-		strSql = fmt.Sprintf("ALTER TABLE %s DROP CONSTRAINT %s", tableName, pkCons)
-		if _, err := db.Exec(strSql); err != nil {
-			return NewSQLError(strSql, nil, err)
-		}
-	case "oci8":
-		ns := strings.Split(tableName, ".")
-		var strSql string
-		if len(ns) > 1 {
-			strSql = fmt.Sprintf(
-				"select constraint_name from ALL_CONSTRAINTS where owner = '%s' and table_name ='%s' and constraint_type='P'",
-				strings.ToUpper(ns[0]),
-				strings.ToUpper(ns[1]))
-		} else {
-			strSql = fmt.Sprintf(
-				"select constraint_name from user_CONSTRAINTS where table_name ='%s' and constraint_type='P'",
-				strings.ToUpper(tableName))
-		}
-		pkCons := ""
-		if rows, _, err := QueryRecord(db, strSql, nil); err != nil {
-			return NewSQLError(strSql, nil, err)
-		} else {
-			if len(rows) > 0 {
-				pkCons = rows[0]["CONSTRAINT_NAME"].(string)
-			} else {
-				return nil
-			}
-		}
-		strSql = fmt.Sprintf("ALTER TABLE %s DROP CONSTRAINT %s", tableName, pkCons)
-		if _, err := db.Exec(strSql); err != nil {
-			return NewSQLError(strSql, nil, err)
-		}
-	case "mysql":
-		strSql := fmt.Sprintf("ALTER TABLE %s DROP PRIMARY KEY", tableName)
-		if _, err := db.Exec(strSql); err != nil {
-			return NewSQLError(strSql, nil, err)
-		}
-	default:
-		log.Panic("not impl," + db.DriverName())
-	}
-	return nil
-}
-
-//返回一个字段值的字符串表达式
-func ValueExpress(db DB, dataType int, value string) string {
-	switch dataType {
-	case TypeFloat, TypeInt:
-		return value
-	case TypeString:
-		return safe.SignString(value)
-	case TypeDatetime:
-		switch db.DriverName() {
-		case "oci8":
-			if len(value) == 10 {
-				return fmt.Sprintf("to_date(%s,'yyyy-mm-dd')", safe.SignString(value))
-			} else if len(value) == 19 {
-				return fmt.Sprintf("to_date(%s,'yyyy-mm-dd hh24:mi:ss')", safe.SignString(value))
-			} else {
-				log.Panic(fmt.Errorf("invalid datetime:%s", value))
-				return ""
-			}
-		default:
-			log.Panic(fmt.Errorf("not impl datetime,dbtype:%s", db.DriverName()))
-			return ""
-		}
-	default:
-		log.Panic(fmt.Errorf("not impl ValueExpress,type:%d", dataType))
-		return ""
-	}
 }
 func MustExec(db DB, strSql string, params ...interface{}) {
 	if _, err := db.Exec(strSql, params...); err != nil {

@@ -1,87 +1,80 @@
-package dbx
+package pageselect
 
 import (
 	"bytes"
-	"dbweb/lib/safe"
 	"encoding/csv"
 	"fmt"
-	"strconv"
 	"strings"
 	"text/template"
 	"time"
 
 	log "github.com/Sirupsen/logrus"
+	"github.com/linlexing/dbx"
 
 	"github.com/jmoiron/sqlx"
+
 )
 
-//条件一行
+//PageSelecter 是pageselect类用来接入任意数据库系统的方法
+type PageSelecter interface {
+	GetOperatorExpress(ope Operator, dataType datatype.DataType, left, right string) string
+}
+
+var (
+	opeExpre = map[string]PageSelecter{}
+)
+
+//Register 注册一个数据库接口，其实现了指定的方法
+func Register(driver string, ps PageSelecter) {
+	opeExpre[driver] = ps
+}
+func ps(driver dbx.Driver) PageSelecter {
+	if v, ok := opeExpre[driver.DriverName()]; !ok {
+		panic(driver + " not registe pageselectrr")
+	} else {
+		return v
+	}
+
+}
+
+//ConditionLine 条件一行
 type ConditionLine struct {
 	LeftBrackets  string
 	ColumnName    string
-	Operators     string
+	Operators     operator.Operator
 	Value         string
 	RightBrackets string
 	Logic         string
 }
 
-//模板条件
-type SqlCondition struct {
+//SQLCondition 模板条件,多行并且可以带一段高级条件
+type SQLCondition struct {
 	Name      string
 	Lines     []*ConditionLine
 	PlainText string
 }
 
-//排序的字段
+//OrderColumn 排序的字段
 type OrderColumn struct {
 	Name  string
 	Order string //DESC ASC
 	Value interface{}
 }
-type SqlSelect struct {
+
+//PageSelect 表示一个select 类，可以附加条件和分页参数
+type PageSelect struct {
 	sql           string
 	ManualPage    bool
-	Table         *DBTable //对应数据库中的表，用于探查字段的数据类型，如果为空或者字段在表中不存在，则是STR
-	Conditions    []*SqlCondition
+	Table         *dbx.DBTable //对应数据库中的表，用于探查字段的数据类型，如果为空或者字段在表中不存在，则是STR
+	Conditions    []*SQLCondition
 	Columns       []string
 	Order         []string
 	Divide        []string
 	Limit         int64
-	SqlRenderArgs interface{} //sql语句在查询前，还会用template进行一次渲染，这里传入渲染的参数
+	SQLRenderArgs interface{} //sql语句在查询前，还会用template进行一次渲染，这里传入渲染的参数
 }
 
-func FieldValueToString(val interface{}) string {
-	return safe.String(val)
-}
-func StringToFieldValue(str string, dataType int) (val interface{}) {
-	var err error
-
-	switch dataType {
-	case TypeBytea:
-		log.Panic("the bytea not impl")
-	case TypeDatetime:
-		if val, err = time.Parse("2006-01-02 15:04:05", str); err != nil {
-			log.Panic(err)
-		}
-	case TypeFloat:
-		if val, err = strconv.ParseFloat(str, 64); err != nil {
-			log.Panic(err)
-		}
-
-	case TypeInt:
-		if val, err = strconv.ParseInt(str, 10, 64); err != nil {
-			log.Panic(err)
-		}
-
-	case TypeString:
-		val = str
-	default:
-		log.Panic("not impl StringToFieldValue")
-	}
-	return
-}
-
-func (c *ConditionLine) GetExpress(db DB, dataType int) (strSql string) {
+func (c *ConditionLine) GetExpress(db DB, dataType datatype.DataType) (strSql string) {
 	//需要考虑到null的情况
 	switch c.Operators {
 	case "=": //等于
@@ -266,7 +259,7 @@ func (c *ConditionLine) GetExpress(db DB, dataType int) (strSql string) {
 	strSql = fmt.Sprintf("%s%s%s", c.LeftBrackets, strSql, c.RightBrackets)
 	return
 }
-func (c *SqlCondition) BuildWhere(db DB, table *DBTable) string {
+func (c *SQLCondition) BuildWhere(db DB, table *DBTable) string {
 	strLines := []string{}
 
 	if len(c.Lines) > 0 {
@@ -378,7 +371,7 @@ func renderManualPageSql(db DB, strSql string, columnList, whereList, orderbyLis
 }
 
 //构造sql语句，和相应的参数值
-func (s *SqlSelect) BuildSql(db DB) (strSql string) {
+func (s *SQLSelect) BuildSql(db DB) (strSql string) {
 
 	renderSql, err := s.renderSql()
 	if err != nil {
@@ -434,7 +427,7 @@ func (s *SqlSelect) BuildSql(db DB) (strSql string) {
 			}
 		}
 		if len(s.Divide) > 0 {
-			divideCondition := &SqlCondition{
+			divideCondition := &SQLCondition{
 				Name:  "divide",
 				Lines: buildCondition(s.Order, s.Divide),
 			}
@@ -482,7 +475,7 @@ func (s *SqlSelect) BuildSql(db DB) (strSql string) {
 		}
 	}
 	//在最后返回前，还需要一次render，防止条件中引用了模板
-	if s, err := RenderSQL(strSql, s.SqlRenderArgs); err != nil {
+	if s, err := RenderSQL(strSql, s.SQLRenderArgs); err != nil {
 		log.Panic(err)
 	} else {
 		strSql = s
@@ -490,7 +483,7 @@ func (s *SqlSelect) BuildSql(db DB) (strSql string) {
 
 	return
 }
-func (s *SqlSelect) convertRow(row map[string]interface{}) map[string]interface{} {
+func (s *SQLSelect) convertRow(row map[string]interface{}) map[string]interface{} {
 	if s.Table != nil {
 		return s.Table.ConvertToTrueType(row)
 	} else {
@@ -507,7 +500,7 @@ func (s *SqlSelect) convertRow(row map[string]interface{}) map[string]interface{
 		return transRecord
 	}
 }
-func (s *SqlSelect) QueryRows(db DB) (result []map[string]interface{}, cols []*ColumnType, err error) {
+func (s *SQLSelect) QueryRows(db DB) (result []map[string]interface{}, cols []*ColumnType, err error) {
 	strSQL := s.BuildSql(db)
 	var rows *sqlx.Rows
 	if rows, err = db.Queryx(strSQL); err != nil {
@@ -571,15 +564,15 @@ func (s *SqlSelect) QueryRows(db DB) (result []map[string]interface{}, cols []*C
 }
 
 //渲染sql
-func (s *SqlSelect) renderSql() (strSql string, err error) {
-	return RenderSQL(s.sql, s.SqlRenderArgs)
+func (s *SQLSelect) renderSql() (strSql string, err error) {
+	return RenderSQL(s.sql, s.SQLRenderArgs)
 }
 
 //如果没有数值字段或者没有记录，则返回空sql
-func (s *SqlSelect) BuildTotalSql(db DB, cols ...string) (strSql string, err error) {
+func (s *SQLSelect) BuildTotalSql(db DB, cols ...string) (strSql string, err error) {
 	totalCoumns := []string{}
 	for _, col := range cols {
-		totalCoumns = append(totalCoumns, fmt.Sprintf("sum(cast(%s(%s,0) as decimal(29,6))) as %[2]s", IsNull(db), col))
+		totalCoumns = append(totalCoumns, fmt.Sprintf("sum(cast(%s(%s,0) as decimal(29,6))) as %[2]s", Meta(db).IsNull(db), col))
 	}
 	if len(totalCoumns) == 0 {
 		return
@@ -618,11 +611,11 @@ func (s *SqlSelect) BuildTotalSql(db DB, cols ...string) (strSql string, err err
 		}
 		strSql = fmt.Sprintf("select %s from (%s) wholesql %s", strings.Join(totalCoumns, ","), renderSql, where)
 	}
-	strSql, err = RenderSQL(strSql, s.SqlRenderArgs)
+	strSql, err = RenderSQL(strSql, s.SQLRenderArgs)
 	return
 
 }
-func (s *SqlSelect) BuildRowCountSql(db DB) (strSQL string) {
+func (s *SQLSelect) BuildRowCountSql(db DB) (strSQL string) {
 	renderSql, err := s.renderSql()
 	if err != nil {
 		log.Panic(err)
@@ -654,7 +647,7 @@ func (s *SqlSelect) BuildRowCountSql(db DB) (strSQL string) {
 		}
 		strSQL = fmt.Sprintf("select count(*) from (%s) wholesql %s", renderSql, where)
 	}
-	if s, err := RenderSQL(strSQL, s.SqlRenderArgs); err != nil {
+	if s, err := RenderSQL(strSQL, s.SQLRenderArgs); err != nil {
 		log.Panic(err)
 	} else {
 		strSQL = s
@@ -664,7 +657,7 @@ func (s *SqlSelect) BuildRowCountSql(db DB) (strSQL string) {
 }
 
 //汇总数值字段
-func (s *SqlSelect) Total(db DB, cols ...string) (result map[string]interface{}, err error) {
+func (s *SQLSelect) Total(db DB, cols ...string) (result map[string]interface{}, err error) {
 	strSql, err := s.BuildTotalSql(db, cols...)
 	if err != nil || len(strSql) == 0 {
 		return
@@ -680,7 +673,7 @@ func (s *SqlSelect) Total(db DB, cols ...string) (result map[string]interface{},
 	result = rows[0]
 	return
 }
-func (s *SqlSelect) RowCount(db DB) (r int64, err error) {
+func (s *SQLSelect) RowCount(db DB) (r int64, err error) {
 	r = -1
 
 	strSql := s.BuildRowCountSql(db)
@@ -691,10 +684,10 @@ func (s *SqlSelect) RowCount(db DB) (r int64, err error) {
 
 }
 
-func NewSqlSelect(strSql string, table *DBTable, manualPage bool) *SqlSelect {
+func NewSQLSelect(strSql string, table *DBTable, manualPage bool) *SQLSelect {
 	//如果没有sql语句而有表名，则生成一个sql
 	if len(strSql) > 0 {
-		return &SqlSelect{
+		return &SQLSelect{
 			sql:        strSql,
 			Table:      table,
 			ManualPage: manualPage,
@@ -721,7 +714,7 @@ func NewSqlSelect(strSql string, table *DBTable, manualPage bool) *SqlSelect {
 	<<if .OrderBy>>ORDER BY <<.OrderBy>><<end>>
 	<<if ge .Limit 0>>LIMIT <<.Limit>><<end>>
 <<end>>`, table.Name())
-	return &SqlSelect{
+	return &SQLSelect{
 		sql:        strSql,
 		Table:      table,
 		ManualPage: true,

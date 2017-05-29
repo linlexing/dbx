@@ -57,14 +57,14 @@ func (b *Bill) Exists(keyValues ...interface{}) (bool, error) {
 	return b.Main.Exists(mapfun.Object(b.Main.PrimaryKeys(), keyValues))
 }
 
-//修改一个记录的主键值
+//ChangeKeyValues 修改一个记录的主键值
 func (b *Bill) ChangeKeyValues(record *BillRecord, pks ...interface{}) {
 	if record.IsEmpty() {
 		return
 	}
 	//修改主表记录
 	for i, name := range b.Main.PrimaryKeys() {
-		record.Main[name] = b.Main.Field(name).ConvertToTrueType(pks[i])
+		record.Main[name] = b.Main.Field(name).Type.ParseScan(pks[i])
 	}
 	//修改明细表记录，明细表主键的前几位必须是主表主键
 	for _, child := range b.Child {
@@ -290,7 +290,7 @@ func (b *BillRows) Record() (result *BillRecord, err error) {
 		return nil, err
 	}
 	//字段名转换成大写，数据类型正确转换
-	mainRow = b.bill.Main.ConvertToTrueType(mainRow)
+	mainRow = b.bill.Main.ParseScan(mainRow)
 	result = &BillRecord{
 		Main: mainRow,
 	}

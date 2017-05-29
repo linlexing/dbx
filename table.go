@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"dbweb/lib/safe"
 
-	"encoding/base64"
 	"encoding/gob"
 	"fmt"
 	"reflect"
@@ -21,398 +20,12 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-const (
-	TypeString = iota
-	TypeInt
-	TypeDatetime
-	TypeBytea
-	TypeFloat
-)
-
-type DBTableColumn struct {
-	Name        string `db:"DBNAME"`
-	Type        string `db:"DBTYPE"`
-	MaxLength   int    `db:"DBMAXLENGTH"`
-	Null        bool   `db:"DBNULL"`
-	TrueType    string `db:"TRUETYPE"`
-	FetchDriver string //上次获取字段信息时，数据库驱动的名称
-
-	Index      bool     `db:"-"`
-	IndexName  string   `db:"-"` //如果该字段有索引，存放数据库中索引的名称
-	FormerName []string `db:"-"`
-}
-type ColumnType struct {
-	Name string
-	Type string
-}
-
-//判定两个字段定义是否相等
-func (field *DBTableColumn) Eque(src *DBTableColumn) bool {
-	return field.Name == src.Name &&
-		field.Type == src.Type &&
-		(field.MaxLength == src.MaxLength ||
-			field.MaxLength <= 0 && src.MaxLength <= 0) &&
-		field.Null == src.Null
-}
-func (f *DBTableColumn) ToJson(v interface{}) (interface{}, error) {
-	if v == nil {
-		return nil, nil
-	}
-	switch f.GoType() {
-	case TypeBytea: //base64
-		return base64.RawStdEncoding.EncodeToString(safe.Bytea(v)), nil
-	case TypeDatetime: //RFC3339
-		if tv, ok := v.(time.Time); ok {
-			return tv.Format(time.RFC3339), nil
-		} else {
-			return nil, fmt.Errorf("the column %s value %v not is time", f.Name, v)
-		}
-	case TypeFloat:
-		if tv, ok := v.(float64); ok {
-			return tv, nil
-		} else {
-			return nil, fmt.Errorf("the column %s value %#v not is float64", f.Name, v)
-		}
-	case TypeInt:
-		if tv, ok := v.(int64); ok {
-			return tv, nil
-		} else {
-			return nil, fmt.Errorf("the column %s value %v not is int64", f.Name, v)
-		}
-	case TypeString:
-		return safe.String(v), nil
-	default:
-		return nil, fmt.Errorf("the column %s type error", f.Name)
-	}
-}
-
-func (f *DBTableColumn) FromJson(v interface{}) (interface{}, error) {
-	if v == nil {
-		return nil, nil
-	}
-	switch f.GoType() {
-	case TypeBytea: //base64
-		if tv, ok := v.(string); ok {
-			return base64.RawStdEncoding.DecodeString(tv)
-		} else {
-			return nil, fmt.Errorf("the column %s json value %v not is base64 string", f.Name, v)
-		}
-		return base64.RawStdEncoding.EncodeToString(safe.Bytea(v)), nil
-	case TypeDatetime: //RFC3339
-		if tv, ok := v.(string); ok {
-			return safe.StrToDate(tv)
-		} else {
-			return nil, fmt.Errorf("the column %s json value %v not is time string", f.Name, v)
-		}
-	case TypeFloat:
-		if tv, ok := v.(float64); ok {
-			return tv, nil
-		} else {
-			return nil, fmt.Errorf("the column %s json value %v not is float64", f.Name, v)
-		}
-	case TypeInt:
-		switch tv := v.(type) {
-		case string:
-			return strconv.ParseInt(tv, 10, 64)
-		case int:
-			return int64(tv), nil
-		case int64:
-			return tv, nil
-		case float32:
-			return int64(tv), nil
-		case float64:
-			return int64(tv), nil
-		default:
-			return nil, fmt.Errorf("the column %s json value %v (%T) not is int64 string", f.Name, v, v)
-		}
-	case TypeString:
-		if tv, ok := v.(string); ok {
-			return tv, nil
-		} else {
-			return nil, fmt.Errorf("the column %s json value %v not is string", f.Name, v)
-		}
-	default:
-		return nil, fmt.Errorf("the column %s type error", f.Name)
-	}
-}
-func (field *DBTableColumn) ConvertToTrueType(v interface{}) (result interface{}) {
-	defer func() {
-		if r := recover(); r != nil {
-			log.WithFields(log.Fields{
-				"column": field.Name,
-				"type":   field.Type,
-			}).Error(r)
-			log.Panic(r)
-		}
-	}()
-
-	//nil代表null，不需要转换，否则会出错
-	if v == nil {
-		return nil
-	}
-	//空字符串当null处理
-	if v == "" {
-		return nil
-	}
-	switch field.GoType() {
-	case TypeString:
-		switch tv := v.(type) {
-		case []byte:
-			result = string(tv)
-		default:
-			result = v
-		}
-	case TypeDatetime:
-		switch tv := v.(type) {
-		case time.Time:
-			result = tv
-		case nil:
-			result = tv
-		case string:
-			result = safe.Date(tv)
-		case []byte:
-			result = safe.Date(string(tv))
-		default:
-			log.Panic(fmt.Errorf("error type,%T", v))
-		}
-	case TypeInt:
-		//如果是nil会出错，所以在本函数的开头加了判断
-		result = safe.Int(v)
-	case TypeBytea:
-		result = safe.Bytea(v)
-	case TypeFloat:
-		result = safe.Float64(v)
-	default:
-		result = v
-	}
-
-	return
-}
-func (c *DBTableColumn) ChineseType() string {
-	switch c.Type {
-	case "STR":
-		return "字符串"
-	case "INT":
-		return "整型"
-	case "DATE":
-		return "日期"
-	case "FLOAT":
-		return "浮点"
-	case "BYTEA":
-		return "二进制"
-	default:
-		log.Panic("invalid type:" + c.Type)
-		return ""
-	}
-}
-func (c *DBTableColumn) GoType() int {
-	switch c.Type {
-	case "STR":
-		return TypeString
-	case "INT":
-		return TypeInt
-	case "DATE":
-		return TypeDatetime
-	case "FLOAT":
-		return TypeFloat
-	case "BYTEA":
-		return TypeBytea
-	default:
-		log.Panic("invalid type:" + c.Type)
-		return -1
-	}
-}
-func ParseGoType(t int) string {
-	switch t {
-	case TypeString:
-		return "STR"
-	case TypeInt:
-		return "INT"
-	case TypeDatetime:
-		return "DATE"
-	case TypeFloat:
-		return "FLOAT"
-	case TypeBytea:
-		return "BYTEA"
-	default:
-		log.Panic(fmt.Sprintf("invalid type:%d", t))
-		return ""
-	}
-
-}
-func (c *DBTableColumn) Clone() *DBTableColumn {
-	return &DBTableColumn{c.Name, c.Type, c.MaxLength, c.Null, c.TrueType, c.FetchDriver, c.Index, c.IndexName, c.FormerName}
-}
-
-//postgres修改字段，不需要名称和notnull
-func (c *DBTableColumn) DBType(driver string) string {
-	if c.FetchDriver == driver && len(c.TrueType) > 0 {
-		return c.TrueType
-	}
-	var dataType string
-	switch driver {
-	case "postgres":
-		switch c.GoType() {
-		case TypeBytea:
-			dataType = "bytea"
-		case TypeDatetime:
-			dataType = "timestamp without time zone"
-		case TypeFloat:
-			dataType = "double precision"
-		case TypeInt:
-			dataType = "integer"
-		case TypeString:
-			if c.MaxLength <= 0 {
-				dataType = "text"
-			} else {
-				dataType = fmt.Sprintf("character varying(%d)", c.MaxLength)
-			}
-		default:
-			log.Panic("not impl DBType")
-
-		}
-	case "oci8":
-		switch c.GoType() {
-		case TypeBytea:
-			dataType = "BLOB"
-		case TypeDatetime:
-			dataType = "DATE"
-		case TypeFloat:
-			dataType = "BINARY_DOUBLE"
-		case TypeInt:
-			dataType = "INT"
-		case TypeString:
-			if c.MaxLength <= 0 {
-				dataType = "CLOB"
-			} else {
-				if c.MaxLength > 4000 {
-					dataType = "VARCHAR2(4000)"
-				} else {
-					dataType = fmt.Sprintf("VARCHAR2(%d CHAR)", c.MaxLength)
-				}
-
-			}
-		default:
-			log.Panic("not impl DBType")
-
-		}
-	case "sqlite3":
-		switch c.GoType() {
-		case TypeBytea:
-			dataType = "BLOB"
-		case TypeDatetime:
-			dataType = "DATE"
-		case TypeFloat:
-			dataType = "REAL"
-		case TypeInt:
-			dataType = "INTEGER"
-		case TypeString:
-			if c.MaxLength <= 0 {
-				dataType = "TEXT"
-			} else {
-				dataType = fmt.Sprintf("TEXT(%d)", c.MaxLength)
-			}
-		default:
-			log.Panic("not impl DBType")
-		}
-	case "mysql":
-		switch c.GoType() {
-		case TypeBytea:
-			dataType = "BLOB"
-		case TypeDatetime:
-			dataType = "DATETIME"
-		case TypeFloat:
-			dataType = "DOUBLE PRECISION"
-		case TypeInt:
-			dataType = "BIGINT"
-		case TypeString:
-			if c.MaxLength <= 0 {
-				dataType = "TEXT"
-			} else {
-				dataType = fmt.Sprintf("VARCHAR(%d)", c.MaxLength)
-			}
-		default:
-			log.Panic("not impl DBType")
-		}
-
-	default:
-		log.Panic("not impl DBType")
-	}
-	return dataType
-}
-func (c *DBTableColumn) DBDefine(driver string) string {
-	nullStr := ""
-	if !c.Null {
-		nullStr = " NOT NULL"
-	}
-	return fmt.Sprintf("%s %s%s", c.Name, c.DBType(driver), nullStr)
-}
-
-//如果是null，则有null字样
-func (c *DBTableColumn) DBDefineNull(driver string) string {
-	nullStr := " NULL"
-	if !c.Null {
-		nullStr = " NOT NULL"
-	}
-	return fmt.Sprintf("%s %s%s", c.Name, c.DBType(driver), nullStr)
-}
-func (c *DBTableColumn) GoValue(v string) interface{} {
-	if len(v) == 0 {
-		return nil
-	}
-	switch c.GoType() {
-	case TypeString:
-		return v
-	case TypeInt:
-		if i, err := strconv.ParseInt(v, 10, 64); err != nil {
-			log.Panic(err)
-			return nil
-		} else {
-			return i
-		}
-	case TypeDatetime:
-		t, err := time.Parse("2006-01-02 15:04:05", v)
-		if err != nil {
-			t, err = time.Parse("2006-01-02T15:04:05", v)
-		}
-		if err != nil {
-			t, err = time.Parse("2006-01-02 15:04:05.999999999 -0700 MST", v)
-		}
-		if err != nil {
-			t, err = time.Parse(time.RFC3339, v)
-		}
-		if err != nil {
-			t, err = time.Parse(time.RFC3339Nano, v)
-		}
-
-		if err != nil {
-			t, err = time.Parse("2006-01-02", v)
-		}
-		if err != nil {
-			log.Panic(err)
-			return -1
-		}
-		return t
-	case TypeBytea:
-		return []byte(v)
-	case TypeFloat:
-		if f, err := strconv.ParseFloat(v, 64); err != nil {
-			log.Panic(err)
-			return nil
-		} else {
-			return f
-		}
-	default:
-		log.Panic("not impl gotype", c)
-		return nil
-	}
-}
-
+//DBTable 表现一个数据库表
 type DBTable struct {
 	Db             DB
 	TableName      string
-	Schema         string //对应数据库中方案的名称
-	FormerName     []string
+	Schema         string   //对应数据库中方案的名称
+	FormerName     []string //曾用名，可以是多个，用过的不应再用，方便跳跃版本升级
 	primaryKeys    []string
 	columns        []*DBTableColumn
 	notnullColumns []string
@@ -420,6 +33,7 @@ type DBTable struct {
 	columnsMap     map[string]*DBTableColumn //用于快速查询
 }
 
+//NewTable 返回一个表，表名可以用 schema.tablename的方式
 func NewTable(db DB, tabName string) *DBTable {
 	if len(tabName) == 0 {
 		log.Panic("table name is empty")
@@ -436,12 +50,14 @@ func NewTable(db DB, tabName string) *DBTable {
 	}
 	return rev
 }
+
+//Name 返回完整表名，如果有schema，也返回
 func (t *DBTable) Name() string {
 	if len(t.Schema) > 0 {
 		return t.Schema + "." + t.TableName
-	} else {
-		return t.TableName
 	}
+	return t.TableName
+
 }
 func (t *DBTable) PrimaryKeys() []string {
 	if t.primaryKeys != nil {
@@ -519,7 +135,7 @@ func (t *DBTable) Columns() (result []string) {
 	}
 	return t.columnsNames
 }
-func (t *DBTable) NotNullColumns() []string {
+func (t *DBTable) notNullColumns() []string {
 	if t.notnullColumns == nil {
 		t.notnullColumns = []string{}
 		for _, v := range t.AllField() {
@@ -551,17 +167,18 @@ func (t *DBTable) Row(pks ...interface{}) map[string]interface{} {
 	return rows[0]
 }
 
-//将一行数据转换成json,日期、二进制、int64数据转换成文本
-func (t *DBTable) ToJsonRow(row map[string]interface{}) (map[string]interface{}, error) {
+//ToJSON 将一行数据转换成json,日期、二进制、int64数据转换成文本
+func (t *DBTable) ToJSON(row map[string]interface{}) (map[string]interface{}, error) {
 	transRecord := map[string]interface{}{}
 	for k, v := range row {
 		k = strings.ToUpper(k)
 		if field := t.Field(k); field != nil {
-			if sv, err := field.ToJson(v); err != nil {
+			sv, err := field.Type.ToJSON(v)
+			if err != nil {
 				return nil, err
-			} else {
-				transRecord[k] = sv
 			}
+			transRecord[k] = sv
+
 		} else {
 			return nil, fmt.Errorf("can't find the column %s to json", k)
 		}
@@ -569,18 +186,19 @@ func (t *DBTable) ToJsonRow(row map[string]interface{}) (map[string]interface{},
 	return transRecord, nil
 }
 
-//将一个json数据转换回row
-func (t *DBTable) FromJsonRow(row map[string]interface{}) (map[string]interface{}, error) {
+//FromJSON 将一个json数据转换回row
+func (t *DBTable) FromJSON(row map[string]interface{}) (map[string]interface{}, error) {
 	transRecord := map[string]interface{}{}
 
 	for k, v := range row {
 		k = strings.ToUpper(k)
 		if field := t.Field(k); field != nil {
-			if sv, err := field.FromJson(v); err != nil {
+			sv, err := field.Type.ParseJSON(v)
+			if err != nil {
 				return nil, err
-			} else {
-				transRecord[k] = sv
 			}
+			transRecord[k] = sv
+
 		} else {
 			return nil, fmt.Errorf("can't find the column %s at fromjson", k)
 		}
@@ -588,14 +206,14 @@ func (t *DBTable) FromJsonRow(row map[string]interface{}) (map[string]interface{
 	return transRecord, nil
 }
 
-//将一行数据转换成实际的数据类型，根据字段名从表中查出类型
-//同时将字段名转换成大写
-func (t *DBTable) ConvertToTrueType(row map[string]interface{}) map[string]interface{} {
+//ParseScan 将一行数据转换成实际的数据类型，根据字段名从表中查出类型
+//同时将字段名转换成大写,如果找不到类型，这将[]byte转换成string
+func (t *DBTable) ParseScan(row map[string]interface{}) map[string]interface{} {
 	transRecord := map[string]interface{}{}
 	for k, v := range row {
 		k = strings.ToUpper(k)
 		if field := t.Field(k); field != nil {
-			transRecord[k] = field.ConvertToTrueType(v)
+			transRecord[k] = field.Type.ParseScan(v)
 		} else {
 			switch tv := v.(type) {
 			case []byte:
@@ -637,7 +255,7 @@ func (t *DBTable) QueryRowsOrder(where string, param map[string]interface{}, ord
 		if err = rows.MapScan(oneRecord); err != nil {
 			return
 		}
-		record = append(record, t.ConvertToTrueType(oneRecord))
+		record = append(record, t.ParseScan(oneRecord))
 	}
 	return
 }
@@ -732,7 +350,7 @@ func (t *DBTable) Rows(query map[string]interface{}, columns ...string) (record 
 	return t.QueryRows(strings.Join(strWhere, " and "), newQuery, columns...)
 }
 func (t *DBTable) checkNotNull(row map[string]interface{}) error {
-	for _, v := range t.NotNullColumns() {
+	for _, v := range t.notNullColumns() {
 		if val, ok := row[v]; ok && val == nil {
 			return fmt.Errorf("the not null column:%s is null", v)
 		}
@@ -744,11 +362,9 @@ func (t *DBTable) checkNotNull(row map[string]interface{}) error {
 //如果是oracle，则需要去除时间中的时区，以免触发ORA-01878错误
 func (t *DBTable) checkAndConvertRow(row map[string]interface{}) (map[string]interface{}, error) {
 	rev := mapfun.Pick(row, t.Columns()...)
-	if t.Db.DriverName() == "oci8" {
+	if pre, ok := t.Db.(Preparer); ok {
 		for k, v := range rev {
-			if t.Field(k).Type == "DATE" && v != nil {
-				rev[k] = safe.TruncateTimeZone(safe.Date(v))
-			}
+			rev[k] = pre.Prepare(t.Field(k).Type, v)
 		}
 	}
 	if err := t.checkNotNull(rev); err != nil {
@@ -757,7 +373,8 @@ func (t *DBTable) checkAndConvertRow(row map[string]interface{}) (map[string]int
 	return rev, nil
 }
 
-//从一个sql语句导入数据,sql语句返回的列必须与表中数量一致
+//CreateAs 从一个sql语句导入数据,sql语句返回的列必须与表中数量一致,因为可能是异构数据库
+//所以不能用直接的CreateTableAs
 func (t *DBTable) CreateAs(dataDB DB, strSql string,
 	typeTableName string, typeColumns []*ColumnType, uniqueField []string,
 	progressFunc func(string)) (err error) {
@@ -794,7 +411,7 @@ func (t *DBTable) CreateAs(dataDB DB, strSql string,
 		colsIndex[cols[i]] = true
 		colDef := &DBTableColumn{
 			Name:      cols[i],
-			Type:      "STR",
+			Type:      datatype.TypeString,
 			Null:      true,
 			MaxLength: -1,
 		}
@@ -857,7 +474,7 @@ func (t *DBTable) CreateAs(dataDB DB, strSql string,
 		}
 		vs := make([]interface{}, len(cols))
 		for i, v := range values {
-			vs[i] = t.AllField()[i].ConvertToTrueType(*(v.(*interface{})))
+			vs[i] = t.AllField()[i].Type.ParseScan(*(v.(*interface{})))
 		}
 		if _, err = insertStmt.Exec(vs...); err != nil {
 			log.Printf("error:%s,values:\n", err)
@@ -1596,37 +1213,7 @@ func (t *DBTable) AllField() []*DBTableColumn {
 	}
 	return t.columns
 }
-func sqliteType(typeName string) (string, int) {
-	/*
-		<1> 如果声明类型包含”INT”字符串，那么这个列被赋予INTEGER近似
-		<2> 如果这个列的声明类型包含”CHAR”，”CLOB”，或者”TEXT”中的任意一个，那么这个列就有了TEXT近似。注意类型VARCHAR包含了”CHAR”字符串，那么也就被赋予了TEXT近似
-		<3> 如果列的声明类型中包含了字符串”BLOB”或者没有为其声明类型，这个列被赋予NONE近似
-		<4> 其他的情况，列被赋予NUMERIC近似
-	*/
-	typeName = strings.ToUpper(typeName)
-	if strings.Contains(typeName, "INT") {
-		return "INT", 0
-	}
-	if strings.Contains(typeName, "CHAR") ||
-		strings.Contains(typeName, "CLOB") ||
-		strings.Contains(typeName, "TEXT") {
-		length := "-1"
-		if ts := strings.Split(typeName, "("); len(ts) > 1 {
-			length = ts[1]
-			length = length[:len(length)-1]
-		}
-		i, _ := strconv.ParseInt(length, 10, 64)
-		return "STR", int(i)
-	}
-	if strings.Contains(typeName, "BLOB") || strings.Contains(typeName, "BYTEA") ||
-		len(typeName) == 0 {
-		return "BYTEA", 0
-	}
-	if strings.Contains(typeName, "DATE") || strings.Contains(typeName, "TIME") {
-		return "DATE", 0
-	}
-	return "FLOAT", 0
-}
+
 func (t *DBTable) Field(name string) *DBTableColumn {
 	if len(t.columnsMap) == 0 {
 		t.FetchColumns()
@@ -1837,7 +1424,7 @@ func (t *DBTable) UpdateSchema() error {
 		}
 		//并根据曾用名去获取之前的表结构
 		for _, v := range t.FormerName {
-			if b, _ := TableExists(t.Db, v); b {
+			if b, _ := Meta(t.Db).TableExists(t.Db, v); b {
 				sch.OldTable = NewTable(t.Db, v)
 				sch.OldTable.FetchColumns()
 				break
@@ -1846,7 +1433,7 @@ func (t *DBTable) UpdateSchema() error {
 	}
 	//如果曾用名的表找不到，则说明数据库结构都已经更新到最新，旧表就用本来的名称
 	if sch.OldTable == nil {
-		b, err := TableExists(t.Db, t.Name())
+		b, err := Meta(t.Db).TableExists(t.Db, t.Name())
 		if err != nil {
 			return err
 		}
