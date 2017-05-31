@@ -103,6 +103,8 @@ func (d DataType) ChineseString() string {
 		panic(newErrInvalidDataType(d))
 	}
 }
+
+//字符串转换成时间，按照各种可能的格式
 func strToDate(s string) (tm time.Time, err error) {
 	if len(s) == 8 {
 		return time.Parse("20060102", s)
