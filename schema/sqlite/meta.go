@@ -15,9 +15,6 @@ const driverName = "sqlite3"
 type meta struct {
 }
 
-func (m *meta) IsNull() string {
-	return "ifnull"
-}
 func init() {
 	schema.Register(driverName, new(meta))
 }

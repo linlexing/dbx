@@ -2,6 +2,8 @@ package schema
 
 import (
 	"fmt"
+	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/linlexing/dbx/common"
@@ -93,5 +95,110 @@ func (t *Table) findColumnAnyName(names ...string) *Column {
 			return col
 		}
 	}
+	return nil
+}
+
+//ColumnByName 根据一个名称返回一个字段，如果没有找到，返回nil
+func (t *Table) ColumnByName(name string) *Column {
+	for _, col := range t.Columns {
+		if name == col.Name {
+			return col
+		}
+	}
+	return nil
+}
+
+//DefineScript 采用脚本的方式定义表，如下：
+//  a str(3) not null
+//  b int
+//  c date not null index
+//  primary key(a,c)
+func (t *Table) DefineScript(src string) error {
+	lineReg, err := regexp.Compile(`(?i)([\p{Han}_a-zA-Z0-9]+)(\s+bytea|\s+date|\s+float|\s+int|\s+str\([0-9]+\)|\s+str|)(\s+null|\s+not null|)(\s+index|)`)
+	if err != nil {
+		return err
+	}
+	pks := []string{}
+	columns := []*Column{}
+	var prevColumn *Column
+	for i, line := range strings.Split(strings.Replace(src, "\r\n", "\n", -1), "\n") {
+
+		line = strings.TrimSpace(line)
+		if len(line) == 0 {
+			continue
+		}
+		//如果是主键定义
+		if strings.HasPrefix(line, "primary key(") {
+			for _, v := range strings.Split(line[12:len(line)-1], ",") {
+				pks = append(pks, strings.TrimSpace(v))
+			}
+		} else {
+			lineList := lineReg.FindStringSubmatch(line)
+			if len(lineList) == 0 {
+				return fmt.Errorf("line %d:%s error", i, line)
+			}
+			//第一个是整行，需要去除
+			lineList = lineList[1:]
+			if len(lineList) == 0 {
+				return fmt.Errorf("line %d:%s error", i, line)
+			}
+			colName := lineList[0]
+			if len(strings.TrimSpace(lineList[1])) == 0 {
+				//如果只有列名，则自动从上一个字段取出数据类型等定义
+				if prevColumn == nil {
+					return fmt.Errorf("line %d:%s not data type", i, line)
+				}
+				col := prevColumn.Clone()
+				col.Name = colName
+				columns = append(columns, col)
+				prevColumn = col
+				continue
+
+			}
+			dataType := strings.ToUpper(strings.TrimSpace(lineList[1]))
+			notNull := false
+			index := false
+			var maxLength int64 = -1
+			if len(lineList) > 2 {
+				switch str := strings.ToLower(strings.TrimSpace(lineList[2])); str {
+				case "not null":
+					notNull = true
+				case "null":
+					notNull = false
+				case "":
+				default:
+					return fmt.Errorf("line %d:%s ,error define %s", i, line, str)
+				}
+			}
+			if len(lineList) > 3 {
+				switch str := strings.ToLower(strings.TrimSpace(lineList[3])); str {
+				case "index":
+					index = true
+				case "":
+				default:
+					return fmt.Errorf("line %d:%s ,error define %s", i, line, str)
+				}
+			}
+			if strings.HasPrefix(dataType, "str(") {
+				maxLength, err = strconv.ParseInt(dataType[4:len(dataType)-1], 10, 64)
+				if err != nil {
+					return err
+				}
+				dataType = "STR"
+			} else {
+				dataType = strings.ToUpper(dataType)
+			}
+			prevColumn = &Column{
+				Name:      colName,
+				Type:      ParseDataType(dataType),
+				MaxLength: int(maxLength),
+				Null:      !notNull,
+				Index:     index,
+			}
+			columns = append(columns, prevColumn)
+		}
+	}
+	t.Columns = columns
+	t.PrimaryKeys = pks
 	return nil
 }

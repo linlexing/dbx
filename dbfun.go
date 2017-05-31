@@ -37,8 +37,8 @@ type ColumnType struct {
 //使得函数可以接收两种参数传入，依赖于sqlx包
 type DB interface {
 	common.Execer
-	common.Driver
 	common.Queryer
+	DriverName() string
 	Select(dest interface{}, query string, args ...interface{}) error
 	NamedQuery(query string, arg interface{}) (*sqlx.Rows, error)
 	NamedExec(query string, arg interface{}) (sql.Result, error)
@@ -262,40 +262,6 @@ func BatchExec(db DB, strSQL string, params map[string]interface{}) error {
 		}
 	}
 	return nil
-}
-
-//RenderSQLError 表示一个SQL语句渲染错误
-type RenderSQLError struct {
-	Template   string
-	SQLParam   map[string]interface{}
-	RenderArgs interface{}
-	Err        error
-}
-
-func (r *RenderSQLError) Error() string {
-	return fmt.Sprintf("Template:\n%s\nSqlParam:\n%#v\nRenderArgs:\n%#v\nError:\n%s", r.Template, r.SQLParam, r.RenderArgs, r.Err)
-}
-
-//RenderSQL 修改{{P}}的语法，因为后期的交叉汇总等需要sql传递的功能，生成参数就无法实现了，改成内嵌的字符串
-//×渲染一个sql，可以用{{P val}}的语法加入一个参数，就不用考虑字符串转义了
-//后期如果速度慢，可以加入一个模板缓存
-func RenderSQL(strSQL string, renderArgs interface{}) (string, error) {
-
-	if len(strSQL) == 0 {
-		return strSQL, nil
-	}
-	var err error
-	var t *template.Template
-	if t, err = template.New("sql").Funcs(tempext.GetFuncMap()).Parse(strSQL); err != nil {
-		return "", &RenderSQLError{strSQL, nil, renderArgs, err}
-	}
-
-	out := bytes.NewBuffer(nil)
-	if err = t.Execute(out, renderArgs); err != nil {
-		return "", &RenderSQLError{strSQL, nil, renderArgs, err}
-	}
-	strSQL = out.String()
-	return strSQL, nil
 }
 
 //Count 统计一个SQL语句的返回行数，采用外套select count(*) from() 的方式

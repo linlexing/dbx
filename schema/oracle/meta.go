@@ -17,10 +17,6 @@ const driverName = "oci8"
 type meta struct {
 }
 
-func (m *meta) IsNull() string {
-	return "nvl"
-}
-
 //CreateTableAs 执行create table as select语句
 func (m *meta) CreateTableAs(db common.DB, tableName, strSQL string, pks []string) error {
 	s := fmt.Sprintf("CREATE TABLE %s as %s", tableName, strSQL)
@@ -65,42 +61,6 @@ func init() {
 	schema.Register(driverName, new(meta))
 }
 
-func (m *meta) ValueExpress(db common.DB, dataType schema.DataType, value string) string {
-	switch dataType {
-	case schema.TypeFloat, schema.TypeInt:
-		return value
-	case schema.TypeString:
-		return safe.SignString(value)
-	case schema.TypeDatetime:
-		if len(value) == 10 {
-			return fmt.Sprintf("TO_DATE('%s','yyyy-mm-dd')", value)
-		} else if len(value) == 19 {
-			return fmt.Sprintf("TO_DATE('%s','yyyy-mm-dd hh24:mi:ss')", value)
-		} else {
-			panic(fmt.Errorf("invalid datetime:%s", value))
-		}
-	default:
-		panic(fmt.Errorf("not impl ValueExpress,type:%d", dataType))
-	}
-}
-func truncateTimeZone(tm time.Time) time.Time {
-	return time.Date(tm.Year(), tm.Month(), tm.Day(), tm.Hour(), tm.Minute(), tm.Second(), 0, time.UTC)
-}
-
-//Prepare拦截保存前，oracle，需要去除时间中的时区，以免触发ORA-01878错误
-func (m *meta) Prepare(dataType schema.DataType, v interface{}) interface{} {
-	if dataType == schema.TypeDatetime {
-		switch tv := v.(type) {
-		case time.Time:
-			return truncateTimeZone(tv)
-		case *time.Time:
-			return truncateTimeZone(*tv)
-		default:
-			log.Panic("not is time")
-		}
-	}
-	return v
-}
 func (m *meta) CreateTable(db common.DB, tab *schema.Table) error {
 	cols := []string{}
 	for _, v := range tab.Columns {

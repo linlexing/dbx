@@ -15,10 +15,6 @@ const driverName = "postgres"
 type meta struct {
 }
 
-func (m *meta) IsNull() string {
-	return "COALESCE"
-}
-
 func init() {
 	schema.Register(driverName, new(meta))
 }
@@ -93,25 +89,7 @@ func (m *meta) TableExists(db common.DB, tabName string) (bool, error) {
 	return iCount > 0, nil
 }
 
-/*
-func (m *meta) ValueExpress(db DB, dataType datatype.DataType, value string) string {
-	switch dataType {
-	case TypeFloat, TypeInt:
-		return value
-	case TypeString:
-		return safe.SignString(value)
-	case TypeDatetime:
-		if len(value) == 10 {
-			return fmt.Sprintf("TO_DATE('%s','YYYY-MM-DD')", value)
-		} else if len(value) == 19 {
-			return fmt.Sprintf("TO_DATE('%s','YYYY-MM-DD HH24:MI:SS')", value)
-		} else {
-			panic(fmt.Errorf("invalid datetime:%s", value))
-		}
-	default:
-		panic(fmt.Errorf("not impl ValueExpress,type:%d", dataType))
-	}
-}*/
+
 
 func (m *meta) CreateTable(db common.DB, tab *schema.Table) error {
 	cols := []string{}

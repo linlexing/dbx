@@ -68,7 +68,11 @@ func (o *Operator) MarshalJSON() ([]byte, error) {
 
 //UnmarshalJSON 实现自定义的json反序列化，主要是为了兼容前个版本
 func (o *Operator) UnmarshalJSON(v []byte) error {
-	o, err := ParseString(string(v))
+	opt, err := ParseString(string(v))
+	if err != nil {
+		return err
+	}
+	*o = opt
 	return err
 }
 

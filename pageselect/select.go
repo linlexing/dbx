@@ -1,24 +1,17 @@
 package pageselect
 
 import (
-	"bytes"
-	"encoding/csv"
+	"database/sql"
+	"errors"
 	"fmt"
+	"log"
 	"strings"
-	"text/template"
-	"time"
 
-	log "github.com/Sirupsen/logrus"
-	"github.com/linlexing/dbx"
-
-	"github.com/jmoiron/sqlx"
-
+	"github.com/linlexing/dbx/common"
+	"github.com/linlexing/dbx/render"
+	"github.com/linlexing/dbx/scan"
+	"github.com/linlexing/dbx/schema"
 )
-
-//PageSelecter 是pageselect类用来接入任意数据库系统的方法
-type PageSelecter interface {
-	GetOperatorExpress(ope Operator, dataType datatype.DataType, left, right string) string
-}
 
 var (
 	opeExpre = map[string]PageSelecter{}
@@ -28,30 +21,15 @@ var (
 func Register(driver string, ps PageSelecter) {
 	opeExpre[driver] = ps
 }
-func ps(driver dbx.Driver) PageSelecter {
-	if v, ok := opeExpre[driver.DriverName()]; !ok {
+
+//Find 根据一个驱动找到正确的Ps
+func Find(driver string) PageSelecter {
+	if v, ok := opeExpre[driver]; !ok {
 		panic(driver + " not registe pageselectrr")
 	} else {
 		return v
 	}
 
-}
-
-//ConditionLine 条件一行
-type ConditionLine struct {
-	LeftBrackets  string
-	ColumnName    string
-	Operators     operator.Operator
-	Value         string
-	RightBrackets string
-	Logic         string
-}
-
-//SQLCondition 模板条件,多行并且可以带一段高级条件
-type SQLCondition struct {
-	Name      string
-	Lines     []*ConditionLine
-	PlainText string
 }
 
 //OrderColumn 排序的字段
@@ -63,322 +41,22 @@ type OrderColumn struct {
 
 //PageSelect 表示一个select 类，可以附加条件和分页参数
 type PageSelect struct {
-	sql           string
+	SQL           string
 	ManualPage    bool
-	Table         *dbx.DBTable //对应数据库中的表，用于探查字段的数据类型，如果为空或者字段在表中不存在，则是STR
 	Conditions    []*SQLCondition
 	Columns       []string
+	ColumnTypes   ColumnTypes //本来只用名称即可，但go 1.8中Query返回ColumnType的特性，很多驱动还不支持，需要手工传入所有可能列的类型
 	Order         []string
 	Divide        []string
-	Limit         int64
+	Limit         int
 	SQLRenderArgs interface{} //sql语句在查询前，还会用template进行一次渲染，这里传入渲染的参数
 }
 
-func (c *ConditionLine) GetExpress(db DB, dataType datatype.DataType) (strSql string) {
-	//需要考虑到null的情况
-	switch c.Operators {
-	case "=": //等于
-		if c.Value == "" {
-			strSql = fmt.Sprintf("%s is null", c.ColumnName)
-		} else {
-			strSql = fmt.Sprintf("%s = %s", c.ColumnName, ValueExpress(db, dataType, c.Value))
-		}
-	case "!=": //不等于
-		if c.Value == "" {
-			strSql = fmt.Sprintf("%s is not null", c.ColumnName)
-		} else {
-			strSql = fmt.Sprintf("(%s <> %s or %[1]s is null)", c.ColumnName, ValueExpress(db, dataType, c.Value))
-		}
-	case ">": //大于
-		if c.Value == "" {
-			strSql = fmt.Sprintf("%s is not null", c.ColumnName)
-		} else {
-			strSql = fmt.Sprintf("%s > %s", c.ColumnName, ValueExpress(db, dataType, c.Value))
-		}
-	case ">=": //大于等于
-		if c.Value == "" {
-			strSql = "1=1"
-		} else {
-			strSql = fmt.Sprintf("%s >= %s", c.ColumnName, ValueExpress(db, dataType, c.Value))
-		}
-	case "<": //小于
-		if c.Value == "" {
-			strSql = "1=2"
-		} else {
-			strSql = fmt.Sprintf("(%s < %s or %[1]s is null)", c.ColumnName, ValueExpress(db, dataType, c.Value))
-		}
-	case "<=": //小于等于
-		if c.Value == "" {
-			strSql = fmt.Sprintf("%s is null", c.ColumnName)
+//BuildSQL 构造sql语句，和相应的参数值
+func (s *PageSelect) BuildSQL(driver string) (strSQL string, err error) {
 
-		} else {
-			strSql = fmt.Sprintf("(%s <= %s or %[1]s is null)", c.ColumnName, ValueExpress(db, dataType, c.Value))
-		}
-	case "?": //包含
-		if c.Value == "" {
-			strSql = fmt.Sprintf("%s is null", c.ColumnName)
-		} else {
-			strSql = fmt.Sprintf("%s like %s", c.ColumnName, ValueExpress(db, dataType, "%"+c.Value+"%"))
-		}
-	case "!?": //不包含
-		if c.Value == "" {
-			strSql = fmt.Sprintf("%s is not null", c.ColumnName)
-		} else {
-			strSql = fmt.Sprintf("%s not like %s", c.ColumnName, ValueExpress(db, dataType, "%"+c.Value+"%"))
-		}
-	case "?>": //前缀
-		if c.Value == "" {
-			strSql = fmt.Sprintf("%s is null", c.ColumnName)
-		} else {
-			strSql = fmt.Sprintf("%s like %s", c.ColumnName, ValueExpress(db, dataType, c.Value+"%"))
-		}
-	case "!?>": //非前缀
-		if c.Value == "" {
-			strSql = fmt.Sprintf("%s is not null", c.ColumnName)
-		} else {
-			strSql = fmt.Sprintf("%s not like %s", c.ColumnName, ValueExpress(db, dataType, c.Value+"%"))
-		}
-	case "<?": //后缀
-		if c.Value == "" {
-			strSql = fmt.Sprintf("%s is null", c.ColumnName)
-		} else {
-			strSql = fmt.Sprintf("%s like %s", c.ColumnName, ValueExpress(db, dataType, "%"+c.Value))
-		}
-	case "!<?": //非后缀
-		if c.Value == "" {
-			strSql = fmt.Sprintf("%s is not null", c.ColumnName)
-		} else {
-			strSql = fmt.Sprintf("%s not like %s", c.ColumnName, ValueExpress(db, dataType, "%"+c.Value))
-		}
-	case "in": //在列表
-		if c.Value == "" {
-			strSql = fmt.Sprintf("%s is null", c.ColumnName)
-		} else {
-			//在列表简化起见，不再类型化
-			if array, err := csv.NewReader(strings.NewReader(c.Value)).Read(); err != nil {
-				log.Panic(err)
-			} else {
-				list := []string{}
-				for _, v := range array {
-					list = append(list, ValueExpress(db, dataType, v))
-				}
-				strSql = fmt.Sprintf("%s in (%s)", c.ColumnName, strings.Join(list, ",\n"))
-			}
-
-		}
-	case "!in": //不在列表
-		if c.Value == "" {
-			strSql = fmt.Sprintf("%s is not null", c.ColumnName)
-		} else {
-			//在列表简化起见，不再类型化
-			if array, err := csv.NewReader(strings.NewReader(c.Value)).Read(); err != nil {
-				log.Panic(err)
-			} else {
-				list := []string{}
-				for _, v := range array {
-					list = append(list, ValueExpress(db, dataType, v))
-				}
-				strSql = fmt.Sprintf("%s not in (%s)", c.ColumnName, strings.Join(list, ",\n"))
-			}
-		}
-	case "~": //正则
-		if c.Value == "" {
-			strSql = fmt.Sprintf("%s is null", c.ColumnName)
-		} else {
-			switch db.DriverName() {
-			case "oci8":
-				strSql = fmt.Sprintf("regexp_like(%s,%s)", c.ColumnName, ValueExpress(db, dataType, c.Value))
-			case "postgres":
-				strSql = fmt.Sprintf("%s ~ %s", c.ColumnName, ValueExpress(db, dataType, c.Value))
-			case "mysql":
-				strSql = fmt.Sprintf("%s REGEXP %s", c.ColumnName, ValueExpress(db, dataType, c.Value))
-			default:
-				log.Panic("not impl GetExpress")
-			}
-		}
-	case "!~": //非正则
-		if c.Value == "" {
-			strSql = fmt.Sprintf("%s is not null", c.ColumnName)
-		} else {
-			switch db.DriverName() {
-			case "oci8":
-				strSql = fmt.Sprintf("not regexp_like(%s,%s)", c.ColumnName, ValueExpress(db, dataType, c.Value))
-			case "postgres":
-				strSql = fmt.Sprintf("%s !~ %s", c.ColumnName, ValueExpress(db, dataType, c.Value))
-			case "mysql":
-				strSql = fmt.Sprintf("%s not REGEXP %s", c.ColumnName, ValueExpress(db, dataType, c.Value))
-			default:
-				log.Panic("not impl GetExpress")
-			}
-		}
-	case "e": //为空
-		strSql = fmt.Sprintf("%s is null", c.ColumnName)
-	case "!e": //不为空
-		strSql = fmt.Sprintf("%s is not null", c.ColumnName)
-	case "_": //长度等于
-		switch db.DriverName() {
-		case "oci8", "postgres":
-			strSql = fmt.Sprintf("length(%s) = %s", c.ColumnName, c.Value)
-		case "mysql":
-			strSql = fmt.Sprintf("char_length(%s) = %s", c.ColumnName, c.Value)
-		default:
-			log.Panic("not impl GetExpress")
-		}
-	case "!_": //长度不等于
-		switch db.DriverName() {
-		case "oci8", "postgres":
-			strSql = fmt.Sprintf("length(%s) <> %s", c.ColumnName, c.Value)
-		case "mysql":
-			strSql = fmt.Sprintf("char_length(%s) <> %s", c.ColumnName, c.Value)
-		default:
-			log.Panic("not impl GetExpress")
-		}
-	case "_>": //长度大于
-		switch db.DriverName() {
-		case "oci8", "postgres":
-			strSql = fmt.Sprintf("length(%s) > %s", c.ColumnName, c.Value)
-		case "mysql":
-			strSql = fmt.Sprintf("char_length(%s) > %s", c.ColumnName, c.Value)
-		default:
-			log.Panic("not impl GetExpress")
-		}
-
-	case "_<": //长度小于
-		switch db.DriverName() {
-		case "oci8", "postgres":
-			strSql = fmt.Sprintf("length(%s) < %s", c.ColumnName, c.Value)
-		case "mysql":
-			strSql = fmt.Sprintf("char_length(%s) < %s", c.ColumnName, c.Value)
-		default:
-			log.Panic("not impl GetExpress")
-		}
-	default:
-		log.Panic(fmt.Errorf("the opt:%s not impl", c.Operators))
-	}
-	//加上括号
-	strSql = fmt.Sprintf("%s%s%s", c.LeftBrackets, strSql, c.RightBrackets)
-	return
-}
-func (c *SQLCondition) BuildWhere(db DB, table *DBTable) string {
-	strLines := []string{}
-
-	if len(c.Lines) > 0 {
-		//最后一行的逻辑设置为空
-		c.Lines[len(c.Lines)-1].Logic = ""
-		for i, v := range c.Lines {
-			dataType := TypeString
-			if table != nil {
-				if field := table.Field(v.ColumnName); field != nil {
-					dataType = field.GoType()
-				}
-			}
-			exp := v.GetExpress(db, dataType)
-			//最后一行不需要加逻辑
-			if i < len(c.Lines)-1 {
-				strLines = append(strLines, exp+" "+v.Logic)
-			} else {
-				strLines = append(strLines, exp)
-			}
-
-		}
-	}
-	if len(c.PlainText) > 0 {
-		if len(strLines) > 0 {
-			return fmt.Sprintf("(\n%s\n) and (\n%s\n)", strings.Join(strLines, "\n"), c.PlainText)
-		} else {
-			return c.PlainText
-		}
-	} else {
-		if len(strLines) > 0 {
-			return strings.Join(strLines, "\n")
-		} else {
-			return ""
-		}
-	}
-}
-func buildCondition(order, divide []string) []*ConditionLine {
-	result := []*ConditionLine{}
-	//a=:a and b=:b and c>:c or
-	//a=:a and b>:b or
-	//a>:a
-	for i := len(divide) - 1; i >= 0; i-- {
-		lines := []*ConditionLine{}
-		for j := i; j >= 0; j-- {
-			colName := order[j]
-			isDesc := strings.HasPrefix(colName, "-")
-			if isDesc {
-				colName = colName[1:]
-			}
-			//尾部指标是用大于或者小于（倒序）
-			if j == i {
-				opt := ">"
-				if isDesc {
-					opt = "<"
-				}
-				lines = append(lines, &ConditionLine{
-					ColumnName: colName,
-					Operators:  opt,
-					Value:      divide[j],
-					Logic:      "AND",
-				})
-			} else {
-				lines = append(lines, &ConditionLine{
-					ColumnName: colName,
-					Operators:  "=",
-					Value:      divide[j],
-					Logic:      "AND",
-				})
-			}
-		}
-		if len(lines) > 1 {
-			lines[0].LeftBrackets = "("
-			lines[len(lines)-1].RightBrackets = ")"
-		}
-		lines[len(lines)-1].Logic = "OR"
-		result = append(result, lines...)
-	}
-	return result
-}
-
-func renderManualPageSql(db DB, strSql string, columnList, whereList, orderbyList []string, limit int64) (string, error) {
-	tmpl, err := template.New("ManualPage").Delims("<<", ">>").Parse(strSql)
-	if err != nil {
-		return "", err
-	}
-	var where string
-	var columns string
-	var orderby string
-	bys := bytes.NewBuffer(nil)
-	if len(whereList) > 0 {
-		where = "(" + strings.Join(whereList, " and ") + ")"
-	}
-	if len(columnList) > 0 {
-		columns = strings.Join(columnList, ",")
-	}
-	if len(orderbyList) > 0 {
-		orderby = strings.Join(orderbyList, ",")
-	}
-	if err = tmpl.Execute(bys, map[string]interface{}{
-		"Driver":  db.DriverName(),
-		"Columns": columns,
-		"Where":   where,
-		"OrderBy": orderby,
-		"Limit":   limit,
-	}); err != nil {
-		return "", err
-	}
-	return bys.String(), nil
-}
-
-//构造sql语句，和相应的参数值
-func (s *SQLSelect) BuildSql(db DB) (strSql string) {
-
-	renderSql, err := s.renderSql()
-	if err != nil {
-		log.Panic(err)
-	}
-	if len(renderSql) == 0 {
-		log.Panic("sql is empty")
+	if len(s.SQL) == 0 {
+		return "", errors.New("sql is empty")
 	}
 
 	whereList := []string{}
@@ -388,22 +66,28 @@ func (s *SQLSelect) BuildSql(db DB) (strSql string) {
 		len(s.Columns) == 0 &&
 		len(s.Order) == 0 &&
 		s.Limit < 0 {
+		var renderSQL string
+		renderSQL, err = s.renderSQL()
+		if err != nil {
+			return
+		}
 		if s.ManualPage {
-			var err error
-			strSql, err = renderManualPageSql(db, renderSql, nil, nil, nil, s.Limit)
+
+			strSQL, err = renderManualPageSQL(driver, renderSQL, nil, nil, nil, s.Limit)
 			if err != nil {
-				log.Panic(err)
+				return
 			}
 		} else {
-			strSql = renderSql
+			strSQL = renderSQL
 		}
+
 		return
 
 	}
 	//where
 	if len(s.Conditions) > 0 {
 		for _, v := range s.Conditions {
-			if str := v.BuildWhere(db, s.Table); len(str) > 0 {
+			if str := v.BuildWhere(driver, s.ColumnTypes); len(str) > 0 {
 				whereList = append(whereList, "("+str+")")
 			}
 		}
@@ -411,19 +95,11 @@ func (s *SQLSelect) BuildSql(db DB) (strSql string) {
 	if len(s.Order) > 0 {
 		for _, v := range s.Order {
 			if strings.HasPrefix(v, "-") {
-				if db.DriverName() == "mysql" ||
-					db.DriverName() == "sqlite3" {
-					orderList = append(orderList, v[1:]+" DESC")
-				} else {
-					orderList = append(orderList, v[1:]+" DESC NULLS LAST")
-				}
+				orderList = append(orderList, Find(driver).SortByDesc(v[1:]))
+
 			} else {
-				if db.DriverName() == "mysql" ||
-					db.DriverName() == "sqlite3" {
-					orderList = append(orderList, v)
-				} else {
-					orderList = append(orderList, v+" NULLS FIRST")
-				}
+				orderList = append(orderList, Find(driver).SortByAsc(v[1:]))
+
 			}
 		}
 		if len(s.Divide) > 0 {
@@ -431,17 +107,15 @@ func (s *SQLSelect) BuildSql(db DB) (strSql string) {
 				Name:  "divide",
 				Lines: buildCondition(s.Order, s.Divide),
 			}
-			if str := divideCondition.BuildWhere(db, s.Table); len(str) > 0 {
+			if str := divideCondition.BuildWhere(driver, s.ColumnTypes); len(str) > 0 {
 				whereList = append(whereList, "("+str+")")
 			}
 		}
 	}
 
 	if s.ManualPage {
-		if str, err := renderManualPageSql(db, renderSql, s.Columns, whereList, orderList, s.Limit); err != nil {
-			log.Panic(err)
-		} else {
-			strSql = str
+		if strSQL, err = renderManualPageSQL(driver, s.SQL, s.Columns, whereList, orderList, s.Limit); err != nil {
+			return
 		}
 	} else {
 		var where, orderby, sel string
@@ -458,72 +132,46 @@ func (s *SQLSelect) BuildSql(db DB) (strSql string) {
 			orderby = " order by " + strings.Join(orderList, ",")
 		}
 		if s.Limit >= 0 {
-			switch db.DriverName() {
-			case "oci8":
-				strSql = fmt.Sprintf(
-					"select * from (select %s from (%s) wholesql %s%s) where rownum<=%d",
-					sel, renderSql, where, orderby, s.Limit)
-			case "mysql", "postgres", "sqlite3":
-				strSql = fmt.Sprintf("select %s from (%s) wholesql %s%s limit %d",
-					sel, renderSql, where, orderby, s.Limit)
-			default:
-				log.Panic("not impl BuildSql")
-			}
-
+			strSQL = Find(driver).LimitSQL(sel, s.SQL, where, orderby, s.Limit)
 		} else {
-			strSql = fmt.Sprintf("select %s from (%s) wholesql %s%s", sel, renderSql, where, orderby)
+			strSQL = fmt.Sprintf("select %s from (%s) wholesql %s%s", sel, s.SQL, where, orderby)
 		}
 	}
-	//在最后返回前，还需要一次render，防止条件中引用了模板
-	if s, err := RenderSQL(strSql, s.SQLRenderArgs); err != nil {
-		log.Panic(err)
-	} else {
-		strSql = s
-	}
+	//在最后返回前，调用render
+	strSQL, err = render.RenderSQL(strSQL, s.SQLRenderArgs)
 
 	return
 }
-func (s *SQLSelect) convertRow(row map[string]interface{}) map[string]interface{} {
-	if s.Table != nil {
-		return s.Table.ConvertToTrueType(row)
-	} else {
-		transRecord := map[string]interface{}{}
-		for k, v := range row {
-			k = strings.ToUpper(k)
-			switch tv := v.(type) {
-			case []byte:
-				transRecord[k] = string(tv)
-			default:
-				transRecord[k] = tv
-			}
-		}
-		return transRecord
+
+//QueryRows 根据设置返回一页数据
+func (s *PageSelect) QueryRows(driver string, db common.DB) (result []map[string]interface{}, cols []*scan.ColumnType, err error) {
+	var strSQL string
+	strSQL, err = s.BuildSQL(driver)
+	if err != nil {
+		return
 	}
-}
-func (s *SQLSelect) QueryRows(db DB) (result []map[string]interface{}, cols []*ColumnType, err error) {
-	strSQL := s.BuildSql(db)
-	var rows *sqlx.Rows
-	if rows, err = db.Queryx(strSQL); err != nil {
-		err = NewSQLError(strSQL, nil, err)
+	var rows *sql.Rows
+	if rows, err = db.Query(strSQL); err != nil {
+		err = common.NewSQLError(err, strSQL)
+		log.Println(err)
 		return
 	}
 	var columns []string
 	if columns, err = rows.Columns(); err != nil {
 		return
 	}
-	cols = []*ColumnType{}
-	//先根据预置的表获取对应的字段类型
+	//go1.8 可以直接返回各列类型，但是驱动还都不支持，以后改进
+	cols = []*scan.ColumnType{}
+	//先根据预置的列类型清单获取对应的字段类型
 	for _, v := range columns {
-		col := &ColumnType{
+		col := &scan.ColumnType{
 			Name: strings.ToUpper(v),
+			Type: schema.TypeString,
 		}
-		if s.Table != nil {
-			if tCol := s.Table.Field(col.Name); tCol != nil {
+		if len(s.ColumnTypes) > 0 {
+			if tCol := s.ColumnTypes.byName(col.Name); tCol != nil {
 				col.Type = tCol.Type
 			}
-		}
-		if len(col.Type) == 0 {
-			col.Type = "STR"
 		}
 
 		cols = append(cols, col)
@@ -532,57 +180,39 @@ func (s *SQLSelect) QueryRows(db DB) (result []map[string]interface{}, cols []*C
 	result = []map[string]interface{}{}
 	defer rows.Close()
 	for rows.Next() {
-		oneRecord := map[string]interface{}{}
-		if err = rows.MapScan(oneRecord); err != nil {
-			err = NewSQLError(strSQL, nil, err)
+		var outList []interface{}
+		outList, err = scan.TypeScan(rows, cols)
+		if err != nil {
 			return
 		}
-		result = append(result, s.convertRow(oneRecord))
-		//再检查所有没有类型的字段的值，根据值来设置类型，nil值的确实没有办法了
-		for _, v := range cols {
-			if len(v.Type) == 0 {
-				//发现Oracle的数值、整型返回的的是字符串，得想其他办法弥补
-				switch oneRecord[v.Name].(type) {
-				//由于字符串返回[]byte，所以bytea就没了
-				//case []byte:
-				//	v.Type= "BYTEA"
-				case time.Time, *time.Time:
-					v.Type = "DATE"
-				case float32, float64:
-					v.Type = "FLOAT"
-				case int, int64, int32, int16, int8, uint, uint64, uint32, uint16, uint8:
-					v.Type = "INT"
-				case string, []byte, nil: //nil作为str处理
-					v.Type = "STR"
-				default:
-					log.Panic("not impl QueryRows")
-				}
-			}
+
+		oneRecord := map[string]interface{}{}
+
+		for i, v := range outList {
+			oneRecord[cols[i].Name] = v
 		}
+		result = append(result, oneRecord)
+
 	}
 	return
 }
 
 //渲染sql
-func (s *SQLSelect) renderSql() (strSql string, err error) {
-	return RenderSQL(s.sql, s.SQLRenderArgs)
+func (s *PageSelect) renderSQL() (string, error) {
+	return render.RenderSQL(s.SQL, s.SQLRenderArgs)
 }
 
-//如果没有数值字段或者没有记录，则返回空sql
-func (s *SQLSelect) BuildTotalSql(db DB, cols ...string) (strSql string, err error) {
+// BuildTotalSQL 如果没有数值字段或者没有记录，则返回空sql
+func (s *PageSelect) BuildTotalSQL(driver string, cols ...string) (strSQL string, err error) {
 	totalCoumns := []string{}
 	for _, col := range cols {
-		totalCoumns = append(totalCoumns, fmt.Sprintf("sum(cast(%s(%s,0) as decimal(29,6))) as %[2]s", Meta(db).IsNull(db), col))
+		totalCoumns = append(totalCoumns, fmt.Sprintf("sum(cast(%s(%s,0) as decimal(29,6))) as %[2]s", Find(driver).IsNull(), col))
 	}
 	if len(totalCoumns) == 0 {
 		return
 	}
 
-	renderSql, err := s.renderSql()
-	if err != nil {
-		return
-	}
-	if len(renderSql) == 0 {
+	if len(s.SQL) == 0 {
 		err = fmt.Errorf("sql is empty")
 		return
 	}
@@ -593,35 +223,33 @@ func (s *SQLSelect) BuildTotalSql(db DB, cols ...string) (strSql string, err err
 	//where
 	if len(s.Conditions) > 0 {
 		for _, v := range s.Conditions {
-			if str := v.BuildWhere(db, s.Table); len(str) > 0 {
+			if str := v.BuildWhere(driver, s.ColumnTypes); len(str) > 0 {
 				whereList = append(whereList, "("+str+")")
 			}
 		}
 	}
 	if s.ManualPage {
-		var str string
-		if str, err = renderManualPageSql(db, renderSql, totalCoumns, whereList, nil, -1); err != nil {
+
+		if strSQL, err = renderManualPageSQL(driver, s.SQL, totalCoumns, whereList, nil, -1); err != nil {
 			return
-		} else {
-			strSql = str
 		}
+
 	} else {
 		if len(whereList) > 0 {
 			where = " where " + strings.Join(whereList, " and ")
 		}
-		strSql = fmt.Sprintf("select %s from (%s) wholesql %s", strings.Join(totalCoumns, ","), renderSql, where)
+		strSQL = fmt.Sprintf("select %s from (%s) wholesql %s", strings.Join(totalCoumns, ","), s.SQL, where)
 	}
-	strSql, err = RenderSQL(strSql, s.SQLRenderArgs)
+	strSQL, err = render.RenderSQL(strSQL, s.SQLRenderArgs)
 	return
 
 }
-func (s *SQLSelect) BuildRowCountSql(db DB) (strSQL string) {
-	renderSql, err := s.renderSql()
-	if err != nil {
-		log.Panic(err)
-	}
-	if len(renderSql) == 0 {
-		log.Panic("sql is empty")
+
+//BuildRowCountSQL 构造Count的语句
+func (s *PageSelect) BuildRowCountSQL(driver string) (strSQL string, err error) {
+
+	if len(s.SQL) == 0 {
+		return "", errors.New("sql is empty")
 	}
 
 	var where string
@@ -630,24 +258,22 @@ func (s *SQLSelect) BuildRowCountSql(db DB) (strSQL string) {
 	//where
 	if len(s.Conditions) > 0 {
 		for _, v := range s.Conditions {
-			if str := v.BuildWhere(db, s.Table); len(str) > 0 {
+			if str := v.BuildWhere(driver, s.ColumnTypes); len(str) > 0 {
 				whereList = append(whereList, "("+str+")")
 			}
 		}
 	}
 	if s.ManualPage {
-		if str, err := renderManualPageSql(db, renderSql, []string{"COUNT(*)"}, whereList, nil, -1); err != nil {
-			log.Panic(err)
-		} else {
-			strSQL = str
+		if strSQL, err = renderManualPageSQL(driver, s.SQL, []string{"COUNT(*)"}, whereList, nil, -1); err != nil {
+			return
 		}
 	} else {
 		if len(whereList) > 0 {
 			where = " where " + strings.Join(whereList, " and ")
 		}
-		strSQL = fmt.Sprintf("select count(*) from (%s) wholesql %s", renderSql, where)
+		strSQL = fmt.Sprintf("select count(*) from (%s) wholesql %s", s.SQL, where)
 	}
-	if s, err := RenderSQL(strSQL, s.SQLRenderArgs); err != nil {
+	if s, err := render.RenderSQL(strSQL, s.SQLRenderArgs); err != nil {
 		log.Panic(err)
 	} else {
 		strSQL = s
@@ -656,68 +282,59 @@ func (s *SQLSelect) BuildRowCountSql(db DB) (strSQL string) {
 	return
 }
 
-//汇总数值字段
-func (s *SQLSelect) Total(db DB, cols ...string) (result map[string]interface{}, err error) {
-	strSql, err := s.BuildTotalSql(db, cols...)
-	if err != nil || len(strSql) == 0 {
+//Total 汇总数值字段
+func (s *PageSelect) Total(db common.DB, driver string, cols ...string) (result map[string]interface{}, err error) {
+	var strSQL string
+	if strSQL, err = s.BuildTotalSQL(driver, cols...); err != nil {
 		return
 	}
-	rows, _, err := QueryRecord(db, strSql, nil)
-	if err != nil {
+	if len(strSQL) == 0 {
+		return nil, errors.New("sql is emtpty")
+	}
+	colTypes := []*scan.ColumnType{}
+	for _, v := range cols {
+		colTypes = append(colTypes, &scan.ColumnType{
+			Name: v,
+			Type: schema.TypeFloat,
+		})
+	}
+	var vals []interface{}
+	if vals, err = scan.TypeScan(db.QueryRow(strSQL), colTypes); err != nil {
+		err = common.NewSQLError(err, strSQL)
+		log.Println(err)
 		return
 	}
-	if len(rows) == 0 {
-		err = fmt.Errorf("sql:%s\npam:%v\ntotal is nil", strSql, nil)
-		return
+	result = map[string]interface{}{}
+	for i, v := range cols {
+		result[v] = vals[i]
 	}
-	result = rows[0]
+
 	return
 }
-func (s *SQLSelect) RowCount(db DB) (r int64, err error) {
+
+//RowCount 根据现有设置，汇总出记录总数
+func (s *PageSelect) RowCount(db common.DB, driver string) (r int64, err error) {
 	r = -1
+	var strSQL string
+	if strSQL, err = s.BuildRowCountSQL(driver); err != nil {
+		return
+	}
 
-	strSql := s.BuildRowCountSql(db)
-	if err = db.Get(&r, strSql); err != nil {
-		err = NewSQLError(strSql, nil, err)
+	if err = db.QueryRow(strSQL).Scan(&r); err != nil {
+		err = common.NewSQLError(err, strSQL)
+		log.Println(err)
 	}
 	return
 
 }
 
-func NewSQLSelect(strSql string, table *DBTable, manualPage bool) *SQLSelect {
-	//如果没有sql语句而有表名，则生成一个sql
-	if len(strSql) > 0 {
-		return &SQLSelect{
-			sql:        strSql,
-			Table:      table,
-			ManualPage: manualPage,
-		}
-	}
-	if table == nil {
-		log.Panic("no table")
-	}
-	strSql = fmt.Sprintf(`<<if eq "oci8" .Driver>>
-	<<if ge .Limit 0>>
-	SELECT * FROM(
-	<<end>>
-	  SELECT <<if .Columns>><<.Columns>><<else>>*<<end>>
-	  FROM %s wholesql
-	  <<if .Where>>WHERE <<.Where>><<end>>
-	  <<if .OrderBy>>ORDER BY <<.OrderBy>><<end>>
-	<<if ge .Limit 0>>
-	)WHERE ROWNUM<=<<.Limit>>
-	<<end>>
-<<else>>
-	SELECT <<if .Columns>><<.Columns>><<else>>*<<end>>
-	FROM %[1]s wholesql
-	<<if .Where>>WHERE <<.Where>><<end>>
-	<<if .OrderBy>>ORDER BY <<.OrderBy>><<end>>
-	<<if ge .Limit 0>>LIMIT <<.Limit>><<end>>
-<<end>>`, table.Name())
-	return &SQLSelect{
-		sql:        strSql,
-		Table:      table,
-		ManualPage: true,
+//NewPageSelect 新建一个查询类
+func NewPageSelect(strSQL string, colTypes ColumnTypes, manualPage bool) *PageSelect {
+
+	return &PageSelect{
+		SQL:         strSQL,
+		ColumnTypes: colTypes,
+		ManualPage:  manualPage,
 	}
 
 }
