@@ -1,7 +1,6 @@
 package oracle
 
 import (
-	"dbweb/lib/safe"
 	"fmt"
 	"log"
 	"sort"
@@ -127,10 +126,10 @@ func (m *meta) CreateIndexIfNotExists(db common.DB, indexName, tableName, expres
 		    WHERE INDEX_NAME = '%s';
 
 		  IF COUNT_INDEXES = 0 THEN
-		    EXECUTE IMMEDIATE %s;
+		    EXECUTE IMMEDIATE '%s';
 		  END IF;
 		END;`, indexName,
-		safe.SignString(fmt.Sprintf("create index %s on %s(%s)", indexName, tableName, express)))
+		fmt.Sprintf("create index %s on %s(%s)", indexName, tableName, express))
 	if _, err := db.Exec(strSQL); err != nil {
 		err = common.NewSQLError(err, strSQL)
 		log.Println(err)
