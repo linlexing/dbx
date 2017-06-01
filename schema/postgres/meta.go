@@ -89,8 +89,6 @@ func (m *meta) TableExists(db common.DB, tabName string) (bool, error) {
 	return iCount > 0, nil
 }
 
-
-
 func (m *meta) CreateTable(db common.DB, tab *schema.Table) error {
 	cols := []string{}
 	for _, v := range tab.Columns {
