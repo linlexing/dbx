@@ -29,3 +29,16 @@ type DB interface {
 	Queryer
 	Preparer
 }
+
+//TxDB 是带事务操作的DB
+type TxDB interface {
+	DB
+	Begin() (Txer, error)
+}
+
+//Txer 是事务
+type Txer interface {
+	DB
+	Commit() error
+	Rollback() error
+}

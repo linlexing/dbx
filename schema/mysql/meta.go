@@ -1,6 +1,7 @@
 package mysql
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"sort"
@@ -86,4 +87,10 @@ func (m *meta) CreateTable(db common.DB, tab *schema.Table) error {
 		}
 	}
 	return nil
+}
+func (m *meta) DropIndexIfExists(db common.DB, indexName,tableName string) error {
+	panic(errors.New("not impl"))
+}
+func (m *meta) CreateIndexIfNotExists(db common.DB, indexName, tableName, express string) error {
+panic(errors.New("not impl"))
 }

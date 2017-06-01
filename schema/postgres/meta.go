@@ -89,8 +89,6 @@ func (m *meta) TableExists(db common.DB, tabName string) (bool, error) {
 	return iCount > 0, nil
 }
 
-
-
 func (m *meta) CreateTable(db common.DB, tab *schema.Table) error {
 	cols := []string{}
 	for _, v := range tab.Columns {
@@ -119,6 +117,27 @@ func (m *meta) CreateTable(db common.DB, tab *schema.Table) error {
 				return err
 			}
 		}
+	}
+	return nil
+}
+func (m *meta) DropIndexIfExists(db common.DB, indexName, tableName string) error {
+	strSQL := fmt.Sprintf("drop index if exists %s", indexName)
+	_, err := db.Exec(strSQL)
+	if err != nil {
+		err = common.NewSQLError(err, strSQL)
+		log.Println(err)
+	}
+	return err
+
+}
+
+func (m *meta) CreateIndexIfNotExists(db common.DB, indexName, tableName, express string) error {
+	var strSQL string
+	strSQL = fmt.Sprintf("create index if not exists %s on %s(%s)", indexName, tableName, express)
+	if _, err := db.Exec(strSQL); err != nil {
+		err = common.NewSQLError(err, strSQL)
+		log.Println(err)
+		return err
 	}
 	return nil
 }

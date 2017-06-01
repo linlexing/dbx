@@ -35,6 +35,8 @@ type Meta interface {
 	OpenTable(db common.DB, tableName string) (*Table, error)
 	ChangeTable(db common.DB, change *TableSchemaChange) error
 	TableNames(db common.DB) (names []string, err error)
+	DropIndexIfExists(db common.DB, indexName,tableName string) error
+	CreateIndexIfNotExists(db common.DB, indexName, tableName, express string) error
 }
 
 //Register 注册一个新元数据操作驱动。
