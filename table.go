@@ -20,7 +20,7 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-//DBTable 表现一个数据库表
+//DBTable 表现一个数据库表的信息
 type DBTable struct {
 	Db             DB
 	TableName      string
