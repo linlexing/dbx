@@ -37,7 +37,7 @@ type Meta interface {
 	TableNames(db common.DB) (names []string, err error)
 }
 
-//Register 注册一个新元数据操作驱动
+//Register 注册一个新元数据操作驱动。
 func Register(driverName string, meta Meta) {
 	metas[driverName] = meta
 }
