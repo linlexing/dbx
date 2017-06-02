@@ -32,16 +32,8 @@ type Table struct {
 	columnsMap     map[string]*schema.Column //用于快速查询
 }
 
-//NewTable 返回一个数据表，表名用 schema.tablename的方式，立即打开表，获取其结构
-//因此，如果不读取数据，仅定义结构，应当使用schema.Table
-func NewTable(driver string, db common.DB, tabName string) *Table {
-	if len(tabName) == 0 {
-		log.Panic("table name is empty")
-	}
-	st, err := schema.Find(driver).OpenTable(db, tabName)
-	if err != nil {
-		log.Panic(err)
-	}
+//NewTable 用schema.Table构造一个Table,没有数据库操作发生
+func NewTable(driver string, db common.DB, st *schema.Table) *Table {
 	rev := &Table{
 		driver:         driver,
 		DB:             db,
@@ -66,6 +58,19 @@ func NewTable(driver string, db common.DB, tabName string) *Table {
 	}
 	return rev
 }
+
+//OpenTable 从数据库取出结构构造Table,表名用 schema.tablename的方式,
+//如果不读取数据，仅定义结构，应当使用schema.Table
+func OpenTable(driver string, db common.DB, tabName string) *Table {
+	if len(tabName) == 0 {
+		log.Panic("table name is empty")
+	}
+	st, err := schema.Find(driver).OpenTable(db, tabName)
+	if err != nil {
+		log.Panic(err)
+	}
+	return NewTable(driver, db, st)
+}
 func (t *Table) bind(strSQL string) string {
 	return Bind(t.driver, strSQL)
 }
@@ -79,14 +84,15 @@ func (t *Table) Row(pks ...interface{}) (map[string]interface{}, error) {
 	for _, onePk := range t.PrimaryKeys {
 		whereList = append(whereList, fmt.Sprintf("%s=?", onePk))
 	}
-	rows, err := t.QueryRows(strings.Join(whereList, " and\n"), pks...)
+	rows, err := t.Query(strings.Join(whereList, " and\n"), pks...)
 	if err != nil {
 		return nil, err
 	}
-	if len(rows) == 0 {
+	defer rows.Close()
+	if !rows.Next() {
 		return nil, errors.New("the record not found")
 	}
-	return rows[0], nil
+	return t.ScanMap(rows)
 }
 
 //ToJSON 将一行数据转换成json,日期、二进制、int64数据转换成文本
@@ -117,8 +123,47 @@ func (t *Table) FromJSON(row map[string]interface{}) (map[string]interface{}, er
 	return transRecord, nil
 }
 
-//QueryRowsOrder 查询返回排序记录，where如有参数，必须用 ?
-func (t *Table) QueryRowsOrder(orderby []string, where string, param ...interface{}) (record []map[string]interface{}, err error) {
+//ScanSlice 根据一个Scaner，再根据Table的字段数据类型，扫描出一个slice
+func (t *Table) ScanSlice(s common.Scaner) (result []interface{}, err error) {
+	result, err = scan.TypeScan(s, t.columnTypes)
+	return
+}
+
+//ScanMap 根据一个Scaner，再根据Table的字段数据类型，扫描出一个map
+func (t *Table) ScanMap(s common.Scaner) (result map[string]interface{}, err error) {
+	outList, err := t.ScanSlice(s)
+	if err != nil {
+		return
+	}
+	result = map[string]interface{}{}
+	for i, one := range outList {
+		result[t.Columns[i].Name] = one
+	}
+	return result, nil
+}
+
+//QueryOrderRows 直接返回所有记录
+func (t *Table) QueryOrderRows(orderby []string, where string,
+	param ...interface{}) (rows []map[string]interface{}, err error) {
+	rs, err := t.QueryOrder(orderby, where, param...)
+	if err != nil {
+		return
+	}
+	defer rs.Close()
+	rows = []map[string]interface{}{}
+	for rs.Next() {
+		one, err := t.ScanMap(rs)
+		if err != nil {
+			return nil, err
+		}
+		rows = append(rows, one)
+	}
+	return
+}
+
+//QueryOrder 查询返回排序记录，where如有参数，必须用 ?
+func (t *Table) QueryOrder(orderby []string, where string,
+	param ...interface{}) (rows *sql.Rows, err error) {
 
 	if len(where) > 0 {
 		where = " where " + where
@@ -131,31 +176,20 @@ func (t *Table) QueryRowsOrder(orderby []string, where string, param ...interfac
 	}
 	strSQL := t.bind(fmt.Sprintf("select %s from %s%s%s", columnsStr, t.FullName(), where, strOrderby))
 
-	var rows *sql.Rows
 	if rows, err = t.DB.Query(strSQL, param...); err != nil {
 		err = common.NewSQLError(err, strSQL, param)
-
-		return
-	}
-	record = []map[string]interface{}{}
-	defer rows.Close()
-	for rows.Next() {
-		oneRecord := map[string]interface{}{}
-		var outList []interface{}
-		if outList, err = scan.TypeScan(rows, t.columnTypes); err != nil {
-			return
-		}
-		for i, one := range outList {
-			oneRecord[t.Columns[i].Name] = one
-		}
-		record = append(record, oneRecord)
 	}
 	return
 }
 
-//QueryRows 查询返回记录，无排序
-func (t *Table) QueryRows(where string, param ...interface{}) (record []map[string]interface{}, err error) {
-	return t.QueryRowsOrder(nil, where, param...)
+//Query 查询返回记录，无排序
+func (t *Table) Query(where string, param ...interface{}) (*sql.Rows, error) {
+	return t.QueryOrder(nil, where, param...)
+}
+
+//QueryRows 直接返回记录
+func (t *Table) QueryRows(where string, param ...interface{}) ([]map[string]interface{}, error) {
+	return t.QueryOrderRows(nil, where, param...)
 }
 
 //KeyExists 检查一个主键是否存在
@@ -260,30 +294,26 @@ func (t *Table) checkAndConvertRow(row map[string]interface{}) error {
 	return nil
 }
 
-//ImportFrom 从一个sql语句导入数据,sql语句返回的列必须与表中数量一致,因为可能是异构数据库
+//ImportFrom 从另一个表中导入数据,其列必须与表中数量一致,因为可能是异构数据库
 //所以不能用直接的CreateTableAs,由于数据可能比较多，采用5秒钟提交一次事务，所以Table.DB不能
 //是事务Tx
-func (t *Table) ImportFrom(dataDB common.DB, strSQL string, progressFunc func(string)) (err error) {
-	var rowCount int
-	s := fmt.Sprintf("select count(*) from (%s) out_count", strSQL)
-	if err = dataDB.QueryRow(s).Scan(&rowCount); err != nil {
-		err = common.NewSQLError(err, s)
-		log.Println(err)
+func (t *Table) ImportFrom(srcTable *Table, progressFunc func(string),
+	where string, args ...interface{}) (iCount int64, err error) {
+	var rowCount int64
+	rowCount, err = srcTable.Count(where, args...)
+	if err != nil {
 		return
 	}
 
-	progressFunc(fmt.Sprintf("start CreateAs table %s,total %d records", t.FullName(), rowCount))
-	//创建表
+	progressFunc(fmt.Sprintf("start import table %s,total %d records", t.FullName(), rowCount))
 
-	rows, err := dataDB.Query(strSQL)
+	rows, err := srcTable.Query(where, args...)
 	if err != nil {
-		err = common.NewSQLError(err, strSQL)
-		log.Println(err)
 		return
 	}
 	defer rows.Close()
 
-	var icount, batCount int64 = 0, 0
+	var batCount int64
 
 	//再构造insert语句
 	insertSQL := t.InsertSQL()
@@ -294,10 +324,9 @@ func (t *Table) ImportFrom(dataDB common.DB, strSQL string, progressFunc func(st
 	finished := false
 	tx, err := t.DB.(common.TxDB).Begin()
 	if err != nil {
-		return err
+		return
 	}
 	defer func() {
-
 		if !finished && tx != nil {
 			tx.Rollback()
 		}
@@ -306,16 +335,14 @@ func (t *Table) ImportFrom(dataDB common.DB, strSQL string, progressFunc func(st
 	if err != nil {
 		log.Println(err)
 		tx.Rollback()
-		return err
+		return
 	}
-	icount = 0
+	iCount = 0
 	batCount = 0
 	for rows.Next() {
-		var outList []interface{}
-
-		if outList, err = scan.TypeScan(rows, t.columnTypes); err != nil {
-
-			return err
+		outList, err := t.ScanSlice(rows)
+		if err != nil {
+			return 0, err
 		}
 
 		if _, err = insertStmt.Exec(outList...); err != nil {
@@ -323,62 +350,56 @@ func (t *Table) ImportFrom(dataDB common.DB, strSQL string, progressFunc func(st
 			for ei, ev := range outList {
 				log.Printf("\t%s=%#v", t.Columns[ei].Name, ev)
 			}
-
-			return err
+			return 0, err
 		}
-		icount++
+		iCount++
 		batCount++
 		totalSec := time.Since(startTime).Seconds()
+		//5秒提交一次
 		if totalSec >= 5 {
 			if err = insertStmt.Close(); err != nil {
 				log.Println(err)
-
-				return err
+				return 0, err
 			}
 			if err = tx.Commit(); err != nil {
 				log.Println(err)
-				return err
+				return 0, err
 			}
 			batCount = 0
 			tx = nil
 			tx, err = t.DB.(common.TxDB).Begin()
 			if err != nil {
 				log.Println(err)
-				return err
+				return 0, err
 			}
 			insertStmt, err = tx.Prepare(insertSQL)
 			if err != nil {
 				log.Println(err)
-
-				return err
+				return 0, err
 			}
-			progressFunc(fmt.Sprintf("\t%.2f%%\t%d/%d\t%.2fs", 100.0*float64(icount)/float64(rowCount), icount, rowCount, totalSec))
+			progressFunc(fmt.Sprintf("\t%.2f%%\t%d/%d\t%.2fs", 100.0*float64(iCount)/float64(rowCount), iCount, rowCount, totalSec))
 			startTime = time.Now()
 		}
 	}
 
 	if err = rows.Err(); err != nil {
 		log.Println(err)
-
-		return err
+		return
 	}
+	//如果最后一批有数据
 	if batCount > 0 {
 		if err = insertStmt.Close(); err != nil {
 			log.Println(err)
-
-			return err
+			return
 		}
 		if err = tx.Commit(); err != nil {
 			tx = nil
-			return err
+			return
 		}
-		finished = true
 	}
-
-	progressFunc(fmt.Sprintf("%s,total %d records imported %.2fs", t.FullName(), icount, time.Since(beginTime).Seconds()))
-
+	finished = true
+	progressFunc(fmt.Sprintf("%s,total %d records imported %.2fs", t.FullName(), iCount, time.Since(beginTime).Seconds()))
 	return
-
 }
 
 //InsertSQL 生成一个InsertSQL
