@@ -48,14 +48,14 @@ func (m *meta) TableNames(db common.DB) (names []string, err error) {
 	defer rows.Close()
 	for rows.Next() {
 		var name string
-		if err = rows.Scan(name); err != nil {
+		if err = rows.Scan(&name); err != nil { //从rows中取值是用&name
 			return nil, err
 		}
 		names = append(names, name)
 	}
-
 	sort.Strings(names)
-	return
+	//需要返回值
+	return names, err
 }
 
 func (m *meta) TableExists(db common.DB, tabName string) (bool, error) {
