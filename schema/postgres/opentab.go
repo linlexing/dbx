@@ -24,6 +24,7 @@ type indexType struct {
 }
 
 //获取主键字段
+//tablename需要加单引号才能被sql语句识别
 func getPk(db common.DB, tableName string) ([]string, error) {
 	result := []string{}
 	strSQL := fmt.Sprintf(
@@ -31,7 +32,7 @@ func getPk(db common.DB, tableName string) ([]string, error) {
 			FROM   pg_index i
 			JOIN   pg_attribute a ON a.attrelid = i.indrelid
 			        AND a.attnum = ANY(i.indkey)
-			WHERE  i.indrelid = %s::regclass
+			WHERE  i.indrelid = '%s'::regclass
 			AND    i.indisprimary;`, tableName)
 
 	rows, err := db.Query(strSQL)
@@ -51,10 +52,13 @@ func getPk(db common.DB, tableName string) ([]string, error) {
 
 	return result, nil
 }
+
+//columnType中DBNULL被定义为int类型
+//0代表false 1代表true
 func getTableColumns(db common.DB, schemaName, tableName string) ([]columnType, error) {
 	columns := []columnType{}
 	strSQL := `select upper(column_name) as "DBNAME",
-					(case when is_nullable='YES' then true else false end) as "DBNULL",
+					(case when is_nullable='YES' then 1 else 0 end) as "DBNULL",
 					(case when data_type in ('text', 'character varying')
 						then 'STR'
 						when  data_type in ('integer','bigint')
