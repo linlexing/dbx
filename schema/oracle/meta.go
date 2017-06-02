@@ -1,12 +1,10 @@
 package oracle
 
 import (
-	"dbweb/lib/safe"
 	"fmt"
 	"log"
 	"sort"
 	"strings"
-	"time"
 
 	"github.com/linlexing/dbx/common"
 	"github.com/linlexing/dbx/schema"
@@ -89,6 +87,53 @@ func (m *meta) CreateTable(db common.DB, tab *schema.Table) error {
 				return err
 			}
 		}
+	}
+	return nil
+}
+
+//DropIndexIfExists 删除一个存在的索引，不存在返回nil
+func (m *meta) DropIndexIfExists(db common.DB, indexName, tableName string) error {
+	strSQL := fmt.Sprintf(`
+		DECLARE
+		  COUNT_INDEXES INTEGER;
+		BEGIN
+		  SELECT COUNT(*) INTO COUNT_INDEXES
+		    FROM USER_INDEXES
+		    WHERE INDEX_NAME = '%s';
+
+		  IF COUNT_INDEXES = 1 THEN
+		    EXECUTE IMMEDIATE '%s';
+		  END IF;
+		END;`, indexName,
+		fmt.Sprintf("drop index %s", indexName))
+
+	if _, err := db.Exec(strSQL); err != nil {
+		err = common.NewSQLError(err, strSQL)
+		log.Println(err)
+		return err
+	}
+	return nil
+}
+
+func (m *meta) CreateIndexIfNotExists(db common.DB, indexName, tableName, express string) error {
+	var strSQL string
+	strSQL = fmt.Sprintf(`
+		DECLARE
+		  COUNT_INDEXES INTEGER;
+		BEGIN
+		  SELECT COUNT(*) INTO COUNT_INDEXES
+		    FROM USER_INDEXES
+		    WHERE INDEX_NAME = '%s';
+
+		  IF COUNT_INDEXES = 0 THEN
+		    EXECUTE IMMEDIATE '%s';
+		  END IF;
+		END;`, indexName,
+		fmt.Sprintf("create index %s on %s(%s)", indexName, tableName, express))
+	if _, err := db.Exec(strSQL); err != nil {
+		err = common.NewSQLError(err, strSQL)
+		log.Println(err)
+		return err
 	}
 	return nil
 }

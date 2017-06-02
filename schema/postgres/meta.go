@@ -78,9 +78,9 @@ func (m *meta) TableExists(db common.DB, tabName string) (bool, error) {
 	}
 
 	strSQL :=
-		"SELECT count(*) FROM information_schema.tables WHERE table_schema ilike :schema and table_name ilike :tname"
+		"SELECT count(*) FROM information_schema.tables WHERE table_schema ilike $1 and table_name ilike $2"
 	var iCount int64
-	if err := db.QueryRow(strSQL, schemaName, tname).Scan(iCount); err != nil {
+	if err := db.QueryRow(strSQL, schemaName, tname).Scan(&iCount); err != nil {
 		err = common.NewSQLError(err, strSQL, schemaName, tname)
 		log.Println(err)
 		return false, err
@@ -88,8 +88,6 @@ func (m *meta) TableExists(db common.DB, tabName string) (bool, error) {
 
 	return iCount > 0, nil
 }
-
-
 
 func (m *meta) CreateTable(db common.DB, tab *schema.Table) error {
 	cols := []string{}
@@ -119,6 +117,27 @@ func (m *meta) CreateTable(db common.DB, tab *schema.Table) error {
 				return err
 			}
 		}
+	}
+	return nil
+}
+func (m *meta) DropIndexIfExists(db common.DB, indexName, tableName string) error {
+	strSQL := fmt.Sprintf("drop index if exists %s", indexName)
+	_, err := db.Exec(strSQL)
+	if err != nil {
+		err = common.NewSQLError(err, strSQL)
+		log.Println(err)
+	}
+	return err
+
+}
+
+func (m *meta) CreateIndexIfNotExists(db common.DB, indexName, tableName, express string) error {
+	var strSQL string
+	strSQL = fmt.Sprintf("create index if not exists %s on %s(%s)", indexName, tableName, express)
+	if _, err := db.Exec(strSQL); err != nil {
+		err = common.NewSQLError(err, strSQL)
+		log.Println(err)
+		return err
 	}
 	return nil
 }

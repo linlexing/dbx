@@ -3,41 +3,29 @@ package data
 import (
 	"bytes"
 	"database/sql"
-"errors"
+	"errors"
+	"log"
 
 	"encoding/gob"
 	"fmt"
-
 
 	"strconv"
 	"strings"
 	"time"
 
-
-	log "github.com/Sirupsen/logrus"
-
 	"github.com/linlexing/mapfun"
 
-	"github.com/jmoiron/sqlx"
 	"github.com/linlexing/dbx/common"
 	"github.com/linlexing/dbx/scan"
 	"github.com/linlexing/dbx/schema"
 )
-
-type txDB interface {
-	Begin() (txer, error)
-}
-type txer interface {
-	Prepare(query string) (*sql.Stmt, error)
-	Commit() error
-	Rollback() error
-}
 
 //Table 表现一个数据库表,扩展了schema.Table ，提供了数据访问
 type Table struct {
 	driver string
 	DB     common.DB
 	*schema.Table
+
 	columnTypes    []*scan.ColumnType
 	notnullColumns []string
 	ColumnNames    []string
@@ -79,19 +67,19 @@ func NewTable(driver string, db common.DB, tabName string) *Table {
 	return rev
 }
 func (t *Table) bind(strSQL string) string {
-	return sqlx.Rebind(sqlx.BindType(t.driver), strSQL)
+	return Bind(t.driver, strSQL)
 }
 
 //Row 根据一个主键值返回一个记录,如果没有找到返回一个错误
 func (t *Table) Row(pks ...interface{}) (map[string]interface{}, error) {
-whereList :=[]string{}
+	whereList := []string{}
 	if len(t.PrimaryKeys) != len(pks) {
 		return nil, fmt.Errorf("the table %s pk values number error.table pk:%#v,pkvalues:%#v", t.FullName(), t.PrimaryKeys, pks)
 	}
-	for i, v := range pks {
-		whereList = append(whereList, fmt.Sprintf("%s=?",t.PrimaryKeys[i]))
+	for _, onePk := range t.PrimaryKeys {
+		whereList = append(whereList, fmt.Sprintf("%s=?", onePk))
 	}
-	rows, err := t.QueryRows(strings.Join(whereList," and\n"),pks...)
+	rows, err := t.QueryRows(strings.Join(whereList, " and\n"), pks...)
 	if err != nil {
 		return nil, err
 	}
@@ -166,8 +154,8 @@ func (t *Table) QueryRowsOrder(orderby []string, where string, param ...interfac
 }
 
 //QueryRows 查询返回记录，无排序
-func (t *Table) QueryRows(where string, param  ...interface{}) (record []map[string]interface{}, err error) {
-	return t.QueryRowsOrder(nil,where, param...)
+func (t *Table) QueryRows(where string, param ...interface{}) (record []map[string]interface{}, err error) {
+	return t.QueryRowsOrder(nil, where, param...)
 }
 
 //KeyExists 检查一个主键是否存在
@@ -213,10 +201,27 @@ func (t *Table) MustCount(where string, params ...interface{}) int64 {
 
 }
 
+//Exists 检测指定条件的记录是否存在，只要用于Bill.Remove方法，目前没有用到数据的exists，
+//后期优化性能，可以考虑改成select 1 from dual where exists()
+func (t *Table) Exists(where string, params ...interface{}) (rev bool, err error) {
+	strSQL := "select 1 from " + t.FullName()
+	if len(where) > 0 {
+
+		strSQL += "where " + where
+	}
+	rows, err := t.DB.Query(t.bind(strSQL), params...)
+	if err != nil {
+		err = common.NewSQLError(err, strSQL, params...)
+		log.Println(err)
+		return
+	}
+	defer rows.Close()
+	rev = rows.Next()
+	return
+}
+
 //Count 统计表中记录数，其实没什么逻辑，就是省了组合一个sql语句
 func (t *Table) Count(where string, params ...interface{}) (rev int64, err error) {
-
-	var pam map[string]interface{}
 	strSQL := "select count(*) from " + t.FullName()
 	if len(where) > 0 {
 
@@ -259,13 +264,15 @@ func (t *Table) checkAndConvertRow(row map[string]interface{}) error {
 //所以不能用直接的CreateTableAs,由于数据可能比较多，采用5秒钟提交一次事务，所以Table.DB不能
 //是事务Tx
 func (t *Table) ImportFrom(dataDB common.DB, strSQL string, progressFunc func(string)) (err error) {
-	rowCount, err := t.Count(dataDB, strSql, nil)
-	if err != nil {
+	var rowCount int
+	s := fmt.Sprintf("select count(*) from (%s) out_count", strSQL)
+	if err = dataDB.QueryRow(s).Scan(&rowCount); err != nil {
+		err = common.NewSQLError(err, s)
 		log.Println(err)
 		return
 	}
 
-	progressFunc(fmt.Sprintf("start CreateAs table %s,total %d records", t.Name(), rowCount))
+	progressFunc(fmt.Sprintf("start CreateAs table %s,total %d records", t.FullName(), rowCount))
 	//创建表
 
 	rows, err := dataDB.Query(strSQL)
@@ -285,7 +292,7 @@ func (t *Table) ImportFrom(dataDB common.DB, strSQL string, progressFunc func(st
 	startTime := time.Now()
 	beginTime := startTime
 	finished := false
-	tx, err := t.DB.(txDB).Begin()
+	tx, err := t.DB.(common.TxDB).Begin()
 	if err != nil {
 		return err
 	}
@@ -314,7 +321,7 @@ func (t *Table) ImportFrom(dataDB common.DB, strSQL string, progressFunc func(st
 		if _, err = insertStmt.Exec(outList...); err != nil {
 			log.Printf("error:%s,values:\n", err)
 			for ei, ev := range outList {
-				log.Printf("\t%s=%#v", t.ColumnByName(ei).Name, ev)
+				log.Printf("\t%s=%#v", t.Columns[ei].Name, ev)
 			}
 
 			return err
@@ -334,12 +341,12 @@ func (t *Table) ImportFrom(dataDB common.DB, strSQL string, progressFunc func(st
 			}
 			batCount = 0
 			tx = nil
-			tx, err = t.DB.Begin()
+			tx, err = t.DB.(common.TxDB).Begin()
 			if err != nil {
 				log.Println(err)
 				return err
 			}
-			insertStmt, err = tx.Prepare(insertSql)
+			insertStmt, err = tx.Prepare(insertSQL)
 			if err != nil {
 				log.Println(err)
 
@@ -368,7 +375,7 @@ func (t *Table) ImportFrom(dataDB common.DB, strSQL string, progressFunc func(st
 		finished = true
 	}
 
-	progressFunc(fmt.Sprintf("%s,total %d records imported %.2fs", t.Name(), icount, time.Since(beginTime).Seconds()))
+	progressFunc(fmt.Sprintf("%s,total %d records imported %.2fs", t.FullName(), icount, time.Since(beginTime).Seconds()))
 
 	return
 
@@ -380,7 +387,7 @@ func (t *Table) InsertSQL() string {
 		"insert into %s(%s)values(%s)",
 		t.FullName(), strings.Join(t.ColumnNames, ","),
 		strings.Join(strings.Split(strings.Repeat("?", len(t.Columns)), ""), ","))
-	insertSql = t.bind(insertSql)
+	insertSQL = t.bind(insertSQL)
 	return insertSQL
 
 }
@@ -402,7 +409,7 @@ func (t *Table) insertAsPack(row map[string]interface{}) (err error) {
 		t.FullName(), strings.Join(columns, ","),
 		strings.Join(strings.Split(strings.Repeat("?", len(columns)), ""), ","))
 	if _, err = t.DB.Exec(strSQL, data...); err != nil {
-		err = common.NewSQLError(err, strSql, data...)
+		err = common.NewSQLError(err, strSQL, data...)
 	}
 	return
 }
@@ -414,10 +421,10 @@ func (t *Table) encodeKey(keys ...interface{}) []byte {
 		case schema.TypeString:
 			return []byte(keys[0].(string))
 		case schema.TypeInt:
-			return []byte(fmt.Sprintf("%d",keys[0]))
-		case []byte:
+			return []byte(fmt.Sprintf("%d", keys[0]))
+		case schema.TypeBytea:
 			return keys[0].([]byte)
-			default:
+		default:
 			panic("invalid primary key datatype")
 		}
 	}
@@ -438,10 +445,10 @@ func (t *Table) decodeKey(key []byte) []interface{} {
 			return []interface{}{key}
 		case schema.TypeString:
 			return []interface{}{string(key)}
-			case schema.TypeInt:
-			i,err := strconv.ParseInt(string(key),10,64)
-			if err !=nil{
-				panic("invalid int data"+ string(key))
+		case schema.TypeInt:
+			i, err := strconv.ParseInt(string(key), 10, 64)
+			if err != nil {
+				panic("invalid int data" + string(key))
 			}
 			return []interface{}{i}
 		}
@@ -456,177 +463,178 @@ func (t *Table) decodeKey(key []byte) []interface{} {
 
 //Insert 插入一批记录,使用第一行数据中的字段，并没有使用表中的字段,因此可以插入部分字段
 func (t *Table) Insert(rows []map[string]interface{}) (err error) {
-	if len(rows)==0{
+	if len(rows) == 0 {
 		return nil
 	}
 	if len(rows) == 1 {
-		if  err= t.checkAndConvertRow(rows[0]); err != nil {
-			
+		if err = t.checkAndConvertRow(rows[0]); err != nil {
+
 			return
-		} 
-			return t.insertAsPack(rows[0])
-		
+		}
+		return t.insertAsPack(rows[0])
+
 	}
-	cols :=[]string{}
-	for k,_:=range rows[0]{
-		cols = append(cols,k)
+	cols := []string{}
+	for k := range rows[0] {
+		cols = append(cols, k)
 	}
 	strSQL := fmt.Sprintf("insert into %s(%s)values(%s)",
-	t.FullName(),strings.Join(cols,","),
-	strings.Join(strings.Split(strings.Repeat("?",len(cols),""),",")))
-	stmt,err := t.DB.Prepare(strSQL)
-	if err !=nil{
-		err = common.NewSQLError(err,strSQL)
+		t.FullName(), strings.Join(cols, ","),
+		strings.Join(strings.Split(strings.Repeat("?", len(cols)), ""), ","))
+	stmt, err := t.DB.Prepare(strSQL)
+	if err != nil {
+		err = common.NewSQLError(err, strSQL)
 		log.Println(err)
 		return
 	}
 	defer stmt.Close()
 	//先检查并插入数据
-	
+
 	for _, row := range rows {
-		if err= t.checkAndConvertRow(row); err != nil {
-			
+		if err = t.checkAndConvertRow(row); err != nil {
+
 			return
 		}
-		data :=[]interface{}{}
-		for _,col :=range cols{
-			data = append(data,row[col])
+		data := []interface{}{}
+		for _, col := range cols {
+			data = append(data, row[col])
 		}
-		if err = stmt.Exec(data...);err !=nil{
+		if _, err = stmt.Exec(data...); err != nil {
 			return
 		}
-	
+
 	}
-	
+
 	return
 }
 
 //Delete 删除记录，全部字段值将被生成where字句(text、bytea除外)
-func (t *Table) Delete(rows []map[string]interface{}) (delCount int64,err error) {
+func (t *Table) Delete(rows []map[string]interface{}) (delCount int64, err error) {
 	//考虑到null值，所有的行不能用一个语句，必须单独删除
 	for _, v := range rows {
 		var i int64
-		if i,err = t.Remove(v); err != nil {
+		if i, err = t.Remove(v); err != nil {
 			return
 		}
 		delCount += i
 	}
 	return
 }
+
 //RemoveByKeyValues 根据一个主键值，删除记录，如果没有记录被删除，则返回一个错误
-func (t *Table) RemoveByKeyValues(keyValues ...interface{}) (delCount int64,err error) {
-	if len(keyValues) != len(t.PrimaryKeys){
-		return errors.New("the key number not equ primary keys")
+func (t *Table) RemoveByKeyValues(keyValues ...interface{}) (delCount int64, err error) {
+	if len(keyValues) != len(t.PrimaryKeys) {
+		err = errors.New("the key number not equ primary keys")
+		return
 	}
-	whereList :=[]string{}
-	for i,v :=range keyValues{
-		whereList = append(whereList,fmt.Sprintf("%s=?",t.PrimaryKeys[i]))
+	whereList := []string{}
+	for _, v := range t.PrimaryKeys {
+		whereList = append(whereList, fmt.Sprintf("%s=?", v))
 	}
-	strSQL :=t.bind( fmt.Sprintf("delete from %s where %s",t.FullName(),
-	strings.Join(whereList," and\n")))
+	strSQL := t.bind(fmt.Sprintf("delete from %s where %s", t.FullName(),
+		strings.Join(whereList, " and\n")))
 
-
-	sr,err :=t.DB.Exec(strSQL,keyValues...)
-	if err !=nil{
-		err = common.NewSQLError(err,strSQL,keyValues...)
+	sr, err := t.DB.Exec(strSQL, keyValues...)
+	if err != nil {
+		err = common.NewSQLError(err, strSQL, keyValues...)
 		log.Println(err)
 		return
 	}
-	delCount,err = sr.RowsAffected()
-return
-			
+	delCount, err = sr.RowsAffected()
+	return
 
 }
-func (t *Table)buildWhere(row map[string]interface{})(string,[]interface{}){
-		strWhere := []string{}
+func (t *Table) buildWhere(row map[string]interface{}) (string, []interface{}) {
+	strWhere := []string{}
 	newRow := []interface{}{}
 	for k, v := range row {
 		//如果是没有长度的string，即text，以及bytea、datetime不参与where条件
 		fld := t.ColumnByName(k)
 		if fld.Type == schema.TypeBytea ||
-		fld.Type == schema.TypeDatetime||	
-		 (fld.Type == schema.TypeString && fld.MaxLength <=0) {
-			 continue
-		 }
-			if v == nil {
-				strWhere = append(strWhere, fmt.Sprintf("%s is null", k))
-			} else {
-				strWhere = append(strWhere, fmt.Sprintf("%s=?", k))
-			}
-		newRow = append(newRow,v)
+			fld.Type == schema.TypeDatetime ||
+			(fld.Type == schema.TypeString && fld.MaxLength <= 0) {
+			continue
+		}
+		if v == nil {
+			strWhere = append(strWhere, fmt.Sprintf("%s is null", k))
+		} else {
+			strWhere = append(strWhere, fmt.Sprintf("%s=?", k))
+		}
+		newRow = append(newRow, v)
 	}
-	return strWhere,newRow
+	return strings.Join(strWhere, " and\n"), newRow
 
 }
+
 //Remove 删除一个记录，必须是全指标的记录
-func (t *Table) Remove(row map[string]interface{}) (delCount int64,err error) {
-	row, err = t.checkAndConvertRow(row)
+func (t *Table) Remove(row map[string]interface{}) (delCount int64, err error) {
+	err = t.checkAndConvertRow(row)
 	if err != nil {
 		return
 	}
-	strWhere,newRow :=t.buildWhere(row)
-	strSql :=t.bind( fmt.Sprintf(
-		"delete from %s where %s", t.FullName(), strings.Join(strWhere, " and\n")))
+	strWhere, newRow := t.buildWhere(row)
+	strSQL := t.bind(fmt.Sprintf(
+		"delete from %s where %s", t.FullName(), strWhere))
 	var sqlr sql.Result
-	if sqlr, err = t.DB.Exec(strSql, newRow...); err != nil {
-		err = NewSQLError(err,strSql, newRow...)
+	if sqlr, err = t.DB.Exec(strSQL, newRow...); err != nil {
+		err = common.NewSQLError(err, strSQL, newRow...)
 		log.Println(err)
 		return
 	}
-	
-	 delCount, err = sqlr.RowsAffected()
+
+	delCount, err = sqlr.RowsAffected()
 
 	return
 }
 
 //UpdateByKey 通过一个key更新记录
-func (t *Table) UpdateByKey(key []interface{}, row map[string]interface{}) (upCount int64,err error) {
+func (t *Table) UpdateByKey(key []interface{}, row map[string]interface{}) (upCount int64, err error) {
 
-whereList :=[]string{}
-	for i,v :=range key{
-		whereList = append(whereList,fmt.Sprintf("%s=?",t.PrimaryKeys[i]))
+	whereList := []string{}
+	for _, v := range t.PrimaryKeys {
+		whereList = append(whereList, fmt.Sprintf("%s=?", v))
 	}
-		
-	return t.UpdateByWhere(row,strings.Join(whereList," and\n"),key...)
+
+	return t.UpdateByWhere(row, strings.Join(whereList, " and\n"), key...)
 }
 
 //UpdateByWhere 通过一个条件更新指定的字段值
-func (t *Table) UpdateByWhere(row map[string]interface{},where string,params ...interface{}) (upCount int64,err error) {
+func (t *Table) UpdateByWhere(row map[string]interface{}, where string, params ...interface{}) (upCount int64, err error) {
 	if len(row) == 0 {
-		return fmt.Errorf("data is null,row:%v,where:%v,params:%#v", row, where,params)
+		err = fmt.Errorf("data is null,row:%v,where:%v,params:%#v", row, where, params)
+		return
 	}
 
 	if err = t.checkAndConvertRow(row); err != nil {
-		return err
+		return 0, err
 	}
 	set := []string{}
-	setVals :=[]interface{}{}
-	for k,v :=range row{
-		set = append(set,fmt.Sprintf("%s=?",k))
-		setVals=append(setVals,v)
+	setVals := []interface{}{}
+	for k, v := range row {
+		set = append(set, fmt.Sprintf("%s=?", k))
+		setVals = append(setVals, v)
 	}
-	whereStr:=""
-	if len(where)>0{
-whereStr = "where "+where
+	whereStr := ""
+	if len(where) > 0 {
+		whereStr = "where " + where
 	}
-	setVals = append(setVals,params...)
-	strSql :=t.bind( fmt.Sprintf("update %s set %s %s",
+	setVals = append(setVals, params...)
+	strSQL := t.bind(fmt.Sprintf("update %s set %s %s",
 		t.FullName(), strings.Join(set, ","), whereStr))
 	var sqlr sql.Result
 
-	if sqlr, err = t.DB.Exec(strSql, setVals...); err != nil {
-		err = common.NewSQLError(err,strSql,setVals... )
+	if sqlr, err = t.DB.Exec(strSQL, setVals...); err != nil {
+		err = common.NewSQLError(err, strSQL, setVals...)
 		return
 	}
-	 upCount, err = sqlr.RowsAffected()
+	upCount, err = sqlr.RowsAffected()
 	return
 }
 
 //Update 只有修改过的字段才被更新，where采用全部旧值判断（没有长度的string将不参与，因为oracle会出错）
-//如果old、new中有多余字段，则会自动剔除，如果主键缺失，则会出错
-func (t *Table) Update(oldData, newData map[string]interface{}) (upCount int64,err error) {
+func (t *Table) Update(oldData, newData map[string]interface{}) (upCount int64, err error) {
 	if oldData == nil || len(oldData) == 0 || newData == nil || len(newData) == 0 {
-		err= errors.New("data is empty")
+		err = errors.New("data is empty")
 		return
 	}
 	if len(oldData) != len(newData) {
@@ -639,39 +647,39 @@ func (t *Table) Update(oldData, newData map[string]interface{}) (upCount int64,e
 	if err = t.checkAndConvertRow(newData); err != nil {
 		return
 	}
-	whereStr,whereVals := t.buildWhere(oldData)
-	return	t.UpdateByWhere(newData,whereStr,whereVals...)
+	whereStr, whereVals := t.buildWhere(oldData)
+	return t.UpdateByWhere(newData, whereStr, whereVals...)
 }
 
 //Save 保存一个记录，先尝试用keyvalue去update，如果更新到记录为0再insert，
 //逻辑上是正确的，同时，速度也会有保障
 func (t *Table) Save(row map[string]interface{}) error {
-	i,err := t.UpdateByKey(t.KeyValues(row),row)
-	if err !=nil{
+	i, err := t.UpdateByKey(t.KeyValues(row), row)
+	if err != nil {
 		return err
 	}
-	if i >0 {
+	if i > 0 {
 		return nil
 	}
 	return t.insertAsPack(row)
 }
 
 //Replace 将一批记录替换成另一批记录，自动删除旧在新中不存在，插入新在旧中不存在的，更新主键相同的
-func (t *Table) Replace(oldRows, newRows []map[string]interface{}) (insCount,upCounterr,delCount int64,err  error) {
-	pkNames := t.PrimaryKeys()
-	updateRowsOld, updateRowsNew := mapfun.Intersection(oldRows, newRows, pkNames)
-	if delCount, err = t.Delete(mapfun.Difference(oldRows, newRows, pkNames)); err != nil {
+func (t *Table) Replace(oldRows, newRows []map[string]interface{}) (insCount, upCount, delCount int64, err error) {
+
+	if delCount, err = t.Delete(mapfun.Difference(oldRows, newRows, t.PrimaryKeys)); err != nil {
 		return
 	}
+	updateRowsOld, updateRowsNew := mapfun.Intersection(oldRows, newRows, t.PrimaryKeys)
 	for i, v := range updateRowsOld {
 		var up int64
-		if up,err = t.Update(v, updateRowsNew[i]); err != nil {
+		if up, err = t.Update(v, updateRowsNew[i]); err != nil {
 			return
 		}
 		upCount += up
 	}
-	insertRows := mapfun.Difference(newRows, oldRows, pkNames)
-	insCount = len(insertRows)
+	insertRows := mapfun.Difference(newRows, oldRows, t.PrimaryKeys)
+	insCount = int64(len(insertRows))
 	err = t.Insert(insertRows)
 	return
 }
@@ -679,6 +687,6 @@ func (t *Table) Replace(oldRows, newRows []map[string]interface{}) (insCount,upC
 //Merge 将另一个表中的数据合并进本表，要求两个表的主键相同,相同主键的被覆盖
 //skipColumns指定跳过update的字段清单
 func (t *Table) Merge(tabName string, skipUpdateColumns ...string) error {
-	cols := mapfun.WithoutStr( t.ColumnNames,skipUpdateColumns...)
-	return Find(t.driver).Merge(t.DB,t.FullName(),tabName,t.PrimaryKeys,cols)
+	cols := mapfun.WithoutStr(t.ColumnNames, skipUpdateColumns...)
+	return Find(t.driver).Merge(t.DB, t.FullName(), tabName, t.PrimaryKeys, cols)
 }

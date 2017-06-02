@@ -3,33 +3,10 @@ package scan
 import (
 	"database/sql"
 	"errors"
-	"fmt"
-
-	"time"
 
 	"github.com/linlexing/dbx/common"
 	"github.com/linlexing/dbx/schema"
 )
-
-type nullTime struct {
-	Valid bool
-	Time  time.Time
-}
-
-func (n *nullTime) Scan(src interface{}) error {
-	switch tv := src.(type) {
-	case nil:
-		n.Valid = false
-		println("nil")
-	case time.Time:
-		n.Valid = true
-		n.Time = tv
-	default:
-		return fmt.Errorf("invalid type:%T", src)
-
-	}
-	return nil
-}
 
 //ColumnType 表示一个列，带有类型，主要是go1.8的规范，还很少有driver实现，后期可去掉类型
 type ColumnType struct {
@@ -37,7 +14,7 @@ type ColumnType struct {
 	Type schema.DataType
 }
 
-// Scan 根据一个字段类型清单，扫描出正确的数据，null值返回nil,类型对照如下：
+// TypeScan 根据一个字段类型清单，扫描出正确的数据，null值返回nil,类型对照如下：
 // TypeString	string
 // TypeInt 	int64
 // TypeDatetime time.Time
@@ -53,7 +30,7 @@ func TypeScan(s common.Scaner, cols []*ColumnType) ([]interface{}, error) {
 		case schema.TypeInt:
 			newV = new(sql.NullInt64)
 		case schema.TypeDatetime:
-			newV = new(nullTime)
+			newV = new(NullTime)
 		case schema.TypeFloat:
 			newV = new(sql.NullFloat64)
 		case schema.TypeBytea:
@@ -81,7 +58,7 @@ func TypeScan(s common.Scaner, cols []*ColumnType) ([]interface{}, error) {
 				outV = tv.Int64
 			}
 		case schema.TypeDatetime:
-			tv := outList[i].(*nullTime)
+			tv := outList[i].(*NullTime)
 			if tv.Valid {
 				outV = tv.Time
 			}

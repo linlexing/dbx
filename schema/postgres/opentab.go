@@ -10,9 +10,10 @@ import (
 )
 
 type columnType struct {
-	Name      string `db:"DBNAME"`
-	Null      int    `db:"DBNULL"`
-	Type      string `db:"DBTYPE"`
+	Name string `db:"DBNAME"`
+	Null int    `db:"DBNULL"`
+	Type string `db:"DBTYPE"`
+
 	MaxLength int    `db:"DBMAXLENGTH"`
 	TrueType  string `db:"TRUETYPE"`
 }
