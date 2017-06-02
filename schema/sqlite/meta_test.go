@@ -1,13 +1,11 @@
 package sqlite
 
 import (
-	"fmt"
 	"testing"
 
 	"os"
 
 	"github.com/jmoiron/sqlx"
-	"github.com/linlexing/dbx"
 	_ "github.com/mattn/go-sqlite3"
 )
 
@@ -82,27 +80,4 @@ func Test_CreateTableAs(t *testing.T) {
 		t.Error("not equ")
 	}
 
-}
-func Test_RemoveColumns(t *testing.T) {
-	testDB := createTestDB()
-	db := testDB.DB
-	defer testDB.Close()
-	var err error
-	if _, err = db.Exec("create table aaa(a varchar(200) primary key,b integer,C text)"); err != nil {
-		t.Fatal(err)
-	}
-	if err = new(meta).RemoveColumns(db, "aaa", []string{"b"}); err != nil {
-		t.Error(err)
-	}
-	strSQL := fmt.Sprintf("PRAGMA table_info(%s)", "aaa")
-	tabCols := []tableColumn{}
-	if err = db.Select(&tabCols, strSQL); err != nil {
-		t.Error(dbx.NewSQLError(strSQL, nil, err))
-	}
-	if len(tabCols) != 2 {
-		t.Error("not 2")
-	}
-	if tabCols[0].Name != "a" || tabCols[1].Name != "C" {
-		t.Error("error")
-	}
 }

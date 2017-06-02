@@ -33,7 +33,7 @@ type DB interface {
 //TxDB 是带事务操作的DB
 type TxDB interface {
 	DB
-	Begin() (Txer, error)
+	Begin() (*sql.Tx, error)
 }
 
 //Txer 是事务

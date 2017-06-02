@@ -31,6 +31,8 @@ func (f *Column) Eque(src *Column) bool {
 
 //Clone 复制一个字段
 func (f *Column) Clone() *Column {
+	fns := []string{}
+	copy(fns, f.FormerName)
 	return &Column{f.Name, f.Type, f.MaxLength, f.Null,
-		f.TrueType, f.FetchDriver, f.Index, f.IndexName, f.FormerName}
+		f.TrueType, f.FetchDriver, f.Index, f.IndexName, fns}
 }
