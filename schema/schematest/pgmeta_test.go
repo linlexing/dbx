@@ -11,7 +11,7 @@ import (
 )
 
 func getDb() (*sql.DB, error) {
-	return sql.Open("postgres", "port=5432 user=test password=123456 dbname=test sslmode=disable")
+	return sql.Open("postgres", "port=5432 user=test password=123456 dbname=postgres sslmode=disable")
 }
 
 func TestCreateTable(t *testing.T) {
@@ -72,11 +72,9 @@ func TestTableNames(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-
+	db.Close()
 	var names []string
 	names, err = schema.Find("postgres").TableNames(db)
-	fmt.Println(err)
-	fmt.Println(len(names))
 	for key, value := range names {
 		fmt.Println(key)
 		fmt.Println(value)
@@ -87,4 +85,28 @@ func TestTableNames(t *testing.T) {
 		t.Error("测试未通过")
 	}
 
+}
+
+func TestCreateIndexIfNotExists(t *testing.T) {
+	db, err := getDb()
+	if err != nil {
+		t.Error(err)
+	}
+	err = schema.Find("postgres").CreateIndexIfNotExists(db, "myindex1", "userinfo", "id")
+	db.Close()
+	if err != nil {
+		t.Error("失败")
+	}
+}
+
+func TestDropIndexIfExists(t *testing.T) {
+	db, err := getDb()
+	if err != nil {
+		t.Error(err)
+	}
+	err = schema.Find("postgres").DropIndexIfExists(db, "myindex1", "userinfo")
+	db.Close()
+	if err != nil {
+		t.Error("失败")
+	}
 }
