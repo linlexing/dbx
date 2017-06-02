@@ -34,6 +34,7 @@ type DB interface {
 type TxDB interface {
 	DB
 	Begin() (*sql.Tx, error)
+	Close() error
 }
 
 //Txer 是事务
