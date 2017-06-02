@@ -12,14 +12,7 @@ func getdb() (*sql.DB, error) {
 	db, err := sql.Open("postgres", "user=test password=123456 dbname=postgres sslmode=disable")
 	return db, err
 }
-
-//测试创建表
-func TestCreateTable(t *testing.T) {
-	db, err := getdb()
-	if err != nil {
-		t.Error(err)
-	}
-	defer db.Close()
+func tableTest() *schema.Table {
 	tab := schema.NewTable("test")
 	tab.PrimaryKeys = []string{"ID"}
 	tab.Columns = []*schema.Column{
@@ -49,13 +42,23 @@ func TestCreateTable(t *testing.T) {
 			Null: true,
 		},
 	}
-	err = new(meta).CreateTable(db, tab)
+	return tab
+}
+
+//测试创建表
+func TestCreateTable(t *testing.T) {
+	db, err := getdb()
 	if err != nil {
-		t.Error("创建表测试未通过")
+		t.Error(err)
 	}
-	// if _, err := db.Exec("drop table test"); err != nil {
-	// 	t.Error(err)
-	// }
+	defer db.Close()
+	err = new(meta).CreateTable(db, tableTest())
+	if err != nil {
+		t.Error(err)
+	}
+	if _, err := db.Exec("drop table test"); err != nil {
+		t.Error(err)
+	}
 }
 
 //测试表是否存在
@@ -65,22 +68,47 @@ func TestTableExists(t *testing.T) {
 		t.Error(err)
 	}
 	defer db.Close()
-	_, err = new(meta).TableExists(db, "test")
+	b, err := new(meta).TableExists(db, "test")
 	if err != nil {
-		t.Error("判断表是否存在测试未通过")
+		t.Error(err)
 	}
+	if b {
+		t.Error("test 表不应该存在")
+	}
+
+	if err = new(meta).CreateTable(db, tableTest()); err != nil {
+		t.Error(err)
+	}
+	b, err = new(meta).TableExists(db, "test")
+	if err != nil {
+		t.Error(err)
+	}
+	if !b {
+		t.Error("test 应该存在")
+	}
+
 }
 
 //测试新增单字段索引
-func TestCreateColumIndex(t *testing.T) {
+func TestCreateColumnIndex(t *testing.T) {
 	db, err := getdb()
 	if err != nil {
 		t.Error(err)
 	}
 	defer db.Close()
+	tab := tableTest()
+	tab.Name = "test01"
+	if err = new(meta).CreateTable(db, tab); err != nil {
+		t.Error(err)
+	}
+	defer func() {
+		if _, err := db.Exec("drop table test"); err != nil {
+			t.Error(err)
+		}
+	}()
 	err = createColumnIndex(db, "test01", "name")
 	if err != nil {
-		t.Error("新增单字段索引测试未通过")
+		t.Error(err)
 	}
 }
 

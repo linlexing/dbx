@@ -11,11 +11,15 @@ import (
 )
 
 func getDb() (*sql.DB, error) {
-	return sql.Open("postgres", "port=5432 user=test password=123456 dbname=test sslmode=disable")
+	return sql.Open("postgres", "user=test password=123456 dbname=postgres sslmode=disable")
 }
 
 func TestCreateTable(t *testing.T) {
 	db, err := getDb()
+	if err != nil {
+		t.Error(err)
+	}
+	defer db.Close()
 	tab := schema.NewTable("test")
 	tab.PrimaryKeys = []string{"ID"}
 	tab.Columns = []*schema.Column{
@@ -30,13 +34,11 @@ func TestCreateTable(t *testing.T) {
 			Null: true,
 		},
 	}
-	err = schema.Find("postgres").CreateTable(db, tab)
-	db.Exec("drop table test")
-	db.Close()
-	if err != nil {
-		t.Error("创建表测试未通过")
-	} else {
-		t.Log("测试通过")
+	if err = schema.Find("postgres").CreateTable(db, tab); err != nil {
+		t.Error(err)
+	}
+	if _, err = db.Exec("drop table test"); err != nil {
+		t.Error(err)
 	}
 }
 
