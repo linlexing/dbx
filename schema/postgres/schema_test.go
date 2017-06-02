@@ -28,14 +28,34 @@ func TestCreateTable(t *testing.T) {
 			Type: schema.TypeInt,
 			Null: false,
 		},
+		&schema.Column{
+			Name: "name",
+			Type: schema.TypeString,
+			Null: true,
+		},
+		&schema.Column{
+			Name: "age",
+			Type: schema.TypeString,
+			Null: true,
+		},
+		&schema.Column{
+			Name: "address",
+			Type: schema.TypeString,
+			Null: true,
+		},
+		&schema.Column{
+			Name: "phone",
+			Type: schema.TypeString,
+			Null: true,
+		},
 	}
 	err = new(meta).CreateTable(db, tab)
 	if err != nil {
 		t.Error("创建表测试未通过")
 	}
-	if _, err := db.Exec("drop table test"); err != nil {
-		t.Error(err)
-	}
+	// if _, err := db.Exec("drop table test"); err != nil {
+	// 	t.Error(err)
+	// }
 }
 
 //测试表是否存在
@@ -48,5 +68,126 @@ func TestTableExists(t *testing.T) {
 	_, err = new(meta).TableExists(db, "test")
 	if err != nil {
 		t.Error("判断表是否存在测试未通过")
+	}
+}
+
+//测试新增单字段索引
+func TestCreateColumIndex(t *testing.T) {
+	db, err := getdb()
+	if err != nil {
+		t.Error(err)
+	}
+	defer db.Close()
+	err = createColumnIndex(db, "test01", "name")
+	if err != nil {
+		t.Error("新增单字段索引测试未通过")
+	}
+}
+
+//测试删除多列
+func TestRemoveColumns(t *testing.T) {
+	db, err := getdb()
+	if err != nil {
+		t.Error(err)
+	}
+	defer db.Close()
+	cols := []string{"age", "phone"}
+	err = removeColumns(db, "test01", cols)
+	if err != nil {
+		t.Error("删除多列测试未通过")
+	}
+}
+
+//测试表重命名
+func TestTableRename(t *testing.T) {
+	db, err := getdb()
+	if err != nil {
+		t.Error(err)
+	}
+	defer db.Close()
+	err = tableRename(db, "test01", "newtest01")
+	if err != nil {
+		t.Error("表重命名测试未通过")
+	}
+}
+
+//测试删除列索引
+func TestDropColumIndex(t *testing.T) {
+	db, err := getdb()
+	if err != nil {
+		t.Error(err)
+	}
+	defer db.Close()
+	err = dropColumnIndex(db, "newtest01", "test01_name_idx")
+	if err != nil {
+		t.Error("删除列索引测试未通过")
+	}
+
+}
+
+//测试删除表主键
+func TestDropTablePrimaryKey(t *testing.T) {
+	db, err := getdb()
+	if err != nil {
+		t.Error(err)
+	}
+	defer db.Close()
+	err = dropTablePrimaryKey(db, "newtest01")
+	if err != nil {
+		t.Error("删除表主键测试未通过")
+	}
+}
+
+//测试新增主键
+func TestAddTablePrimaryKey(t *testing.T) {
+	db, err := getdb()
+	if err != nil {
+		t.Error(err)
+	}
+	defer db.Close()
+	pks := []string{"ID"}
+	err = addTablePrimaryKey(db, "newtest01", pks)
+	if err != nil {
+		t.Error("新增主键测试未通过")
+	}
+}
+
+//测试获取主键字段
+func TestGetPk(t *testing.T) {
+	db, err := getdb()
+	if err != nil {
+		t.Error(err)
+	}
+	defer db.Close()
+	_, err = getPk(db, "test")
+	if err != nil {
+		t.Error("测试获取逐渐字段未通过")
+	}
+}
+
+//测试获取表的列
+func TestGetTableColumns(t *testing.T) {
+	db, err := getdb()
+	if err != nil {
+		t.Error(err)
+	}
+	defer db.Close()
+	_, err = getTableColumns(db, "test", "test")
+	if err != nil {
+		t.Error(err)
+		t.Error("获取表表的列测试未通过")
+	}
+}
+
+//测试获取表索引
+func TestGetTableIndexes(t *testing.T) {
+	db, err := getdb()
+	if err != nil {
+		t.Error(err)
+	}
+	defer db.Close()
+	_, err = getTableIndexes(db, "test", "newtest01")
+	if err != nil {
+		t.Error("获取表索引测试未通过")
 	}
 }
