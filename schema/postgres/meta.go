@@ -54,8 +54,7 @@ func (m *meta) TableNames(db common.DB) (names []string, err error) {
 		names = append(names, name)
 	}
 	sort.Strings(names)
-	//需要返回值
-	return names, err
+	return
 }
 
 func (m *meta) TableExists(db common.DB, tabName string) (bool, error) {
