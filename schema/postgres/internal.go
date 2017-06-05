@@ -98,6 +98,7 @@ func dropTablePrimaryKey(db common.DB, tableName string) error {
 }
 
 //addTablePrimaryKey 新增主键
+//只有当表不存在主键时，才可以新增主键
 func addTablePrimaryKey(db common.DB, tableName string, pks []string) error {
 	strSQL := fmt.Sprintf("alter table %s add primary key(%s)", tableName, strings.Join(pks, ","))
 	if _, err := db.Exec(strSQL); err != nil {
