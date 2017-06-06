@@ -203,6 +203,7 @@ func TestCreateTableAs(t *testing.T) {
 }
 
 //ChangeTable
+//这是一个执行失败的测试用例
 func TestChangeTable(t *testing.T) {
 	db, err := getmysql()
 	if err != nil {
