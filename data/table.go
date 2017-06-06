@@ -61,15 +61,15 @@ func NewTable(driver string, db common.DB, st *schema.Table) *Table {
 
 //OpenTable 从数据库取出结构构造Table,表名用 schema.tablename的方式,
 //如果不读取数据，仅定义结构，应当使用schema.Table
-func OpenTable(driver string, db common.DB, tabName string) *Table {
+func OpenTable(driver string, db common.DB, tabName string) (*Table, error) {
 	if len(tabName) == 0 {
-		log.Panic("table name is empty")
+		return nil, errors.New("table name is empty")
 	}
 	st, err := schema.Find(driver).OpenTable(db, tabName)
 	if err != nil {
-		log.Panic(err)
+		return nil, err
 	}
-	return NewTable(driver, db, st)
+	return NewTable(driver, db, st), nil
 }
 func (t *Table) bind(strSQL string) string {
 	return Bind(t.driver, strSQL)
