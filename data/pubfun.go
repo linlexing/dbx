@@ -10,6 +10,11 @@ func Bind(driver, strSQL string) string {
 	return sqlx.Rebind(sqlx.BindType(driver), strSQL)
 }
 
+//In 将一个参数类型是数组的参数对应的?，扩展成多个?，并把参数也扁平化
+func In(query string, args ...interface{}) (string, []interface{}, error) {
+	return sqlx.In(query, args...)
+}
+
 //RunAtTx 在一个事务中运行，自动处理commit 和rollback
 func RunAtTx(db common.TxDB, callback func(common.Txer) error) (err error) {
 	var tx common.Txer
