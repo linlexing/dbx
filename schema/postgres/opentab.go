@@ -105,6 +105,8 @@ func getTableColumns(db common.DB, schemaName, tableName string) ([]columnType, 
 	return columns, nil
 
 }
+
+//SQL语句查询结果为null
 func getTableIndexes(db common.DB, schemaName, tableName string) ([]indexType, error) {
 	indexes := []indexType{}
 	strSQL := `select
