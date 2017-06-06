@@ -3,7 +3,6 @@ package mysql
 import (
 	"fmt"
 	"log"
-	//"strings"
 
 	"database/sql"
 
