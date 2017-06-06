@@ -362,9 +362,12 @@ func TestOpenTable(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	_, err = new(meta).OpenTable(db, "test01")
+	tab, err = new(meta).OpenTable(db, "test01")
 	if err != nil {
 		t.Error(err)
 		t.Error("测试未通过")
+	}
+	if !tab.ColumnByName("name").Index {
+		t.Error("没有索引")
 	}
 }

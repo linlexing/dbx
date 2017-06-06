@@ -41,7 +41,7 @@ func tableExists(db common.DB, tabName string) (bool, error) {
 			return false, common.NewSQLError(err, strSQL)
 		}
 	}
-	strSQL := "SELECT count(*) FROM information_schema.tables WHERE table_schema = ? and UPPER(table_name)=?"
+	strSQL := "SELECT count(*) FROM information_schema.tables WHERE table_schema = ? and table_name=?"
 	var iCount int64
 	row := db.QueryRow(strSQL, schemaName, tname)
 	if err := row.Scan(&iCount); err != nil {

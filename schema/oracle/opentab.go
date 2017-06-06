@@ -167,12 +167,12 @@ func getColumns(db common.DB, schemaName, table string) ([]*schema.Column, error
 	//注意indexColumns中可能含有非表字段的名称，例如oracle中的function index
 	indexColumnsMap := map[string]indexType{}
 	for _, s := range indexColumns {
-		indexColumnsMap[strings.ToUpper(s.Column)] = s
+		indexColumnsMap[s.Column] = s
 	}
 	rev := []*schema.Column{}
 	for _, v := range columns {
 		col := &schema.Column{
-			Name:        strings.ToUpper(v.Name),
+			Name:        v.Name,
 			Type:        schema.ParseDataType(v.Type),
 			MaxLength:   v.MaxLength,
 			Null:        v.Null > 0,
@@ -185,7 +185,7 @@ func getColumns(db common.DB, schemaName, table string) ([]*schema.Column, error
 			col.Index = true
 			col.IndexName = s.Name
 			if len(schemaName) > 0 || //如果是其他schema的表，则必定带上schema
-				strings.ToUpper(s.Owner) != schemaName { //如果index不和表在同一个schema中，也带上schema
+				s.Owner != schemaName { //如果index不和表在同一个schema中，也带上schema
 				col.IndexName = s.Owner + "." + col.IndexName
 			}
 		}

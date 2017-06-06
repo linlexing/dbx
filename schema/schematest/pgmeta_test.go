@@ -7,6 +7,7 @@ import (
 
 	_ "github.com/lib/pq"
 	"github.com/linlexing/dbx/schema"
+	_ "github.com/linlexing/dbx/schema/postgres"
 )
 
 func getDb() (*sql.DB, error) {

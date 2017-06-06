@@ -3,7 +3,6 @@ package postgres
 import (
 	"fmt"
 	"log"
-	"strings"
 
 	"github.com/linlexing/dbx/common"
 	"github.com/linlexing/dbx/schema"
@@ -57,7 +56,7 @@ func getPk(db common.DB, tableName string) ([]string, error) {
 //0代表false 1代表true
 func getTableColumns(db common.DB, schemaName, tableName string) ([]columnType, error) {
 	columns := []columnType{}
-	strSQL := `select upper(column_name) as "DBNAME",
+	strSQL := `select column_name as "DBNAME",
 					(case when is_nullable='YES' then 1 else 0 end) as "DBNULL",
 					(case when data_type in ('text', 'character varying')
 						then 'STR'
@@ -112,7 +111,7 @@ func getTableIndexes(db common.DB, schemaName, tableName string) ([]indexType, e
 	strSQL := `select
 					(select nspname from pg_namespace where oid=i.relnamespace) as "INDEXOWNER",
 					i.relname as "INDEXNAME",
-				    upper(min(a.attname)) as "COLUMNNAME"
+				    min(a.attname) as "COLUMNNAME"
 				from
 				    pg_class t,
 				    pg_class i,
@@ -124,10 +123,10 @@ func getTableIndexes(db common.DB, schemaName, tableName string) ([]indexType, e
 				    and i.oid = ix.indexrelid
 				    and a.attrelid = t.oid
 				    and t.relnamespace=tn.oid 
-				    and upper(tn.nspname) = $1
+				    and tn.nspname = $1
 				    and a.attnum = ANY(ix.indkey)
 				    and t.relkind = 'r'
-				    and upper(t.relname) =$2
+				    and t.relname =$2
 				group by
 				   t.relname,
 				   i.relnamespace,
@@ -159,7 +158,7 @@ func getTableIndexes(db common.DB, schemaName, tableName string) ([]indexType, e
 }
 func getColumns(db common.DB, schemaName, table string) ([]*schema.Column, error) {
 	if len(schemaName) == 0 {
-		strSQL := "select upper(current_schema())"
+		strSQL := "select current_schema()"
 
 		if err := db.QueryRow(strSQL).Scan(&schemaName); err != nil {
 			err = common.NewSQLError(err, strSQL)
@@ -180,13 +179,13 @@ func getColumns(db common.DB, schemaName, table string) ([]*schema.Column, error
 	//注意indexColumns中可能含有非表字段的名称，例如oracle中的function index
 	indexColumnsMap := map[string]indexType{}
 	for _, s := range indexColumns {
-		indexColumnsMap[strings.ToUpper(s.Column)] = s
+		indexColumnsMap[s.Column] = s
 	}
 	rev := []*schema.Column{}
 
 	for _, v := range columns {
 		col := &schema.Column{
-			Name:        strings.ToUpper(v.Name),
+			Name:        v.Name,
 			Type:        schema.ParseDataType(v.Type),
 			MaxLength:   v.MaxLength,
 			Null:        v.Null > 0,
@@ -199,7 +198,7 @@ func getColumns(db common.DB, schemaName, table string) ([]*schema.Column, error
 			col.Index = true
 			col.IndexName = s.Name
 			if len(schemaName) > 0 || //如果是其他schema的表，则必定带上schema
-				strings.ToUpper(s.Owner) != schemaName { //如果index不和表在同一个schema中，也带上schema
+				s.Owner != schemaName { //如果index不和表在同一个schema中，也带上schema
 				col.IndexName = s.Owner + "." + col.IndexName
 			}
 		}
