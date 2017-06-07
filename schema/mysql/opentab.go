@@ -3,7 +3,6 @@ package mysql
 import (
 	"fmt"
 	"log"
-	"strings"
 
 	"database/sql"
 
@@ -16,7 +15,9 @@ func getPk(db common.DB, tableName string) ([]string, error) {
 	pks := []string{}
 
 	strSQL := fmt.Sprintf("SHOW KEYS FROM %s WHERE Key_name = 'PRIMARY'", tableName)
+
 	rows, err := db.Query(strSQL)
+
 	if err != nil {
 		log.Println(strSQL)
 		return nil, common.NewSQLError(err, strSQL)
@@ -48,11 +49,11 @@ func getPk(db common.DB, tableName string) ([]string, error) {
 			&Cardinality,
 			&SubPart,
 			&Packed,
-			&Packed,
 			&Null,
 			&IndexType,
 			&Comment,
 			&IndexComment); err != nil {
+			log.Println(err)
 			return nil, err
 		}
 		pks = append(pks, ColumnName)
@@ -61,7 +62,7 @@ func getPk(db common.DB, tableName string) ([]string, error) {
 }
 func getColumns(db common.DB, schemaName, tableName string) ([]*schema.Column, error) {
 	if len(schemaName) == 0 {
-		strSQL := "select upper(SCHEMA())"
+		strSQL := "select SCHEMA()"
 		row := db.QueryRow(strSQL)
 		if err := row.Scan(&schemaName); err != nil {
 			log.Println(strSQL)
@@ -69,6 +70,7 @@ func getColumns(db common.DB, schemaName, tableName string) ([]*schema.Column, e
 		}
 
 	}
+
 	type columnType struct {
 		Name      string `db:"DBNAME"`
 		Null      int    `db:"DBNULL"`
@@ -84,10 +86,10 @@ func getColumns(db common.DB, schemaName, tableName string) ([]*schema.Column, e
 	columns := []columnType{}
 	if err := func() error {
 		strSQL := `select 
-					upper(column_name) as DBNAME,
+					column_name as DBNAME,
 				    (case when is_nullable='YES' then 1 else 0 end) as DBNULL,
 				    (case when data_type in('varchar','text','char') then 'STR'
-						  when data_type ='int' then 'INT'
+						  when data_type in('bigint','int') then 'INT'
 						  when data_type in('decimal','double') then 'FLOAT'
 				          when data_type ='blob' then 'BYTEA'
 				          when data_type in('date','datetime') then 'DATE'
@@ -95,7 +97,7 @@ func getColumns(db common.DB, schemaName, tableName string) ([]*schema.Column, e
 				    ifnull(CHARACTER_MAXIMUM_LENGTH,0) as DBMAXLENGTH,
 					column_type as TRUETYPE
 				from information_schema.columns 
-				where upper(table_name)=? and upper(table_schema)= ?
+				where table_name=? and table_schema= ?
 				order by ORDINAL_POSITION`
 		rows, err := db.Query(strSQL, tableName, schemaName)
 		if err != nil {
@@ -119,14 +121,13 @@ func getColumns(db common.DB, schemaName, tableName string) ([]*schema.Column, e
 	}(); err != nil {
 		return nil, err
 	}
-
 	indexColumns := []indexType{}
 	if err := func() error {
 		strSQL := `SELECT INDEX_SCHEMA AS INDEXOWNER,
 					INDEX_NAME as INDEXNAME,
 					COLUMN_NAME AS COLUMNNAME
 				FROM INFORMATION_SCHEMA.STATISTICS 
-				WHERE upper(table_schema) = ? and upper(table_name)=?
+				WHERE table_schema = ? and table_name=?
 				group by index_name having count(*)=1
 				ORDER BY table_name, index_name, seq_in_index`
 		rows, err := db.Query(strSQL, schemaName, tableName)
@@ -151,13 +152,13 @@ func getColumns(db common.DB, schemaName, tableName string) ([]*schema.Column, e
 	//注意indexColumns中可能含有非表字段的名称，例如oracle中的function index
 	indexColumnsMap := map[string]indexType{}
 	for _, s := range indexColumns {
-		indexColumnsMap[strings.ToUpper(s.Column)] = s
+		indexColumnsMap[s.Column] = s
 	}
 
 	revColumns := []*schema.Column{}
 	for _, v := range columns {
 		col := &schema.Column{
-			Name:        strings.ToUpper(v.Name),
+			Name:        v.Name,
 			Type:        schema.ParseDataType(v.Type),
 			MaxLength:   v.MaxLength,
 			Null:        v.Null > 0,
@@ -170,7 +171,7 @@ func getColumns(db common.DB, schemaName, tableName string) ([]*schema.Column, e
 			col.Index = true
 			col.IndexName = s.Name
 			if len(schemaName) > 0 || //如果是其他schema的表，则必定带上schema
-				strings.ToUpper(s.Owner) != schemaName { //如果index不和表在同一个schema中，也带上schema
+				s.Owner != schemaName { //如果index不和表在同一个schema中，也带上schema
 				col.IndexName = s.Owner + "." + col.IndexName
 			}
 		}
@@ -181,11 +182,15 @@ func getColumns(db common.DB, schemaName, tableName string) ([]*schema.Column, e
 }
 func (m *meta) OpenTable(db common.DB, tableName string) (*schema.Table, error) {
 	t := schema.NewTable(tableName)
+
 	pks, err := getPk(db, tableName)
+
 	if err != nil {
 		return nil, err
 	}
+
 	cols, err := getColumns(db, t.Schema, t.Name)
+
 	if err != nil {
 		return nil, err
 	}

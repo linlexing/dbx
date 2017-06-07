@@ -7,6 +7,7 @@ import (
 
 	_ "github.com/lib/pq"
 	"github.com/linlexing/dbx/schema"
+	_ "github.com/linlexing/dbx/schema/postgres"
 )
 
 func getDb() (*sql.DB, error) {
@@ -24,12 +25,12 @@ func createTable(db *sql.DB) (err error) {
 			IndexName: "oldindex",
 		},
 		&schema.Column{
-			Name: "name",
+			Name: "NAME",
 			Type: schema.TypeString,
 			Null: true,
 		},
 		&schema.Column{
-			Name: "age",
+			Name: "AGE",
 			Type: schema.TypeInt,
 			Null: false,
 		},
@@ -49,7 +50,7 @@ func TestCreateTable(t *testing.T) {
 	if err = createTable(db); err != nil {
 		t.Error(err)
 	}
-	if _, err = db.Exec("drop table test"); err != nil {
+	if _, err = db.Exec("DROP TABLE test"); err != nil {
 		t.Error(err)
 	}
 }
@@ -60,9 +61,16 @@ func TestTableExists(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	_, err = schema.Find("postgres").TableExists(db, "userinfo")
 	defer db.Close()
+	if err = createTable(db); err != nil {
+		t.Error(err)
+	}
+	_, err = schema.Find("postgres").TableExists(db, "test")
+
 	if err != nil {
+		t.Error(err)
+	}
+	if _, err = db.Exec("DROP TABLE test"); err != nil {
 		t.Error(err)
 	}
 }
@@ -73,13 +81,19 @@ func TestCreateTableAs(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	strSQL := "select *from userinfo"
-	pks := []string{"id", "name"}
-	err = schema.Find("postgres").CreateTableAs(db, "copyuserinfo", strSQL, pks)
 	defer db.Close()
-	if _, err = db.Exec("drop table copyuserinfo"); err != nil {
+	if err = createTable(db); err != nil {
 		t.Error(err)
 	}
+
+	strSQL := "select *from test"
+	pks := []string{"ID", "NAME"}
+	err = schema.Find("postgres").CreateTableAs(db, "copytest", strSQL, pks)
+
+	if _, err = db.Exec("DROP TABLE test, copytest"); err != nil {
+		t.Error(err)
+	}
+
 }
 
 //获得所以表格名称测试
@@ -89,6 +103,9 @@ func TestTableNames(t *testing.T) {
 		t.Error(err)
 	}
 	defer db.Close()
+	if err = createTable(db); err != nil {
+		t.Error(err)
+	}
 	var names []string
 	names, err = schema.Find("postgres").TableNames(db)
 	for key, value := range names {
@@ -98,7 +115,9 @@ func TestTableNames(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-
+	if _, err = db.Exec("DROP TABLE test"); err != nil {
+		t.Error(err)
+	}
 }
 
 //创建 删除索引
@@ -107,13 +126,20 @@ func TestCreateIndexIfNotExistsAndDropIndexIfExists(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	err = schema.Find("postgres").CreateIndexIfNotExists(db, "myindex", "userinfo", "id")
 	defer db.Close()
+	if err = createTable(db); err != nil {
+		t.Error(err)
+	}
+	err = schema.Find("postgres").CreateIndexIfNotExists(db, "myindex", "test", "ID")
+
 	if err != nil {
 		t.Error(err)
 	}
-	err = schema.Find("postgres").DropIndexIfExists(db, "myindex", "userinfo")
+	err = schema.Find("postgres").DropIndexIfExists(db, "myindex", "test")
 	if err != nil {
+		t.Error(err)
+	}
+	if _, err = db.Exec("DROP TABLE test"); err != nil {
 		t.Error(err)
 	}
 }
@@ -132,16 +158,16 @@ func TestChangeTable(t *testing.T) {
 		NewName:  "testChange",
 		OldName:  "test",
 		PKChange: true,
-		PK:       []string{"username"},
+		PK:       []string{"USERNAME"},
 	}
 	tab.OriginFields = []*schema.Column{
 		&schema.Column{
-			Name: "id",
+			Name: "ID",
 			Type: schema.TypeInt,
 			Null: false,
 		},
 		&schema.Column{
-			Name: "name",
+			Name: "NAME",
 			Type: schema.TypeString,
 			Null: true,
 		},
@@ -149,31 +175,31 @@ func TestChangeTable(t *testing.T) {
 	tab.ChangeFields = []*schema.ChangedField{
 		{
 			NewField: &schema.Column{
-				Name: "username",
+				Name: "USERNAME",
 				Type: schema.TypeString,
 				Null: false,
 			},
 			OldField: &schema.Column{
-				Name: "name",
+				Name: "NAME",
 				Type: schema.TypeString,
 				Null: true,
 			},
 		},
 		{
 			NewField: &schema.Column{
-				Name: "age",
+				Name: "AGE",
 				Type: schema.TypeInt,
 				Null: true,
 			},
 			OldField: &schema.Column{
-				Name: "age",
+				Name: "AGE",
 				Type: schema.TypeInt,
 				Null: false,
 			},
 		},
 		{
 			NewField: &schema.Column{
-				Name:      "clazz",
+				Name:      "CJAZZ",
 				Type:      schema.TypeInt,
 				Null:      true,
 				Index:     true,
@@ -182,7 +208,7 @@ func TestChangeTable(t *testing.T) {
 		},
 	}
 	err = schema.Find("postgres").ChangeTable(db, &tab)
-	if _, err = db.Exec("drop table testChange"); err != nil {
+	if _, err = db.Exec("DROP TABLE testChange"); err != nil {
 		t.Error(err)
 	}
 	if err != nil {

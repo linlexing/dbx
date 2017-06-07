@@ -41,13 +41,13 @@ func dropTablePrimaryKey(db common.DB, tableName string) error {
 		strSQL =
 			"select constraint_name from ALL_CONSTRAINTS where owner = :schema and table_name =:table and constraint_type='P'"
 		params = []interface{}{
-			strings.ToUpper(ns[0]),
-			strings.ToUpper(ns[1])}
+			ns[0],
+			ns[1]}
 	} else {
 		strSQL =
 			"select constraint_name from user_CONSTRAINTS where table_name =:table and constraint_type='P'"
 		params = []interface{}{
-			strings.ToUpper(tableName)}
+			tableName}
 	}
 	var pkCons string
 	row := db.QueryRow(strSQL, params...)

@@ -165,7 +165,7 @@ func (s *PageSelect) QueryRows(driver string, db common.DB) (result []map[string
 	//先根据预置的列类型清单获取对应的字段类型
 	for _, v := range columns {
 		col := &scan.ColumnType{
-			Name: strings.ToUpper(v),
+			Name: v,
 			Type: schema.TypeString,
 		}
 		if len(s.ColumnTypes) > 0 {
