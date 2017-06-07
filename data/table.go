@@ -27,7 +27,7 @@ type Table struct {
 	DB     common.DB
 	*schema.Table
 
-	columnTypes    []*scan.ColumnType
+	ColumnTypes    []*scan.ColumnType
 	notnullColumns []string
 	ColumnNames    []string
 	columnsMap     map[string]*schema.Column //用于快速查询
@@ -40,7 +40,7 @@ func NewTable(driver string, db common.DB, st *schema.Table) *Table {
 		DB:             db,
 		ColumnNames:    []string{},
 		Table:          st,
-		columnTypes:    []*scan.ColumnType{},
+		ColumnTypes:    []*scan.ColumnType{},
 		notnullColumns: []string{},
 		columnsMap:     map[string]*schema.Column{},
 	}
@@ -51,7 +51,7 @@ func NewTable(driver string, db common.DB, st *schema.Table) *Table {
 		if !col.Null {
 			rev.notnullColumns = append(rev.notnullColumns, col.Name)
 		}
-		rev.columnTypes = append(rev.columnTypes, &scan.ColumnType{
+		rev.ColumnTypes = append(rev.ColumnTypes, &scan.ColumnType{
 			Name: col.Name,
 			Type: col.Type,
 		})
@@ -126,7 +126,7 @@ func (t *Table) FromJSON(row map[string]interface{}) (map[string]interface{}, er
 
 //ScanSlice 根据一个Scaner，再根据Table的字段数据类型，扫描出一个slice
 func (t *Table) ScanSlice(s common.Scaner) (result []interface{}, err error) {
-	result, err = scan.TypeScan(s, t.columnTypes)
+	result, err = scan.TypeScan(s, t.ColumnTypes)
 	return
 }
 
@@ -361,7 +361,7 @@ func (t *Table) ImportFrom(db common.Queryer, progressFunc func(string), query s
 	iCount = 0
 	batCount = 0
 	for rows.Next() {
-		outList, err := scan.TypeScan(rows, t.columnTypes)
+		outList, err := scan.TypeScan(rows, t.ColumnTypes)
 		if err != nil {
 			return 0, err
 		}
