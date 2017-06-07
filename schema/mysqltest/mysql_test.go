@@ -51,6 +51,11 @@ func TestOpenTable(t *testing.T) {
 	if err = createTable(db); err != nil {
 		t.Error(err)
 	}
+	defer func() {
+		if _, err := db.Exec("DROP TABLE test"); err != nil {
+			t.Error(err)
+		}
+	}()
 	var tab *schema.Table
 	tab, err = schema.Find("mysql").OpenTable(db, "test")
 	if err != nil {
@@ -62,9 +67,6 @@ func TestOpenTable(t *testing.T) {
 	for key, value := range tab.Columns {
 		fmt.Println(key)
 		fmt.Println(value)
-	}
-	if _, err = db.Exec("DROP TABLE test"); err != nil {
-		t.Error(err)
 	}
 
 }
