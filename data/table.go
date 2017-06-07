@@ -195,14 +195,18 @@ func (t *Table) QueryRows(where string, param ...interface{}) ([]map[string]inte
 
 //KeyExists 检查一个主键是否存在
 func (t *Table) KeyExists(pks ...interface{}) (result bool, err error) {
-	strWhere := []string{}
+	whereList := []string{}
 
 	for _, v := range t.PrimaryKeys {
-		strWhere = append(strWhere, v+"=?")
+		whereList = append(whereList, v+"=?")
+	}
+	var strWhere string
+	if len(whereList) > 0 {
+		strWhere = " where " + strings.Join(whereList, " and ")
 	}
 
 	var rows *sql.Rows
-	strSQL := fmt.Sprintf("select 1 from %s%s", t.FullName(), strings.Join(strWhere, " and "))
+	strSQL := fmt.Sprintf("select 1 from %s %s", t.FullName(), strWhere)
 	if rows, err = t.DB.Query(t.bind(strSQL), pks...); err != nil {
 		err = common.NewSQLError(err, strSQL)
 		log.Println(err)
@@ -696,6 +700,9 @@ func (t *Table) Update(oldData, newData map[string]interface{}) (upCount int64, 
 //Save 保存一个记录，先尝试用keyvalue去update，如果更新到记录为0再insert，
 //逻辑上是正确的，同时，速度也会有保障
 func (t *Table) Save(row map[string]interface{}) error {
+	if len(t.PrimaryKeys) == 0 {
+		return errors.New("no pk")
+	}
 	i, err := t.UpdateByKey(t.KeyValues(row), row)
 	if err != nil {
 		return err
