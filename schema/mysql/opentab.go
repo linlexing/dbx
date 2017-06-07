@@ -3,7 +3,6 @@ package mysql
 import (
 	"fmt"
 	"log"
-	//"strings"
 
 	"database/sql"
 
@@ -16,7 +15,9 @@ func getPk(db common.DB, tableName string) ([]string, error) {
 	pks := []string{}
 
 	strSQL := fmt.Sprintf("SHOW KEYS FROM %s WHERE Key_name = 'PRIMARY'", tableName)
+
 	rows, err := db.Query(strSQL)
+
 	if err != nil {
 		log.Println(strSQL)
 		return nil, common.NewSQLError(err, strSQL)
@@ -48,11 +49,11 @@ func getPk(db common.DB, tableName string) ([]string, error) {
 			&Cardinality,
 			&SubPart,
 			&Packed,
-			&Packed,
 			&Null,
 			&IndexType,
 			&Comment,
 			&IndexComment); err != nil {
+			log.Println(err)
 			return nil, err
 		}
 		pks = append(pks, ColumnName)
@@ -69,6 +70,7 @@ func getColumns(db common.DB, schemaName, tableName string) ([]*schema.Column, e
 		}
 
 	}
+
 	type columnType struct {
 		Name      string `db:"DBNAME"`
 		Null      int    `db:"DBNULL"`
@@ -87,7 +89,7 @@ func getColumns(db common.DB, schemaName, tableName string) ([]*schema.Column, e
 					column_name as DBNAME,
 				    (case when is_nullable='YES' then 1 else 0 end) as DBNULL,
 				    (case when data_type in('varchar','text','char') then 'STR'
-						  when data_type ='int' then 'INT'
+						  when data_type in('bigint','int') then 'INT'
 						  when data_type in('decimal','double') then 'FLOAT'
 				          when data_type ='blob' then 'BYTEA'
 				          when data_type in('date','datetime') then 'DATE'
@@ -119,7 +121,6 @@ func getColumns(db common.DB, schemaName, tableName string) ([]*schema.Column, e
 	}(); err != nil {
 		return nil, err
 	}
-
 	indexColumns := []indexType{}
 	if err := func() error {
 		strSQL := `SELECT INDEX_SCHEMA AS INDEXOWNER,
@@ -181,11 +182,15 @@ func getColumns(db common.DB, schemaName, tableName string) ([]*schema.Column, e
 }
 func (m *meta) OpenTable(db common.DB, tableName string) (*schema.Table, error) {
 	t := schema.NewTable(tableName)
+
 	pks, err := getPk(db, tableName)
+
 	if err != nil {
 		return nil, err
 	}
+
 	cols, err := getColumns(db, t.Schema, t.Name)
+
 	if err != nil {
 		return nil, err
 	}
