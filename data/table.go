@@ -20,7 +20,8 @@ import (
 	"github.com/linlexing/dbx/schema"
 )
 
-//Table 表现一个数据库表,扩展了schema.Table ，提供了数据访问
+//Table 表现一个数据库表,扩展了schema.Table ，提供了数据访问，
+//注意该表实例后，不能再去修改其结构
 type Table struct {
 	driver string
 	DB     common.DB
@@ -294,25 +295,45 @@ func (t *Table) checkAndConvertRow(row map[string]interface{}) error {
 	return nil
 }
 
-//ImportFrom 从另一个表中导入数据,其列必须与表中数量一致,因为可能是异构数据库
-//所以不能用直接的CreateTableAs,由于数据可能比较多，采用5秒钟提交一次事务，所以Table.DB不能
-//是事务Tx
-func (t *Table) ImportFrom(srcTable *Table, progressFunc func(string),
-	where string, args ...interface{}) (iCount int64, err error) {
+//ImportFromTable 从另一个表中导入数据，表中列数量、名称、类型必须一致
+func (t *Table) ImportFromTable(srcTable *Table, progressFunc func(string), where string,
+	args ...interface{}) (iCount int64, err error) {
+	if len(t.ColumnNames) != len(srcTable.ColumnNames) {
+		return -1, errors.New("column number not equ")
+	}
+	for _, col := range t.ColumnNames {
+		if srcTable.ColumnByName(col) == nil {
+			return -1, errors.New("column:" + col + " not exists")
+		}
+	}
+	var whereStr string
+	if len(where) > 0 {
+		whereStr = " where " + where
+	}
+	query := fmt.Sprintf("select %s from %s%s", strings.Join(t.ColumnNames, ","),
+		srcTable.FullName(), whereStr)
+	return t.ImportFrom(srcTable.DB, progressFunc, query, args...)
+}
+
+//ImportFrom 从一个查询中导入数据,其列必须与表中数量一致,且序号类型一致，因为可能是异构数据库
+//所以不能用直接的CreateTableAs,由于数据可能比较多，采用5秒钟提交一次事务，
+//所以Table.DB必须是TxDB
+func (t *Table) ImportFrom(db common.Queryer, progressFunc func(string), query string,
+	args ...interface{}) (iCount int64, err error) {
 	var rowCount int64
-	rowCount, err = srcTable.Count(where, args...)
-	if err != nil {
+	strSQL := fmt.Sprintf("select count(*) from (%s) out_count", query)
+	if err = db.QueryRow(strSQL, args...).Scan(&rowCount); err != nil {
+		err = common.NewSQLError(err, strSQL, args...)
 		return
 	}
-
 	progressFunc(fmt.Sprintf("start import table %s,total %d records", t.FullName(), rowCount))
 
-	rows, err := srcTable.Query(where, args...)
+	rows, err := db.Query(query, args...)
 	if err != nil {
+		err = common.NewSQLError(err, query, args...)
 		return
 	}
 	defer rows.Close()
-
 	var batCount int64
 
 	//再构造insert语句
@@ -340,7 +361,7 @@ func (t *Table) ImportFrom(srcTable *Table, progressFunc func(string),
 	iCount = 0
 	batCount = 0
 	for rows.Next() {
-		outList, err := t.ScanSlice(rows)
+		outList, err := scan.TypeScan(rows, t.columnTypes)
 		if err != nil {
 			return 0, err
 		}
