@@ -605,8 +605,8 @@ func (t *Table) buildWhere(row map[string]interface{}) (string, []interface{}) {
 			strWhere = append(strWhere, fmt.Sprintf("%s is null", k))
 		} else {
 			strWhere = append(strWhere, fmt.Sprintf("%s=?", k))
+			newRow = append(newRow, v)
 		}
-		newRow = append(newRow, v)
 	}
 	return strings.Join(strWhere, " and\n"), newRow
 

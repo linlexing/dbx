@@ -2,8 +2,8 @@ package pageselect
 
 import (
 	"bytes"
-	"html/template"
 	"strings"
+	"text/template"
 )
 
 func buildCondition(order, divide []string) []*ConditionLine {
