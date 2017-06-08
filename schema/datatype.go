@@ -41,7 +41,7 @@ const (
 
 //MarshalJSON 实现json的自定义的json序列化，主要是为了兼容前个直接保存字符串值的版本
 func (d *DataType) MarshalJSON() ([]byte, error) {
-	return []byte(d.String()), nil
+	return json.Marshal(d.String())
 }
 
 //UnmarshalJSON 实现自定义的json反序列化，主要是为了兼容前个版本
