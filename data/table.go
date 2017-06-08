@@ -20,13 +20,14 @@ import (
 	"github.com/linlexing/dbx/schema"
 )
 
-//Table 表现一个数据库表,扩展了schema.Table ，提供了数据访问
+//Table 表现一个数据库表,扩展了schema.Table ，提供了数据访问，
+//注意该表实例后，不能再去修改其结构
 type Table struct {
 	driver string
 	DB     common.DB
 	*schema.Table
 
-	columnTypes    []*scan.ColumnType
+	ColumnTypes    []*scan.ColumnType
 	notnullColumns []string
 	ColumnNames    []string
 	columnsMap     map[string]*schema.Column //用于快速查询
@@ -39,7 +40,7 @@ func NewTable(driver string, db common.DB, st *schema.Table) *Table {
 		DB:             db,
 		ColumnNames:    []string{},
 		Table:          st,
-		columnTypes:    []*scan.ColumnType{},
+		ColumnTypes:    []*scan.ColumnType{},
 		notnullColumns: []string{},
 		columnsMap:     map[string]*schema.Column{},
 	}
@@ -50,7 +51,7 @@ func NewTable(driver string, db common.DB, st *schema.Table) *Table {
 		if !col.Null {
 			rev.notnullColumns = append(rev.notnullColumns, col.Name)
 		}
-		rev.columnTypes = append(rev.columnTypes, &scan.ColumnType{
+		rev.ColumnTypes = append(rev.ColumnTypes, &scan.ColumnType{
 			Name: col.Name,
 			Type: col.Type,
 		})
@@ -125,7 +126,7 @@ func (t *Table) FromJSON(row map[string]interface{}) (map[string]interface{}, er
 
 //ScanSlice 根据一个Scaner，再根据Table的字段数据类型，扫描出一个slice
 func (t *Table) ScanSlice(s common.Scaner) (result []interface{}, err error) {
-	result, err = scan.TypeScan(s, t.columnTypes)
+	result, err = scan.TypeScan(s, t.ColumnTypes)
 	return
 }
 
@@ -194,14 +195,18 @@ func (t *Table) QueryRows(where string, param ...interface{}) ([]map[string]inte
 
 //KeyExists 检查一个主键是否存在
 func (t *Table) KeyExists(pks ...interface{}) (result bool, err error) {
-	strWhere := []string{}
+	whereList := []string{}
 
 	for _, v := range t.PrimaryKeys {
-		strWhere = append(strWhere, v+"=?")
+		whereList = append(whereList, v+"=?")
+	}
+	var strWhere string
+	if len(whereList) > 0 {
+		strWhere = " where " + strings.Join(whereList, " and ")
 	}
 
 	var rows *sql.Rows
-	strSQL := fmt.Sprintf("select 1 from %s%s", t.FullName(), strings.Join(strWhere, " and "))
+	strSQL := fmt.Sprintf("select 1 from %s %s", t.FullName(), strWhere)
 	if rows, err = t.DB.Query(t.bind(strSQL), pks...); err != nil {
 		err = common.NewSQLError(err, strSQL)
 		log.Println(err)
@@ -294,25 +299,45 @@ func (t *Table) checkAndConvertRow(row map[string]interface{}) error {
 	return nil
 }
 
-//ImportFrom 从另一个表中导入数据,其列必须与表中数量一致,因为可能是异构数据库
-//所以不能用直接的CreateTableAs,由于数据可能比较多，采用5秒钟提交一次事务，所以Table.DB不能
-//是事务Tx
-func (t *Table) ImportFrom(srcTable *Table, progressFunc func(string),
-	where string, args ...interface{}) (iCount int64, err error) {
+//ImportFromTable 从另一个表中导入数据，表中列数量、名称、类型必须一致
+func (t *Table) ImportFromTable(srcTable *Table, progressFunc func(string), where string,
+	args ...interface{}) (iCount int64, err error) {
+	if len(t.ColumnNames) != len(srcTable.ColumnNames) {
+		return -1, errors.New("column number not equ")
+	}
+	for _, col := range t.ColumnNames {
+		if srcTable.ColumnByName(col) == nil {
+			return -1, errors.New("column:" + col + " not exists")
+		}
+	}
+	var whereStr string
+	if len(where) > 0 {
+		whereStr = " where " + where
+	}
+	query := fmt.Sprintf("select %s from %s%s", strings.Join(t.ColumnNames, ","),
+		srcTable.FullName(), whereStr)
+	return t.ImportFrom(srcTable.DB, progressFunc, query, args...)
+}
+
+//ImportFrom 从一个查询中导入数据,其列必须与表中数量一致,且序号类型一致，因为可能是异构数据库
+//所以不能用直接的CreateTableAs,由于数据可能比较多，采用5秒钟提交一次事务，
+//所以Table.DB必须是TxDB
+func (t *Table) ImportFrom(db common.Queryer, progressFunc func(string), query string,
+	args ...interface{}) (iCount int64, err error) {
 	var rowCount int64
-	rowCount, err = srcTable.Count(where, args...)
-	if err != nil {
+	strSQL := fmt.Sprintf("select count(*) from (%s) out_count", query)
+	if err = db.QueryRow(strSQL, args...).Scan(&rowCount); err != nil {
+		err = common.NewSQLError(err, strSQL, args...)
 		return
 	}
-
 	progressFunc(fmt.Sprintf("start import table %s,total %d records", t.FullName(), rowCount))
 
-	rows, err := srcTable.Query(where, args...)
+	rows, err := db.Query(query, args...)
 	if err != nil {
+		err = common.NewSQLError(err, query, args...)
 		return
 	}
 	defer rows.Close()
-
 	var batCount int64
 
 	//再构造insert语句
@@ -340,7 +365,7 @@ func (t *Table) ImportFrom(srcTable *Table, progressFunc func(string),
 	iCount = 0
 	batCount = 0
 	for rows.Next() {
-		outList, err := t.ScanSlice(rows)
+		outList, err := scan.TypeScan(rows, t.ColumnTypes)
 		if err != nil {
 			return 0, err
 		}
@@ -675,6 +700,9 @@ func (t *Table) Update(oldData, newData map[string]interface{}) (upCount int64, 
 //Save 保存一个记录，先尝试用keyvalue去update，如果更新到记录为0再insert，
 //逻辑上是正确的，同时，速度也会有保障
 func (t *Table) Save(row map[string]interface{}) error {
+	if len(t.PrimaryKeys) == 0 {
+		return errors.New("no pk")
+	}
 	i, err := t.UpdateByKey(t.KeyValues(row), row)
 	if err != nil {
 		return err

@@ -96,10 +96,10 @@ func (s *PageSelect) BuildSQL(driver string) (strSQL string, err error) {
 		for _, v := range s.Order {
 			if strings.HasPrefix(v, "-") {
 				orderList = append(orderList, Find(driver).SortByDesc(v[1:]))
-
-			} else {
+			} else if strings.HasPrefix(v, "+") {
 				orderList = append(orderList, Find(driver).SortByAsc(v[1:]))
-
+			} else {
+				orderList = append(orderList, Find(driver).SortByAsc(v))
 			}
 		}
 		if len(s.Divide) > 0 {

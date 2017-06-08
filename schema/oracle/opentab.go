@@ -33,9 +33,9 @@ func getPk(db common.DB, tableName string) ([]string, error) {
 	strSQL :=
 		`SELECT cols.column_name
 			FROM all_constraints cons,all_cons_columns cols
-			WHERE cons.owner=:schema
+			WHERE cons.owner=:1
 			and cons.OWNER=cols.owner
-			and cols.table_name = :tblname
+			and cols.table_name = :2
 			AND cons.constraint_type = 'P'
 			AND cons.constraint_name = cols.constraint_name
 			AND cons.owner = cols.owner
@@ -107,7 +107,7 @@ func getColumns(db common.DB, schemaName, table string) ([]*schema.Column, error
 						                                           end||')'
 						end as "TRUETYPE"
 				from ALL_TAB_COLUMNS 
-				where owner=:schema and table_name=:table
+				where owner=:1 and table_name=:2
 				order by column_id`
 		rows, err := db.Query(strSQL, schemaName, table)
 		if err != nil {
@@ -138,7 +138,7 @@ func getColumns(db common.DB, schemaName, table string) ([]*schema.Column, error
 		strSQL := `SELECT min(index_owner) as "INDEXOWNER",
 					index_name as "INDEXNAME",min(column_name) as "COLUMNNAME"
 				from all_ind_columns a
-				where table_owner=:schema and table_name = :name and
+				where table_owner=:1 and table_name = :2 and
 					exists(select 1 from all_indexes b where 
 						a.index_owner=b.owner and a.index_name =b.index_name and 
 						UNIQUENESS ='NONUNIQUE')

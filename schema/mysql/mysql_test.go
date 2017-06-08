@@ -221,13 +221,18 @@ func TestChangeTable(t *testing.T) {
 	// 		t.Error(err)
 	// 	}
 	// }()
+	// tab, err = new(meta).OpenTable(db, "oldtest")
+	// if err != nil {
+	// 	t.Error(err)
+	// }
 	change := schema.TableSchemaChange{
 		OldName:      "oldtest",
 		NewName:      "newtest",
 		PKChange:     true,
-		PK:           []string{"ID"},
+		PK:           []string{"name"},
 		RemoveFields: []string{"birthday"},
 	}
+	// change.OriginFields = tab.Columns
 	change.OriginFields = []*schema.Column{
 		&schema.Column{
 			Name:      "ID",
@@ -265,6 +270,7 @@ func TestChangeTable(t *testing.T) {
 				Type:      schema.TypeString,
 				MaxLength: 200,
 				Index:     true,
+				IndexName: "ioldtestname",
 				Null:      true,
 			},
 			NewField: &schema.Column{

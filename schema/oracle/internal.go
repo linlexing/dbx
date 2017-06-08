@@ -39,13 +39,13 @@ func dropTablePrimaryKey(db common.DB, tableName string) error {
 	var params []interface{}
 	if len(ns) > 1 {
 		strSQL =
-			"select constraint_name from ALL_CONSTRAINTS where owner = :schema and table_name =:table and constraint_type='P'"
+			"select constraint_name from ALL_CONSTRAINTS where owner = :1 and table_name =:2 and constraint_type='P'"
 		params = []interface{}{
 			ns[0],
 			ns[1]}
 	} else {
 		strSQL =
-			"select constraint_name from user_CONSTRAINTS where table_name =:table and constraint_type='P'"
+			"select constraint_name from user_CONSTRAINTS where table_name =:1 and constraint_type='P'"
 		params = []interface{}{
 			tableName}
 	}
@@ -139,7 +139,7 @@ func tableExists(db common.DB, tabName string) (bool, error) {
 		}
 
 	}
-	strSQL := "SELECT count(*) FROM all_tables where owner=:schema and table_name=:tname"
+	strSQL := "SELECT count(*) FROM all_tables where owner=:1 and table_name=:2"
 	var iCount int64
 	row := db.QueryRow(strSQL, schemaName, tname)
 	if err := row.Scan(&iCount); err != nil {
