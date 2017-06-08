@@ -124,12 +124,12 @@ func (t *Table) DefineScript(src string) error {
 	var prevColumn *Column
 	for i, line := range strings.Split(strings.Replace(src, "\r\n", "\n", -1), "\n") {
 
-		line = strings.TrimSpace(line)
+		line = strings.ToUpper(strings.TrimSpace(line))
 		if len(line) == 0 {
 			continue
 		}
 		//如果是主键定义
-		if strings.HasPrefix(line, "primary key(") {
+		if strings.HasPrefix(line, "PRIMARY KEY(") {
 			for _, v := range strings.Split(line[12:len(line)-1], ",") {
 				pks = append(pks, strings.TrimSpace(v))
 			}
@@ -156,15 +156,15 @@ func (t *Table) DefineScript(src string) error {
 				continue
 
 			}
-			dataType := strings.ToUpper(strings.TrimSpace(lineList[1]))
+			dataType := strings.TrimSpace(lineList[1])
 			notNull := false
 			index := false
 			var maxLength int64 = -1
 			if len(lineList) > 2 {
-				switch str := strings.ToLower(strings.TrimSpace(lineList[2])); str {
-				case "not null":
+				switch str := strings.TrimSpace(lineList[2]); str {
+				case "NOT NULL":
 					notNull = true
-				case "null":
+				case "NULL":
 					notNull = false
 				case "":
 				default:
@@ -172,22 +172,22 @@ func (t *Table) DefineScript(src string) error {
 				}
 			}
 			if len(lineList) > 3 {
-				switch str := strings.ToLower(strings.TrimSpace(lineList[3])); str {
-				case "index":
+				switch str := strings.TrimSpace(lineList[3]); str {
+				case "INDEX":
 					index = true
 				case "":
 				default:
 					return fmt.Errorf("line %d:%s ,error define %s", i, line, str)
 				}
 			}
-			if strings.HasPrefix(dataType, "str(") {
+			if strings.HasPrefix(dataType, "STR(") {
 				maxLength, err = strconv.ParseInt(dataType[4:len(dataType)-1], 10, 64)
 				if err != nil {
 					return err
 				}
 				dataType = "STR"
 			} else {
-				dataType = strings.ToUpper(dataType)
+				dataType = dataType
 			}
 			prevColumn = &Column{
 				Name:      colName,

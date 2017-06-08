@@ -2,6 +2,7 @@ package schema
 
 import (
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"log"
 	"strconv"
@@ -45,7 +46,12 @@ func (d *DataType) MarshalJSON() ([]byte, error) {
 
 //UnmarshalJSON 实现自定义的json反序列化，主要是为了兼容前个版本
 func (d *DataType) UnmarshalJSON(v []byte) error {
-	*d = ParseDataType(string(v))
+	var str string
+	//v 是一个字符串，带有两端双引号，需要转换
+	if err := json.Unmarshal(v, &str); err != nil {
+		return err
+	}
+	*d = ParseDataType(str)
 	return nil
 }
 
@@ -63,7 +69,7 @@ func ParseDataType(d string) DataType {
 	case "BYTEA":
 		return TypeBytea
 	default:
-		panic(fmt.Errorf("invalid type:%s", d))
+		panic(fmt.Errorf("invalid type:%#v", d))
 	}
 }
 
@@ -239,6 +245,8 @@ func (d DataType) ParseScan(v interface{}) interface{} {
 		switch tv := v.(type) {
 		case []byte:
 			return string(tv)
+		case string:
+			return tv
 		default:
 			panic(fmt.Sprintf("v:%#v can't to string", tv))
 		}
