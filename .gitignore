@@ -5,6 +5,7 @@
 *.zip
 *.exe
 *.apk
+*.db
 
 # Windows image file caches
 Thumbs.db
