@@ -45,6 +45,7 @@ func (m *meta) TableNames(db common.DB) (names []string, err error) {
 			log.Println(err)
 			return nil, err
 		}
+		names = append(names, name)
 	}
 
 	sort.Strings(names)
