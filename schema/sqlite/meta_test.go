@@ -15,8 +15,11 @@ type testDB struct {
 	DB *sqlx.DB
 }
 
+// var sqdb = "e:\\temp\\test.sq3"
+var sqdb = "E:\\SQLite\\test.db"
+
 func createTestDB() *testDB {
-	rev := testDB{fileName: "e:\\temp\\test.sq3"}
+	rev := testDB{fileName: sqdb}
 
 	if _, err := os.Stat(rev.fileName); err == nil {
 		os.Remove(rev.fileName)
