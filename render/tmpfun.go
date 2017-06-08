@@ -8,7 +8,7 @@ import (
 )
 
 var tempFunc = template.FuncMap{
-
+	//P 函数将具体的参数值转换成文字量，这里不用绑定，会有一些性能损失
 	"P": func(val interface{}) string {
 		switch tv := val.(type) {
 		case string:
@@ -29,4 +29,11 @@ var tempFunc = template.FuncMap{
 			panic(fmt.Errorf("not impl P,data type :%T", val))
 		}
 	},
+}
+
+//AddFunc 增加模板函数，如果前面有同名的函数，将被覆盖
+func AddFunc(fs template.FuncMap) {
+	for k, v := range fs {
+		tempFunc[k] = v
+	}
 }
