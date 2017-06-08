@@ -18,6 +18,7 @@ type testDB struct {
 // var sqdb = "e:\\temp\\test.sq3"
 var sqdb = "E:\\SQLite\\test.db"
 
+//create
 func createTestDB() *testDB {
 	rev := testDB{fileName: sqdb}
 
