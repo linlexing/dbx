@@ -105,7 +105,7 @@ func (m *meta) DropIndexIfExists(db common.DB, indexName, tableName string) erro
 		  IF COUNT_INDEXES = 1 THEN
 		    EXECUTE IMMEDIATE '%s';
 		  END IF;
-		END;`, indexName,
+		END;`, strings.ToUpper(indexName),
 		fmt.Sprintf("drop index %s", indexName))
 
 	if _, err := db.Exec(strSQL); err != nil {
@@ -129,7 +129,7 @@ func (m *meta) CreateIndexIfNotExists(db common.DB, indexName, tableName, expres
 		  IF COUNT_INDEXES = 0 THEN
 		    EXECUTE IMMEDIATE '%s';
 		  END IF;
-		END;`, indexName,
+		END;`, strings.ToUpper(indexName),
 		fmt.Sprintf("create index %s on %s(%s)", indexName, tableName, express))
 	if _, err := db.Exec(strSQL); err != nil {
 		err = common.NewSQLError(err, strSQL)
