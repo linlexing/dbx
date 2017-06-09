@@ -26,13 +26,16 @@ func (f *Column) Eque(src *Column) bool {
 	return f.Type == src.Type &&
 		(f.MaxLength == src.MaxLength ||
 			f.MaxLength <= 0 && src.MaxLength <= 0) &&
-		f.Null == src.Null
+		f.Null == src.Null &&
+		f.Index == src.Index
 }
 
 //Clone 复制一个字段
 func (f *Column) Clone() *Column {
-	fns := []string{}
-	copy(fns, f.FormerName)
+	var fns []string
+	if f.FormerName != nil {
+		copy(fns, f.FormerName)
+	}
 	return &Column{f.Name, f.Type, f.MaxLength, f.Null,
 		f.TrueType, f.FetchDriver, f.Index, f.IndexName, fns}
 }
