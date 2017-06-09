@@ -81,10 +81,13 @@ func (t *tableSchema) update() error {
 		if oldCol != nil {
 			oldColumnProcesses[oldCol.Name] = true
 		}
-		schg.ChangeFields = append(schg.ChangeFields, &ChangedField{
-			OldField: oldCol,
-			NewField: col,
-		})
+		//只有不相等的字段才纳入修改
+		if !oldCol.Eque(col) {
+			schg.ChangeFields = append(schg.ChangeFields, &ChangedField{
+				OldField: oldCol,
+				NewField: col,
+			})
+		}
 	}
 	//最后删除没有处理过的旧字段
 

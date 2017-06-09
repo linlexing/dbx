@@ -1,9 +1,8 @@
 package sqlite
 
 import (
-	"testing"
-
 	"os"
+	"testing"
 
 	"github.com/jmoiron/sqlx"
 	"github.com/linlexing/dbx/schema"
@@ -16,16 +15,17 @@ type testDB struct {
 	DB *sqlx.DB
 }
 
-// var sqdb = "e:\\temp\\test.sq3"
-var sqdb = "E:\\SQLite\\test.db"
+var sqdb = "e:\\temp\\dump932726563"
+
+//var sqdb = "E:\\SQLite\\test.db"
 
 //create
 func createTestDB() *testDB {
 	rev := testDB{fileName: sqdb}
 
-	if _, err := os.Stat(rev.fileName); err == nil {
+	/*	if _, err := os.Stat(rev.fileName); err == nil {
 		os.Remove(rev.fileName)
-	}
+	}*/
 	db, err := sqlx.Open("sqlite3", rev.fileName)
 	if err != nil {
 		panic(err)
@@ -36,6 +36,36 @@ func createTestDB() *testDB {
 func (t *testDB) Close() {
 	t.DB.Close()
 	os.Remove(t.fileName)
+}
+
+func Test_CreateTable(t *testing.T) {
+	testDB := createTestDB()
+	db := testDB.DB
+	defer testDB.Close()
+	tab := schema.NewTable("DEPT")
+	tab.Columns = []*schema.Column{
+		&schema.Column{Name: "CODE", Type: schema.TypeString, MaxLength: 50, Null: false},
+		&schema.Column{Name: "NAME", Type: schema.TypeString, MaxLength: 50, Null: false},
+		&schema.Column{Name: "DLEVEL", Type: schema.TypeInt, Null: false},
+	}
+	tab.PrimaryKeys = []string{"CODE"}
+	if err := tab.Update("sqlite3", db); err != nil {
+		t.Error(err)
+	}
+}
+func Test_exesql(t *testing.T) {
+	testDB := createTestDB()
+	db := testDB.DB
+	defer testDB.Close()
+	if _, err := db.Exec(
+		`CREATE TABLE dept(
+CODE TEXT(50) NOT NULL,
+NAME TEXT(50) NOT NULL,
+DLEVEL INTEGER NOT NULL,
+CONSTRAINT dept_pkey PRIMARY KEY(CODE))`); err != nil {
+		t.Fatal(err)
+	}
+
 }
 
 func Test_TableNames(t *testing.T) {
@@ -61,6 +91,7 @@ func Test_TableNames(t *testing.T) {
 		t.Fatal("not aaa", list[0])
 	}
 }
+
 func Test_CreateTableAs(t *testing.T) {
 	testDB := createTestDB()
 	db := testDB.DB
@@ -78,17 +109,20 @@ func Test_CreateTableAs(t *testing.T) {
 	if _, err = db.Exec("create table aaa(a varchar(200) primary key,b integer)"); err != nil {
 		t.Fatal(err)
 	}
+
 	defer func() {
 		if _, err := db.Exec("drop table aaa"); err != nil {
 			t.Error(err)
 		}
 	}()
 	if _, err = db.NamedExec("insert into aaa(a,b)values(:a,:b)", &v); err != nil {
+
 		t.Fatal(err)
 	}
 	if err = new(meta).CreateTableAs(db, "bbb", "select * from aaa", []string{"a"}); err != nil {
 		t.Fatal(err)
 	}
+
 	defer func() {
 		if _, err := db.Exec("drop table bbb"); err != nil {
 			t.Error(err)
@@ -233,11 +267,11 @@ func TestChangeTable(t *testing.T) {
 	}
 
 	tab01 := tableTest01()
-	// defer func() {
-	// 	if _, err := db.Exec("drop table test01"); err != nil {
-	// 		t.Error(err)
-	// 	}
-	// }()
+	defer func() {
+		if _, err := db.Exec("drop table test01"); err != nil {
+			t.Error(err)
+		}
+	}()
 	tab01.FormerName = []string{"test", "test03"}
 	err = tab01.Update("sqlite3", db)
 	if err != nil {
@@ -257,11 +291,11 @@ func TestChangeTable01(t *testing.T) {
 	}
 
 	tab02 := tableTest02()
-	// defer func() {
-	// 	if _, err := db.Exec("drop table test02"); err != nil {
-	// 		t.Error(err)
-	// 	}
-	// }()
+	defer func() {
+		if _, err := db.Exec("drop table test02"); err != nil {
+			t.Error(err)
+		}
+	}()
 	tab02.FormerName = []string{"test", "test03"}
 	err = tab02.Update("sqlite3", db)
 	if err != nil {

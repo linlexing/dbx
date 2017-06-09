@@ -111,12 +111,12 @@ func (m *meta) CreateTable(db common.DB, tab *schema.Table) error {
 			"CREATE TABLE %s(\n%s\n)",
 			tab.FullName(), strings.Join(cols, ",\n"))
 	}
+	log.Println(strSQL)
 	if _, err := db.Exec(strSQL); err != nil {
 		err = common.NewSQLError(err, strSQL)
 		log.Println(err)
 		return err
 	}
-	log.Println(strSQL)
 	//最后处理索引
 	for _, col := range tab.Columns {
 		if col.Index {
