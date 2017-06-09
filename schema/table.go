@@ -111,11 +111,12 @@ func (t *Table) ColumnByName(name string) *Column {
 
 //DefineScript 采用脚本的方式定义表，如下：
 //  a str(3) not null
-//  b int
+//  b int	--注释
 //  c date not null index
 //  primary key(a,c)
 func (t *Table) DefineScript(src string) error {
 	lineReg, err := regexp.Compile(`(?i)([\p{Han}_a-zA-Z0-9]+)(\s+bytea|\s+date|\s+float|\s+int|\s+str\([0-9]+\)|\s+str|)(\s+null|\s+not null|)(\s+index|)`)
+	comment := "--"
 	if err != nil {
 		return err
 	}
@@ -123,7 +124,10 @@ func (t *Table) DefineScript(src string) error {
 	columns := []*Column{}
 	var prevColumn *Column
 	for i, line := range strings.Split(strings.Replace(src, "\r\n", "\n", -1), "\n") {
-
+		//先去除注释
+		if idx := strings.Index(line, comment); idx >= 0 {
+			line = line[:idx]
+		}
 		line = strings.ToUpper(strings.TrimSpace(line))
 		if len(line) == 0 {
 			continue
