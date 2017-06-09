@@ -23,6 +23,8 @@ func (f *Column) Eque(src *Column) bool {
 		len(f.TrueType) > 0 && len(src.TrueType) > 0 {
 		return f.TrueType == src.TrueType
 	}
+	//历史原因，MaxLength <=0 只有一个含义，无限的长度
+	//历史代码中有时用了-1,有时是0，所以都是<=0的视为相等
 	return f.Type == src.Type &&
 		(f.MaxLength == src.MaxLength ||
 			f.MaxLength <= 0 && src.MaxLength <= 0) &&
