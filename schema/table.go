@@ -63,7 +63,7 @@ func (t *Table) Update(driver string, db common.DB) error {
 			if b, _ := mt.TableExists(db, v); b {
 				oldTable, err := mt.OpenTable(db, v)
 				if err != nil {
-					return nil
+					return err
 				}
 				sch.oldTable = oldTable
 				break
