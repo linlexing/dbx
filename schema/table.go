@@ -53,10 +53,30 @@ func (t *Table) FullName() string {
 	}
 	return t.Name
 }
+func (t *Table) check() error {
+	cm := map[string]bool{}
+	for i, c := range t.Columns {
+		if len(c.Name) == 0 {
+			return fmt.Errorf("column %d name is empty", i)
+		}
+		if _, ok := cm[c.Name]; ok {
+			return fmt.Errorf("column %d name is dup", i)
+		}
+	}
+	for _, c := range t.PrimaryKeys {
+		if _, ok := cm[c]; !ok {
+			return fmt.Errorf("primary key %s not found", c)
+		}
+	}
+	return nil
+}
 
 //Update 更新一个表的结构至数据库中，会自动处理表改名、字段改名以及字段修改、索引修改等操作,
 //先自动去数据库取出旧表结构
 func (t *Table) Update(driver string, db common.DB) error {
+	if err := t.check(); err != nil {
+		return err
+	}
 	mt := Find(driver)
 	sch := &tableSchema{
 		newTable: t,
