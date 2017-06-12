@@ -38,7 +38,7 @@ func TestInnerStruct(t *testing.T) {
 		C名称 string `dbx:"名称 STR(50) PRIMARY KEY"`
 		innerT
 	}
-	fields, err := fieldsFromStruct(reflect.TypeOf(tabT{}), nil)
+	fields, err := fieldsFromStruct(reflect.TypeOf(tabT{}), nil, true)
 	if err != nil {
 		t.Fatal(err)
 	}

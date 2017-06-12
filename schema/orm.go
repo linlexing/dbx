@@ -29,10 +29,13 @@ type structField struct {
 //Float  float64
 //Int    int64
 //child []struct
-func (s *structField) checkType() error {
+func (s *structField) checkType(root bool) error {
 	dt := s.define.Type
 	st := s.st
 	if s.child {
+		if !root {
+			return errors.New("child table must at root level")
+		}
 		if st.Kind() == reflect.Slice &&
 			st.Elem().Kind() == reflect.Struct {
 			return nil
@@ -157,14 +160,9 @@ func (s *structField) get(obj reflect.Value) (interface{}, error) {
 		}
 		clist := []map[string]interface{}{}
 		for i := 0; i < p.Len(); i++ {
-			cm, cd, e := struct2Row(p.Index(i))
+			cm, e := childStruct2Row(p.Index(i))
 			if e != nil {
 				return nil, e
-			}
-			//子表不能再有子表，防止问题复杂化
-			if len(cd) > 0 {
-				err := fmt.Errorf("field:%s has sub child data", s.fieldName)
-				return nil, err
 			}
 			clist = append(clist, cm)
 		}
@@ -174,7 +172,6 @@ func (s *structField) get(obj reflect.Value) (interface{}, error) {
 		return nil, nil
 	}
 	if s.json() {
-
 		bys, err := json.Marshal(p.Interface())
 		if err != nil {
 			return nil, err
@@ -182,14 +179,12 @@ func (s *structField) get(obj reflect.Value) (interface{}, error) {
 		return string(bys), nil
 	}
 	if s.gob() {
-
 		bys := bytes.NewBuffer(nil)
 		if err := gob.NewEncoder(bys).EncodeValue(p); err != nil {
 			return nil, err
 		}
 		return bys.Bytes(), nil
 	}
-
 	return p.Interface(), nil
 }
 func (s *structField) getv(obj reflect.Value) reflect.Value {
@@ -213,7 +208,7 @@ func (s *structField) set(obj reflect.Value, val interface{}) error {
 		list := reflect.New(s.st)
 		for _, row := range val.([]map[string]interface{}) {
 			rv := reflect.New(s.st.Elem())
-			if err := row2Struct(row, nil, rv); err != nil {
+			if err := childRow2Struct(row, rv); err != nil {
 				return err
 			}
 			list.Elem().Set(reflect.Append(list.Elem(), rv.Elem()))
@@ -259,7 +254,7 @@ func (s *structField) setv(obj reflect.Value, val reflect.Value) {
 //fieldsFromStruct 读取一个结构体，转换成元数据，可以接受一个*struct、
 //[]struct、[]*struct,并需传入一个属性路径索引数组，方便后期赋值
 //允许匿名嵌套
-func fieldsFromStruct(vtype reflect.Type, parentPath []int) (rev []*structField, err error) {
+func fieldsFromStruct(vtype reflect.Type, parentPath []int, root bool) (rev []*structField, err error) {
 	rev = []*structField{}
 	for vtype.Kind() == reflect.Slice ||
 		vtype.Kind() == reflect.Ptr {
@@ -271,12 +266,12 @@ func fieldsFromStruct(vtype reflect.Type, parentPath []int) (rev []*structField,
 	}
 	for i := 0; i < vtype.NumField(); i++ {
 		field := vtype.Field(i)
-		newPath :=make([]int,len(parentPath))
+		newPath := make([]int, len(parentPath))
 		copy(newPath, parentPath)
 		newPath = append(newPath, i)
 		//嵌套结构，扁平化
 		if field.Anonymous {
-			list, e := fieldsFromStruct(field.Type, newPath)
+			list, e := fieldsFromStruct(field.Type, newPath, root)
 			if e != nil {
 				err = e
 				return
@@ -335,15 +330,15 @@ func fieldsFromStruct(vtype reflect.Type, parentPath []int) (rev []*structField,
 			}
 		}
 		//检查字段类型是否正确
-		if err := sf.checkType(); err != nil {
+		if err := sf.checkType(root); err != nil {
 			return nil, fmt.Errorf("field:%s error:%s", sf.fieldName, err)
 		}
 		rev = append(rev, sf)
 	}
 	return rev, nil
 }
-func struct2Table(tableName string, vtype reflect.Type, parentPath []int) ([]*Table, error) {
-	list, err := fieldsFromStruct(vtype, parentPath)
+func struct2Table(tableName string, vtype reflect.Type, parentPath []int, root bool) ([]*Table, error) {
+	list, err := fieldsFromStruct(vtype, parentPath, root)
 	if err != nil {
 		return nil, err
 	}
@@ -354,7 +349,7 @@ func struct2Table(tableName string, vtype reflect.Type, parentPath []int) ([]*Ta
 
 		//子表递归调用
 		if one.child {
-			tabs, err := struct2Table(one.childName, one.st, parentPath)
+			tabs, err := struct2Table(one.childName, one.st, parentPath, false)
 			if err != nil {
 				return nil, err
 			}
@@ -372,11 +367,11 @@ func struct2Table(tableName string, vtype reflect.Type, parentPath []int) ([]*Ta
 //TableFromStruct 将一个struct转换成table清单,可能有明细表
 //第一个是主表，剩余是明细表
 func TableFromStruct(tableName string, meta interface{}) ([]*Table, error) {
-	return struct2Table(tableName, reflect.TypeOf(meta), nil)
+	return struct2Table(tableName, reflect.TypeOf(meta), nil, true)
 }
-func struct2Row(vval reflect.Value) (main map[string]interface{},
+func mainStruct2Row(vval reflect.Value) (main map[string]interface{},
 	child map[string][]map[string]interface{}, err error) {
-	types, err := fieldsFromStruct(vval.Type(), nil)
+	types, err := fieldsFromStruct(vval.Type(), nil, true)
 	if err != nil {
 		return
 	}
@@ -402,21 +397,37 @@ func struct2Row(vval reflect.Value) (main map[string]interface{},
 	}
 	return
 }
+func childStruct2Row(vval reflect.Value) (main map[string]interface{}, err error) {
+	types, err := fieldsFromStruct(vval.Type(), nil, false)
+	if err != nil {
+		return
+	}
+	if vval.Kind() == reflect.Ptr {
+		vval = vval.Elem()
+	}
+	main = map[string]interface{}{}
+	for _, v := range types {
+		if main[v.define.Name], err = v.get(vval); err != nil {
+			return
+		}
+	}
+	return
+}
 
 //Struct2Row 结构体的值转换成map
 func Struct2Row(meta interface{}) (main map[string]interface{},
 	detail map[string][]map[string]interface{}, err error) {
-	return struct2Row(reflect.ValueOf(meta))
+	return mainStruct2Row(reflect.ValueOf(meta))
 }
 
 //Row2Struct map转换成结构体的值
 func Row2Struct(row map[string]interface{},
 	child map[string][]map[string]interface{}, vval interface{}) error {
-	return row2Struct(row, child, reflect.ValueOf(vval))
+	return mainRow2Struct(row, child, reflect.ValueOf(vval))
 }
-func row2Struct(row map[string]interface{},
+func mainRow2Struct(row map[string]interface{},
 	child map[string][]map[string]interface{}, vval reflect.Value) error {
-	types, err := fieldsFromStruct(vval.Type(), nil)
+	types, err := fieldsFromStruct(vval.Type(), nil, true)
 	if err != nil {
 		return err
 	}
@@ -439,6 +450,25 @@ func row2Struct(row map[string]interface{},
 			} else {
 				v.set(vval, nil) //没找到的属性要设置成nil，防止有旧值
 			}
+		}
+	}
+	return nil
+}
+
+//childRow2Struct 将一个子表记录转换成struct
+func childRow2Struct(row map[string]interface{}, vval reflect.Value) error {
+	types, err := fieldsFromStruct(vval.Type(), nil, false)
+	if err != nil {
+		return err
+	}
+	for vval.Kind() == reflect.Ptr {
+		vval = vval.Elem()
+	}
+	for _, v := range types {
+		if tv, ok := row[v.define.Name]; ok {
+			v.set(vval, tv)
+		} else {
+			v.set(vval, nil) //没找到的属性要设置成nil，防止有旧值
 		}
 	}
 	return nil
