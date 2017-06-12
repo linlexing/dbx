@@ -81,7 +81,7 @@ func columnDefine(line string) (result *colDef, err error) {
 	result.Type = ParseDataType(dataType)
 	result.MaxLength = int(maxLength)
 	//主键一定是not null
-	result.Null = !(notNull || result.isPK
+	result.Null = !(notNull || result.isPK)
 	result.Index = index
 	return
 }
