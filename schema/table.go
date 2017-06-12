@@ -62,6 +62,7 @@ func (t *Table) check() error {
 		if _, ok := cm[c.Name]; ok {
 			return fmt.Errorf("column %d name is dup", i)
 		}
+		cm[c.Name] = true
 	}
 	for _, c := range t.PrimaryKeys {
 		if _, ok := cm[c]; !ok {

@@ -366,8 +366,23 @@ func struct2Table(tableName string, vtype reflect.Type, parentPath []int, root b
 
 //TableFromStruct 将一个struct转换成table清单,可能有明细表
 //第一个是主表，剩余是明细表
-func TableFromStruct(tableName string, meta interface{}) ([]*Table, error) {
-	return struct2Table(tableName, reflect.TypeOf(meta), nil, true)
+func TableFromStruct(meta interface{}, tabNames ...string) ([]*Table, error) {
+	vtype := reflect.TypeOf(meta)
+	if vtype.Kind() == reflect.Ptr {
+		vtype = vtype.Elem()
+	}
+
+	var tabName string
+	if len(tabNames) > 0 {
+		tabName = tabNames[0]
+	} else {
+		tabName = strings.ToUpper(vtype.Name())
+	}
+	if len(tabNames) > 1 {
+		panic("tableNames must is one or none")
+	}
+
+	return struct2Table(tabName, reflect.TypeOf(meta), nil, true)
 }
 func mainStruct2Row(vval reflect.Value) (main map[string]interface{},
 	child map[string][]map[string]interface{}, err error) {

@@ -76,24 +76,6 @@ func (t *Table) bind(strSQL string) string {
 	return Bind(t.driver, strSQL)
 }
 
-//Get 获取一个记录，并赋值给结构体
-func (t *Table) Get(out interface{}, pks ...interface{}) error {
-	row, err := t.Row(pks...)
-	if err != nil {
-		return err
-	}
-	return schema.Row2Struct(row, out)
-}
-
-//Set 保存一个记录，从结构体读取数据
-func (t *Table) Set(out interface{}) error {
-	row, err := schema.Struct2Row(out)
-	if err != nil {
-		return err
-	}
-	return t.Save(row)
-}
-
 //Row 根据一个主键值返回一个记录,如果没有找到返回一个错误
 func (t *Table) Row(pks ...interface{}) (map[string]interface{}, error) {
 	whereList := []string{}

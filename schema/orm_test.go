@@ -85,7 +85,7 @@ func TestTableFromStruct(t *testing.T) {
 				Date2 time.Time
 				Byte1 []byte `dbx:"bytea"`
 			}
-			tabs, err := TableFromStruct("TEST", new(test))
+			tabs, err := TableFromStruct(new(test), "TEST")
 			if err != nil {
 				t.Error(err)
 			}
@@ -98,7 +98,7 @@ func TestTableFromStruct(t *testing.T) {
 		}{
 			"汉字",
 			func() []*Table {
-				tab := NewTable("用户")
+				tab := NewTable("T用户")
 				if err := tab.DefineScript(`
 					代码  STR(50) PRIMARY KEY
 					名称  STR(50) PRIMARY KEY
@@ -122,7 +122,7 @@ func TestTableFromStruct(t *testing.T) {
 				return []*Table{tab, tab1}
 			}(), func() []*Table {
 
-				tabs, err := TableFromStruct("用户", new(T用户))
+				tabs, err := TableFromStruct(new(T用户))
 				if err != nil {
 					t.Error(err)
 				}
