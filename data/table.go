@@ -76,7 +76,7 @@ func (t *Table) bind(strSQL string) string {
 	return Bind(t.driver, strSQL)
 }
 
-//Row 根据一个主键值返回一个记录,如果没有找到返回一个错误
+//Row 根据一个主键值返回一个记录,如果没有找到返回ErrNoRows
 func (t *Table) Row(pks ...interface{}) (map[string]interface{}, error) {
 	whereList := []string{}
 	if len(t.PrimaryKeys) != len(pks) {
@@ -91,7 +91,7 @@ func (t *Table) Row(pks ...interface{}) (map[string]interface{}, error) {
 	}
 	defer rows.Close()
 	if !rows.Next() {
-		return nil, errors.New("the record not found")
+		return nil, sql.ErrNoRows
 	}
 	return t.ScanMap(rows)
 }
