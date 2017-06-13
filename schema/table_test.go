@@ -53,8 +53,8 @@ func TestTableDefineScript(t *testing.T) {
 		}(), func() *Table {
 			tab := NewTable("test")
 			tab.Columns = []*Column{
-				&Column{Name: "CODE", Type: TypeString, Null: true, MaxLength: 50},
-				&Column{Name: "NAME", Type: TypeString, Null: true, MaxLength: 50},
+				&Column{Name: "CODE", Type: TypeString, Null: false, MaxLength: 50},
+				&Column{Name: "NAME", Type: TypeString, Null: false, MaxLength: 50},
 				&Column{Name: "DESC", Type: TypeString, Null: true, MaxLength: 0},
 				&Column{Name: "NUM", Type: TypeFloat, Index: true},
 				&Column{Name: "NUM1", Type: TypeInt, Null: true},
@@ -91,8 +91,8 @@ func TestTableDefineScript(t *testing.T) {
 			}(), func() *Table {
 				tab := NewTable("test")
 				tab.Columns = []*Column{
-					&Column{Name: "CODE", Type: TypeString, Null: true, MaxLength: 50},
-					&Column{Name: "NAME", Type: TypeString, Null: true, MaxLength: 50},
+					&Column{Name: "CODE", Type: TypeString, Null: false, MaxLength: 50},
+					&Column{Name: "NAME", Type: TypeString, Null: false, MaxLength: 50},
 					&Column{Name: "DESC", Type: TypeString, Null: true, MaxLength: 0},
 					&Column{Name: "NUM", Type: TypeFloat, Index: true},
 					&Column{Name: "NUM1", Type: TypeInt, Null: true},

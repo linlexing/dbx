@@ -176,6 +176,10 @@ func (t *Table) DefineScript(src string) error {
 	//如果单独定义了主键，则覆盖之前的主键定义
 	if len(pks) > 0 {
 		t.PrimaryKeys = pks
+		//将所有的主键设置成NOT NULL
+		for _,v :=range t.PrimaryKeys{
+			t.ColumnByName(v).Null = false
+		}
 	}
 	return nil
 }

@@ -188,10 +188,7 @@ func (s *structField) get(obj reflect.Value) (interface{}, error) {
 	return p.Interface(), nil
 }
 func (s *structField) getv(obj reflect.Value) reflect.Value {
-	p := obj
-	for _, i := range s.valPath {
-		p = p.Field(i)
-	}
+	p := obj.FieldByIndex(s.valPath)
 	for p.Kind() == reflect.Ptr {
 		p = p.Elem()
 	}
@@ -244,16 +241,13 @@ func (s *structField) setv(obj reflect.Value, val reflect.Value) {
 			panic(r)
 		}
 	}()
-	p := obj
-	for _, i := range s.valPath {
-		p = p.Field(i)
-	}
+	p := obj.FieldByIndex(s.valPath)
 	p.Set(val)
 }
 
 //fieldsFromStruct 读取一个结构体，转换成元数据，可以接受一个*struct、
 //[]struct、[]*struct,并需传入一个属性路径索引数组，方便后期赋值
-//允许匿名嵌套
+//允许匿名嵌套,所有未导出的字段被忽略
 func fieldsFromStruct(vtype reflect.Type, parentPath []int, root bool) (rev []*structField, err error) {
 	rev = []*structField{}
 	for vtype.Kind() == reflect.Slice ||
@@ -279,6 +273,11 @@ func fieldsFromStruct(vtype reflect.Type, parentPath []int, root bool) (rev []*s
 			rev = append(rev, list...)
 			continue
 		}
+		//unexported
+		if len(field.PkgPath) > 0 {
+			continue
+		}
+
 		sf := &structField{
 			fieldName: field.Name,
 			valPath:   newPath,
@@ -371,7 +370,9 @@ func TableFromStruct(meta interface{}, tabNames ...string) ([]*Table, error) {
 	if vtype.Kind() == reflect.Ptr {
 		vtype = vtype.Elem()
 	}
-
+	if len(tabNames) > 1 {
+		return nil, fmt.Errorf("table names %v len > 1", tabNames)
+	}
 	var tabName string
 	if len(tabNames) > 0 {
 		tabName = tabNames[0]

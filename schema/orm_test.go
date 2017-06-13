@@ -75,6 +75,8 @@ func TestTableFromStruct(t *testing.T) {
 			return []*Table{tab}
 		}(), func() []*Table {
 			type test struct {
+				unexport string `dbx:"STR(50) PRIMARY KEY"`
+
 				Code  string  `dbx:"STR(50) PRIMARY KEY"`
 				Name  string  `dbx:"STR(50) PRIMARY KEY"`
 				Desc  string  `dbx:"STR"`
