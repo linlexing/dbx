@@ -18,17 +18,25 @@ type innerT struct {
 	C嵌入 string `dbx:"嵌入 STR(50)"`
 }
 type T用户 struct {
-	C代码  string       `dbx:"代码 STR(50) PRIMARY KEY"`
-	C名称  string       `dbx:"名称 STR(50) PRIMARY KEY"`
-	C描述  string       `dbx:"描述 STR"`
-	C时间  time.Time    `dbx:"时间 DATE"`
-	C数量  float64      `dbx:"数量 FLOAT NOT NULL INDEX"`
-	C有效  bool         `dbx:"有效 STR(1)"`
-	C无效  bool         `dbx:"无效 INT"`
-	C其他  []*otherType `dbx:"其他 STR"`
-	C其他1 []otherType  `dbx:"其他1 BYTEA"`
-	C明细  []otherType  `dbx:"明细 CHILD"`
+	C代码  string       `dbx:"STR(50) PRIMARY KEY"`
+	C名称  string       `dbx:"STR(50) PRIMARY KEY"`
+	C描述  string       `dbx:"STR"`
+	C时间  time.Time    `dbx:"DATE"`
+	C数量  float64      `dbx:"FLOAT NOT NULL INDEX"`
+	C有效  bool         `dbx:"STR(1)"`
+	C无效  bool         `dbx:"INT"`
+	C其他  []*otherType `dbx:"STR"`
+	C其他1 []otherType  `dbx:"BYTEA"`
+	C明细  []otherType  `dbx:"CHILD"`
 	innerT
+}
+
+func (t T用户) ConvertFieldName(parent, str string) string {
+	if len(parent) == 0 {
+		return str[1:]
+	}
+	return str
+
 }
 
 func init() {
@@ -40,7 +48,7 @@ func TestInnerStruct(t *testing.T) {
 		C名称 string `dbx:"名称 STR(50) PRIMARY KEY"`
 		innerT
 	}
-	fields, err := fieldsFromStruct(reflect.TypeOf(tabT{}), nil, true)
+	fields, err := fieldsFromStruct(reflect.TypeOf(tabT{}), nil, "", nil, true)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -12,13 +12,18 @@ import (
 	"time"
 )
 
+type converFieldName interface {
+	ConvertFieldName(childName string, str string) string
+}
 type structField struct {
-	fieldName string       //结构属性名称
-	define    *colDef      //字段定义
-	st        reflect.Type //Go类型
-	child     bool         //是否明细表
-	childName string       //如是明细表，这里是表名称
-	valPath   []int        //属性路径，即每层属性序号
+	fieldName  string          //结构属性名称
+	define     *colDef         //字段定义
+	st         reflect.Type    //Go类型
+	child      bool            //是否明细表
+	childName  string          //如是明细表，这里是表名称
+	conv       converFieldName //用于明细表
+	valPath    []int           //属性路径，即每层属性序号
+	parentName string          //如果是子表属性，这里是子表属性名称，用于指标名称转换
 }
 
 //checkType 检查数据库类型和实际类型是否相容
@@ -30,7 +35,6 @@ type structField struct {
 //Int    int64,bool
 //child []struct
 func (s *structField) checkType(root bool) error {
-	dt := s.define.Type
 	st := s.st
 	if s.child {
 		if !root {
@@ -42,6 +46,7 @@ func (s *structField) checkType(root bool) error {
 		}
 		return errors.New("child table must is slice of struct")
 	}
+	dt := s.define.Type
 	switch dt {
 	case TypeString:
 		switch st.Kind() {
@@ -170,7 +175,7 @@ func (s *structField) get(obj reflect.Value) (interface{}, error) {
 		}
 		clist := []map[string]interface{}{}
 		for i := 0; i < p.Len(); i++ {
-			cm, e := childStruct2Row(p.Index(i))
+			cm, e := childStruct2Row(p.Index(i), s.conv, s.fieldName)
 			if e != nil {
 				return nil, e
 			}
@@ -232,7 +237,7 @@ func (s *structField) set(obj reflect.Value, val interface{}) error {
 		list := reflect.New(s.st)
 		for _, row := range val.([]map[string]interface{}) {
 			rv := reflect.New(s.st.Elem())
-			if err := childRow2Struct(row, rv); err != nil {
+			if err := childRow2Struct(row, rv, s.conv, s.fieldName); err != nil {
 				return err
 			}
 			list.Elem().Set(reflect.Append(list.Elem(), rv.Elem()))
@@ -300,7 +305,8 @@ func (s *structField) setv(obj reflect.Value, val reflect.Value) {
 //fieldsFromStruct 读取一个结构体，转换成元数据，可以接受一个*struct、
 //[]struct、[]*struct,并需传入一个属性路径索引数组，方便后期赋值
 //允许匿名嵌套,所有未导出的字段被忽略
-func fieldsFromStruct(vtype reflect.Type, parentPath []int, root bool) (rev []*structField, err error) {
+func fieldsFromStruct(vtype reflect.Type, conv converFieldName, parentName string,
+	parentPath []int, root bool) (rev []*structField, err error) {
 	rev = []*structField{}
 	for vtype.Kind() == reflect.Slice ||
 		vtype.Kind() == reflect.Ptr {
@@ -312,12 +318,10 @@ func fieldsFromStruct(vtype reflect.Type, parentPath []int, root bool) (rev []*s
 	}
 	for i := 0; i < vtype.NumField(); i++ {
 		field := vtype.Field(i)
-		newPath := make([]int, len(parentPath))
-		copy(newPath, parentPath)
-		newPath = append(newPath, i)
+		newPath := append(parentPath, i)
 		//嵌套结构，扁平化
 		if field.Anonymous {
-			list, e := fieldsFromStruct(field.Type, newPath, root)
+			list, e := fieldsFromStruct(field.Type, conv, parentName, newPath, root)
 			if e != nil {
 				err = e
 				return
@@ -331,11 +335,16 @@ func fieldsFromStruct(vtype reflect.Type, parentPath []int, root bool) (rev []*s
 		}
 
 		sf := &structField{
-			fieldName: field.Name,
-			valPath:   newPath,
-			st:        field.Type,
+			fieldName:  field.Name,
+			valPath:    newPath,
+			st:         field.Type,
+			conv:       conv,
+			parentName: parentName,
 		}
 		name := strings.ToUpper(field.Name)
+		if conv != nil {
+			name = conv.ConvertFieldName(sf.parentName, name)
+		}
 		tag, ok := field.Tag.Lookup("dbx")
 		//没有定义，则只有名称
 		if !ok || len(tag) == 0 {
@@ -386,10 +395,12 @@ func fieldsFromStruct(vtype reflect.Type, parentPath []int, root bool) (rev []*s
 		}
 		rev = append(rev, sf)
 	}
+
 	return rev, nil
 }
-func struct2Table(tableName string, vtype reflect.Type, parentPath []int, root bool) ([]*Table, error) {
-	list, err := fieldsFromStruct(vtype, parentPath, root)
+func struct2Table(tableName string, vtype reflect.Type, conv converFieldName,
+	parentName string, parentPath []int, root bool) ([]*Table, error) {
+	list, err := fieldsFromStruct(vtype, conv, parentName, parentPath, root)
 	if err != nil {
 		return nil, err
 	}
@@ -400,7 +411,8 @@ func struct2Table(tableName string, vtype reflect.Type, parentPath []int, root b
 
 		//子表递归调用
 		if one.child {
-			tabs, err := struct2Table(one.childName, one.st, parentPath, false)
+			tabs, err := struct2Table(one.childName, one.st, conv,
+				one.fieldName, parentPath, false)
 			if err != nil {
 				return nil, err
 			}
@@ -434,12 +446,15 @@ func TableFromStruct(meta interface{}, tabNames ...string) ([]*Table, error) {
 	if len(tabNames) > 1 {
 		panic("tableNames must is one or none")
 	}
-
-	return struct2Table(tabName, reflect.TypeOf(meta), nil, true)
+	conv, ok := meta.(converFieldName)
+	if !ok {
+		conv = nil
+	}
+	return struct2Table(tabName, reflect.TypeOf(meta), conv, "", nil, true)
 }
-func mainStruct2Row(vval reflect.Value) (main map[string]interface{},
+func mainStruct2Row(vval reflect.Value, conv converFieldName) (main map[string]interface{},
 	child map[string][]map[string]interface{}, err error) {
-	types, err := fieldsFromStruct(vval.Type(), nil, true)
+	types, err := fieldsFromStruct(vval.Type(), conv, "", nil, true)
 	if err != nil {
 		return
 	}
@@ -465,8 +480,9 @@ func mainStruct2Row(vval reflect.Value) (main map[string]interface{},
 	}
 	return
 }
-func childStruct2Row(vval reflect.Value) (main map[string]interface{}, err error) {
-	types, err := fieldsFromStruct(vval.Type(), nil, false)
+func childStruct2Row(vval reflect.Value, conv converFieldName,
+	parentName string) (main map[string]interface{}, err error) {
+	types, err := fieldsFromStruct(vval.Type(), conv, parentName, nil, false)
 	if err != nil {
 		return
 	}
@@ -485,17 +501,25 @@ func childStruct2Row(vval reflect.Value) (main map[string]interface{}, err error
 //Struct2Row 结构体的值转换成map
 func Struct2Row(meta interface{}) (main map[string]interface{},
 	detail map[string][]map[string]interface{}, err error) {
-	return mainStruct2Row(reflect.ValueOf(meta))
+	conv, ok := meta.(converFieldName)
+	if !ok {
+		conv = nil
+	}
+	return mainStruct2Row(reflect.ValueOf(meta), conv)
 }
 
 //Row2Struct map转换成结构体的值
 func Row2Struct(row map[string]interface{},
 	child map[string][]map[string]interface{}, vval interface{}) error {
-	return mainRow2Struct(row, child, reflect.ValueOf(vval))
+	conv, ok := vval.(converFieldName)
+	if !ok {
+		conv = nil
+	}
+	return mainRow2Struct(row, child, reflect.ValueOf(vval), conv)
 }
 func mainRow2Struct(row map[string]interface{},
-	child map[string][]map[string]interface{}, vval reflect.Value) error {
-	types, err := fieldsFromStruct(vval.Type(), nil, true)
+	child map[string][]map[string]interface{}, vval reflect.Value, conv converFieldName) error {
+	types, err := fieldsFromStruct(vval.Type(), conv, "", nil, true)
 	if err != nil {
 		return err
 	}
@@ -524,8 +548,9 @@ func mainRow2Struct(row map[string]interface{},
 }
 
 //childRow2Struct 将一个子表记录转换成struct
-func childRow2Struct(row map[string]interface{}, vval reflect.Value) error {
-	types, err := fieldsFromStruct(vval.Type(), nil, false)
+func childRow2Struct(row map[string]interface{}, vval reflect.Value,
+	conv converFieldName, parentName string) error {
+	types, err := fieldsFromStruct(vval.Type(), conv, parentName, nil, false)
 	if err != nil {
 		return err
 	}
