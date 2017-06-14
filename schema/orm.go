@@ -23,11 +23,11 @@ type structField struct {
 
 //checkType 检查数据库类型和实际类型是否相容
 //数据库类型 Go类型
-//String string struct slice map
+//String string struct slice map bool
 //Bytea  []byte struct slice map
 //Datetime time.Time
 //Float  float64
-//Int    int64
+//Int    int64,bool
 //child []struct
 func (s *structField) checkType(root bool) error {
 	dt := s.define.Type
@@ -46,6 +46,7 @@ func (s *structField) checkType(root bool) error {
 	case TypeString:
 		switch st.Kind() {
 		case
+			reflect.Bool,
 			reflect.String,
 			reflect.Struct,
 			reflect.Slice,
@@ -77,7 +78,8 @@ func (s *structField) checkType(root bool) error {
 		}
 		return fmt.Errorf("float type must is float64")
 	case TypeInt:
-		if st.Kind() == reflect.Int64 {
+		switch st.Kind() {
+		case reflect.Int64, reflect.Bool:
 			return nil
 		}
 		return fmt.Errorf("int type must is int64")
@@ -125,6 +127,8 @@ func (s *structField) isZero(val reflect.Value) bool {
 		switch s.st.Kind() {
 		case reflect.String, reflect.Slice, reflect.Map:
 			return val.Len() == 0
+		case reflect.Bool:
+			return val.Bool() == false
 		case reflect.Struct:
 			return reflect.DeepEqual(reflect.Zero(s.st), val.Interface())
 		}
@@ -142,7 +146,13 @@ func (s *structField) isZero(val reflect.Value) bool {
 	case TypeFloat:
 		return val.Interface().(float64) == 0
 	case TypeInt:
-		return val.Interface().(int64) == 0
+		switch s.st.Kind() {
+		case reflect.Bool:
+			return val.Bool() == false
+		case reflect.Int:
+			return val.Interface().(int64) == 0
+		}
+		panic("invalid dbtype")
 	default:
 		panic("invalid dbtype")
 	}
@@ -184,6 +194,23 @@ func (s *structField) get(obj reflect.Value) (interface{}, error) {
 			return nil, err
 		}
 		return bys.Bytes(), nil
+	}
+	//数据库没有Bool类型，需要转换
+	if s.st.Kind() == reflect.Bool {
+		switch s.define.Type {
+		case TypeString:
+			if p.Bool() {
+				return "1", nil
+			}
+			return "0", nil
+
+		case TypeInt:
+			if p.Bool() {
+				return int64(1), nil
+			}
+			return int64(0), nil
+
+		}
 	}
 	return p.Interface(), nil
 }
@@ -231,13 +258,38 @@ func (s *structField) set(obj reflect.Value, val interface{}) error {
 		s.setv(obj, newv.Elem())
 		return nil
 	}
+	//数据库没有Bool类型，需要转换
+	if s.st.Kind() == reflect.Bool {
+		switch s.define.Type {
+		case TypeString:
+			switch val.(string) {
+			case "1":
+				s.setv(obj, reflect.ValueOf(true))
+			case "0":
+				s.setv(obj, reflect.ValueOf(false))
+			default:
+				return fmt.Errorf("string %s can't convert to bool,valid is [0,1]", val)
+			}
+			return nil
+		case TypeInt:
+			switch val.(int64) {
+			case 1:
+				s.setv(obj, reflect.ValueOf(true))
+			case 0:
+				s.setv(obj, reflect.ValueOf(false))
+			default:
+				return fmt.Errorf("int64 %s can't convert to bool,valid is [0,1]", val)
+			}
+			return nil
+		}
+	}
 	s.setv(obj, reflect.ValueOf(val))
 	return nil
 }
 func (s *structField) setv(obj reflect.Value, val reflect.Value) {
 	defer func() {
 		if r := recover(); r != nil {
-			fmt.Println(s.fieldName, s.st)
+			fmt.Println(s.fieldName, s.define.Type, s.st, val.Interface())
 			panic(r)
 		}
 	}()

@@ -23,6 +23,8 @@ type T用户 struct {
 	C描述  string       `dbx:"描述 STR"`
 	C时间  time.Time    `dbx:"时间 DATE"`
 	C数量  float64      `dbx:"数量 FLOAT NOT NULL INDEX"`
+	C有效  bool         `dbx:"有效 STR(1)"`
+	C无效  bool         `dbx:"无效 INT"`
 	C其他  []*otherType `dbx:"其他 STR"`
 	C其他1 []otherType  `dbx:"其他1 BYTEA"`
 	C明细  []otherType  `dbx:"明细 CHILD"`
@@ -107,6 +109,8 @@ func TestTableFromStruct(t *testing.T) {
 					描述  STR
 					时间 DATE
 					数量  FLOAT NOT NULL INDEX
+					有效  STR(1)
+					无效  INT
 					其他  STR
 					其他1 BYTEA
 					嵌入 STR(50)
@@ -130,7 +134,36 @@ func TestTableFromStruct(t *testing.T) {
 				}
 				return tabs
 			}()},
+
+		struct {
+			name string
+			tab1 []*Table
+			tab2 []*Table
+		}{
+			"bool",
+			func() []*Table {
+				type boolType struct {
+					StrB bool `dbx:"STR(1)"`
+					IntB bool `dbx:"INT"`
+				}
+				tbl1, err := TableFromStruct(boolType{})
+				if err != nil {
+					t.Fatal(err)
+				}
+				return tbl1
+			}(), func() []*Table {
+
+				tbl1 := NewTable("BOOLTYPE")
+				if err := tbl1.DefineScript(
+					`STRB STR(1)
+					INTB INT`); err != nil {
+					t.Fatal(err)
+				}
+				return []*Table{tbl1}
+			}(),
+		},
 	}
+
 	for _, v := range tt {
 		if len(v.tab1) != len(v.tab2) {
 			t.Error(fmt.Errorf("%s len %d <> %d", v.name,
@@ -145,7 +178,6 @@ func TestTableFromStruct(t *testing.T) {
 		}
 	}
 }
-
 func TestStruct2Row(t *testing.T) {
 	var row1 map[string]interface{}
 	var child1 map[string][]map[string]interface{}
@@ -157,6 +189,8 @@ func TestStruct2Row(t *testing.T) {
 		C数量: 11.2,
 		C描述: "",
 		C时间: time.Time{},
+		C有效: true,
+		C无效: false,
 		C其他: []*otherType{
 			&otherType{
 				Name: "n1",
@@ -216,6 +250,8 @@ func TestStruct2Row(t *testing.T) {
 		"描述":  nil,
 		"时间":  nil,
 		"数量":  float64(11.2),
+		"有效":  "1",
+		"无效":  nil,
 		"其他":  `[{"Code":"c1","Name":"n1","Num":111.22},{"Code":"c2","Name":"n2","Num":111.11}]`,
 		"其他1": bys.Bytes(),
 		"嵌入":  nil,
@@ -294,10 +330,12 @@ func TestRow2Struct(t *testing.T) {
 			user := &T用户{}
 			if err := Row2Struct(
 				map[string]interface{}{
-					"代码":  "001",
-					"名称":  "name",
-					"描述":  nil,
-					"数量":  float64(11.2),
+					"代码": "001",
+					"名称": "name",
+					"描述": nil,
+					"数量": float64(11.2),
+					"有效": "1",
+					//"无效":  nil,
 					"其他":  `[{"name":"n1","code":"c1","num":111.22},{"name":"n2","code":"c2","num":111.11}]`,
 					"其他1": bys.Bytes(),
 					"嵌入":  "aaa",
@@ -324,6 +362,8 @@ func TestRow2Struct(t *testing.T) {
 			C名称: "name",
 			C数量: 11.2,
 			C描述: "",
+			C有效: true,
+			C无效: false,
 			C其他: []*otherType{
 				&otherType{
 					Name: "n1",
