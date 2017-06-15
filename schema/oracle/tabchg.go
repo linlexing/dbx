@@ -73,7 +73,7 @@ func processColumn(db common.DB, tabName string, oldCol, newCol *schema.Column) 
 		}
 		log.Println(strSQL)
 	}
-	if !oldCol.Eque(newCol) {
+	if !oldCol.EqueNoIndex(newCol) {
 		if oldCol.Null != newCol.Null {
 			strSQL = fmt.Sprintf("alter table %s MODIFY %s", tabName, dbDefineNull(newCol))
 

@@ -9,12 +9,14 @@ import (
 	"time"
 )
 
+type empty struct{}
 type otherType struct {
 	Code string  `dbx:"STR(50) PRIMARY KEY"`
 	Name string  `dbx:"STR(50) PRIMARY KEY"`
 	Num  float64 `dbx:"FLOAT"`
 }
 type innerT struct {
+	empty
 	C嵌入 string `dbx:"嵌入 STR(50)"`
 }
 type T用户 struct {
@@ -31,7 +33,7 @@ type T用户 struct {
 	innerT
 }
 
-func (t T用户) ConvertFieldName(parent, str string) string {
+func (t empty) ConvertFieldName(parent, str string) string {
 	if len(parent) == 0 {
 		return str[1:]
 	}
@@ -52,7 +54,7 @@ func TestInnerStruct(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !reflect.DeepEqual(fields[2].valPath, []int{2, 0}) {
+	if !reflect.DeepEqual(fields[2].valPath, []int{2, 1}) {
 		t.Fatal("error", fields[2])
 	}
 }

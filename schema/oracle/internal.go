@@ -5,6 +5,8 @@ import (
 	"log"
 	"strings"
 
+	"database/sql"
+
 	"github.com/linlexing/dbx/common"
 	"github.com/linlexing/dbx/schema"
 )
@@ -52,6 +54,10 @@ func dropTablePrimaryKey(db common.DB, tableName string) error {
 	var pkCons string
 	row := db.QueryRow(strSQL, params...)
 	if err := row.Scan(&pkCons); err != nil {
+		//如果找不到主键，则不需删除
+		if err == sql.ErrNoRows {
+			return nil
+		}
 		err = common.NewSQLError(err, strSQL, params...)
 		log.Println(err)
 		return err

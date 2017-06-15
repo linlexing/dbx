@@ -5,6 +5,8 @@ import (
 	"log"
 	"strings"
 
+	"database/sql"
+
 	"github.com/linlexing/dbx/common"
 	"github.com/linlexing/dbx/schema"
 )
@@ -83,6 +85,10 @@ func dropTablePrimaryKey(db common.DB, tableName string) error {
 		tableName)
 	var pkCons string
 	if err := db.QueryRow(strSQL).Scan(&pkCons); err != nil {
+		if err == sql.ErrNoRows {
+			return nil
+		}
+
 		err = common.NewSQLError(err, strSQL)
 		log.Println(err)
 		return err
