@@ -82,7 +82,7 @@ func getColumns(db common.DB, schemaName, table string) ([]*schema.Column, error
 	if err := func() error {
 		strSQL := `select column_name as "DBNAME",
 					decode(nullable,'Y',1,0) as "DBNULL",
-					(case when data_type in ('CLOB','VARCHAR', 'VARCHAR2')
+					(case when data_type in ('CLOB','VARCHAR', 'VARCHAR2','CHAR')
 						then 'STR'
 						when  data_type ='NUMBER' AND DATA_PRECISION IS NULL AND DATA_SCALE = 0 
 						then 'INT'
@@ -109,7 +109,7 @@ func getColumns(db common.DB, schemaName, table string) ([]*schema.Column, error
 				from ALL_TAB_COLUMNS 
 				where owner=:1 and table_name=:2
 				order by column_id`
-		rows, err := db.Query(strSQL,strings.ToUpper( schemaName), strings.ToUpper(table))
+		rows, err := db.Query(strSQL, strings.ToUpper(schemaName), strings.ToUpper(table))
 		if err != nil {
 			err = common.NewSQLError(err, strSQL, schemaName, table)
 			log.Println(err)
@@ -143,7 +143,7 @@ func getColumns(db common.DB, schemaName, table string) ([]*schema.Column, error
 						a.index_owner=b.owner and a.index_name =b.index_name and 
 						UNIQUENESS ='NONUNIQUE')
 				group by index_name having count(*)=1`
-		rows, err := db.Query(strSQL, strings.ToUpper(schemaName),strings.ToUpper( table))
+		rows, err := db.Query(strSQL, strings.ToUpper(schemaName), strings.ToUpper(table))
 		if err != nil {
 			err = common.NewSQLError(err, strSQL, schemaName, table)
 			log.Println(err)
