@@ -36,18 +36,22 @@ func (m *meta) Merge(db common.DB, destTable, srcTable string, pks, columns []st
 		insertColumns = append(insertColumns, fmt.Sprintf("dest.%s", field))
 		insertValues = append(insertValues, fmt.Sprintf("src.%s", field))
 	}
+	//如果只有主键字段，则省略WHEN MATCHED THEN子句
+	updateStr := ""
+	if len(updateSet) > 0 {
+		updateStr = "WHEN MATCHED THEN UPDATE SET\n" + strings.Join(updateSet, ",\n")
+	}
 	strSQL := fmt.Sprintf(`
 MERGE INTO %s dest
 USING(select * from %s) src 
 ON(%s)
-WHEN MATCHED THEN UPDATE SET
-	%s
+%s
 WHEN NOT MATCHED THEN INSERT
 	(%s)
 	values
 	(%s)`, destTable, srcTable,
 		strings.Join(join, " and "),
-		strings.Join(updateSet, ",\n"),
+		updateStr,
 		strings.Join(insertColumns, ","),
 		strings.Join(insertValues, ","))
 	if _, err := db.Exec(strSQL); err != nil {
