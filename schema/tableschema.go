@@ -76,11 +76,13 @@ func (t *tableSchema) update() error {
 		oldColumnProcesses[v.Name] = false
 	}
 	for _, col := range t.newTable.Columns {
+
 		//用曾用名+现有名称去找旧字段
 		oldCol := t.oldTable.findColumnAnyName(append(col.FormerName, col.Name)...)
 		if oldCol != nil {
 			oldColumnProcesses[oldCol.Name] = true
 		}
+
 		//只有新增（oldCol为nil）或不相等的字段才纳入修改
 		if oldCol == nil || !oldCol.Eque(col) {
 			schg.ChangeFields = append(schg.ChangeFields, &ChangedField{

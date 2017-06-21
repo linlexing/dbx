@@ -154,7 +154,7 @@ func (s *structField) isZero(val reflect.Value) bool {
 		switch s.st.Kind() {
 		case reflect.Bool:
 			return val.Bool() == false
-		case reflect.Int:
+		case reflect.Int64:
 			return val.Interface().(int64) == 0
 		}
 		panic("invalid dbtype")
