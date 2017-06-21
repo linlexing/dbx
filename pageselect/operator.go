@@ -1,6 +1,7 @@
 package pageselect
 
 import "errors"
+import "encoding/json"
 
 //Operator 表示条件中的运算符
 type Operator int
@@ -63,12 +64,16 @@ var (
 
 //MarshalJSON 实现json的自定义的json序列化，主要是为了兼容前个直接保存字符串值的版本
 func (o *Operator) MarshalJSON() ([]byte, error) {
-	return []byte(o.String()), nil
+	return json.Marshal(o.String)
 }
 
 //UnmarshalJSON 实现自定义的json反序列化，主要是为了兼容前个版本
 func (o *Operator) UnmarshalJSON(v []byte) error {
-	opt, err := ParseString(string(v))
+	outstr := ""
+	if err := json.Unmarshal(v, &outstr); err != nil {
+		return err
+	}
+	opt, err := ParseString(outstr)
 	if err != nil {
 		return err
 	}
