@@ -264,9 +264,11 @@ func (t *Table) Count(where string, params ...interface{}) (rev int64, err error
 	strSQL := "select count(*) from " + t.FullName()
 	if len(where) > 0 {
 
-		strSQL += "where " + where
+		strSQL += " where " + where
 	}
-	err = t.DB.QueryRow(t.bind(strSQL), params...).Scan(&rev)
+	if err = t.DB.QueryRow(t.bind(strSQL), params...).Scan(&rev); err != nil {
+		err = common.NewSQLError(err, strSQL, params...)
+	}
 	return
 }
 
