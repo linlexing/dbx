@@ -313,7 +313,8 @@ func fieldsFromStruct(vtype reflect.Type, conv converFieldName, parentName strin
 		vtype = vtype.Elem()
 	}
 	if vtype.Kind() != reflect.Struct {
-		err = fmt.Errorf("val type %s not is struct,parent:%s", vtype.Name(), parentName)
+		err = fmt.Errorf("val type %s kind %s not is struct,parent:%s,path:%v",
+			vtype.Name(), vtype.Kind(), parentName, parentPath)
 		return
 	}
 	for i := 0; i < vtype.NumField(); i++ {
