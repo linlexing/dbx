@@ -29,6 +29,7 @@ var tempFunc = template.FuncMap{
 			panic(fmt.Errorf("not impl P,data type :%T", val))
 		}
 	},
+	"cell": newCell,
 }
 
 //AddFunc 增加模板函数，如果前面有同名的函数，将被覆盖
@@ -37,3 +38,20 @@ func AddFunc(fs template.FuncMap) {
 		tempFunc[k] = v
 	}
 }
+
+//Cell是用来模拟可变变量的，模板系统不允许修改变量的值，因此用struct来模拟
+type cell struct{ v interface{} }
+
+func newCell(v ...interface{}) (*cell, error) {
+	switch len(v) {
+	case 0:
+		return new(cell), nil
+	case 1:
+		return &cell{v[0]}, nil
+	default:
+		return nil, fmt.Errorf("wrong number of args: want 0 or 1, got %v", len(v))
+	}
+}
+
+func (c *cell) Set(v interface{}) *cell { c.v = v; return c }
+func (c *cell) Get() interface{}        { return c.v }
