@@ -23,7 +23,7 @@ import (
 //Table 表现一个数据库表,扩展了schema.Table ，提供了数据访问，
 //注意该表实例后，不能再去修改其结构
 type Table struct {
-	driver string
+	Driver string
 	DB     common.DB
 	*schema.Table
 
@@ -36,7 +36,7 @@ type Table struct {
 //NewTable 用schema.Table构造一个Table,没有数据库操作发生
 func NewTable(driver string, db common.DB, st *schema.Table) *Table {
 	rev := &Table{
-		driver:         driver,
+		Driver:         driver,
 		DB:             db,
 		ColumnNames:    []string{},
 		Table:          st,
@@ -73,7 +73,7 @@ func OpenTable(driver string, db common.DB, tabName string) (*Table, error) {
 	return NewTable(driver, db, st), nil
 }
 func (t *Table) bind(strSQL string) string {
-	return Bind(t.driver, strSQL)
+	return Bind(t.Driver, strSQL)
 }
 
 //Row 根据一个主键值返回一个记录,如果没有找到返回ErrNoRows
@@ -288,7 +288,7 @@ func truncateTimeZone(tm time.Time) time.Time {
 //检查row中是否含有非空字段的值，以及去掉多余的字段值
 //如果是oracle，则需要去除时间中的时区，以免触发ORA-01878错误
 func (t *Table) checkAndConvertRow(row map[string]interface{}) error {
-	if t.driver == "oci8" {
+	if t.Driver == "oci8" {
 		for k, v := range row {
 			if tm, ok := v.(time.Time); ok {
 				row[k] = truncateTimeZone(tm)
@@ -737,5 +737,5 @@ func (t *Table) Replace(oldRows, newRows []map[string]interface{}) (insCount, up
 
 //Merge 将另一个表中的数据合并进本表，要求两个表的主键相同,相同主键的被覆盖
 func (t *Table) Merge(tabName string, cols ...string) error {
-	return Find(t.driver).Merge(t.DB, t.FullName(), tabName, t.PrimaryKeys, cols)
+	return Find(t.Driver).Merge(t.DB, t.FullName(), tabName, t.PrimaryKeys, cols)
 }
