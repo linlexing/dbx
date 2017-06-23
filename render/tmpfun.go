@@ -30,6 +30,14 @@ var tempFunc = template.FuncMap{
 		}
 	},
 	"cell": newCell,
+	"in": func(val string, s ...string) bool {
+		for _, one := range s {
+			if one == val {
+				return true
+			}
+		}
+		return false
+	},
 }
 
 //AddFunc 增加模板函数，如果前面有同名的函数，将被覆盖
