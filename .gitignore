@@ -1,0 +1,27 @@
+*.test
+# Compiled Object files, Static and Dynamic libs (Shared Objects)
+*.dll
+*.rar
+*.zip
+*.exe
+*.apk
+*.db
+
+# Windows image file caches
+Thumbs.db
+ehthumbs.db
+
+# Folder config file
+Desktop.ini
+
+# Recycle Bin used on file shares
+$RECYCLE.BIN/
+
+# Windows Installer files
+*.cab
+*.msi
+*.msm
+*.msp
+
+# Windows shortcuts
+*.lnk
