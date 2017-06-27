@@ -64,7 +64,7 @@ var (
 
 //MarshalJSON 实现json的自定义的json序列化，主要是为了兼容前个直接保存字符串值的版本
 func (o *Operator) MarshalJSON() ([]byte, error) {
-	return json.Marshal(o.String)
+	return json.Marshal(o.String())
 }
 
 //UnmarshalJSON 实现自定义的json反序列化，主要是为了兼容前个版本
