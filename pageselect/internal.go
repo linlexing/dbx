@@ -23,7 +23,7 @@ func buildCondition(order, divide []string) []*ConditionLine {
 			if j == i {
 				opt := OperatorGreaterThan // ">"
 				if isDesc {
-					opt = OperatorGreaterThan //"<"
+					opt = OperatorLessThan //"<"
 				}
 				lines = append(lines, &ConditionLine{
 					ColumnName: colName,
