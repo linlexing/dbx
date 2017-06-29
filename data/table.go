@@ -44,19 +44,7 @@ func NewTable(driver string, db common.DB, st *schema.Table) *Table {
 		notnullColumns: []string{},
 		columnsMap:     map[string]*schema.Column{},
 	}
-	//构造索引
-
-	for _, col := range st.Columns {
-		rev.ColumnNames = append(rev.ColumnNames, col.Name)
-		if !col.Null {
-			rev.notnullColumns = append(rev.notnullColumns, col.Name)
-		}
-		rev.ColumnTypes = append(rev.ColumnTypes, &scan.ColumnType{
-			Name: col.Name,
-			Type: col.Type,
-		})
-		rev.columnsMap[col.Name] = col
-	}
+	rev.buildColumnIndex()
 	return rev
 }
 
@@ -74,6 +62,36 @@ func OpenTable(driver string, db common.DB, tabName string) (*Table, error) {
 }
 func (t *Table) bind(strSQL string) string {
 	return Bind(t.Driver, strSQL)
+}
+func (t *Table) buildColumnIndex() {
+	//构造索引
+	t.ColumnNames = []string{}
+	t.ColumnTypes = []*scan.ColumnType{}
+	t.notnullColumns = []string{}
+	t.columnsMap = map[string]*schema.Column{}
+	for _, col := range t.Columns {
+		t.ColumnNames = append(t.ColumnNames, col.Name)
+		if !col.Null {
+			t.notnullColumns = append(t.notnullColumns, col.Name)
+		}
+		t.ColumnTypes = append(t.ColumnTypes, &scan.ColumnType{
+			Name: col.Name,
+			Type: col.Type,
+		})
+		t.columnsMap[col.Name] = col
+	}
+
+}
+
+//RefreshSchema 从数据库重新检索表结构
+func (t *Table) RefreshSchema() error {
+	tab, err := schema.Find(t.Driver).OpenTable(t.DB, t.FullName())
+	if err != nil {
+		return err
+	}
+	t.Table = tab
+	t.buildColumnIndex()
+	return nil
 }
 
 //Row 根据一个主键值返回一个记录,如果没有找到返回ErrNoRows

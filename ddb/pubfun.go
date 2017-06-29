@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/linlexing/dbx/common"
-	"github.com/linlexing/dbx/data"
 	"github.com/linlexing/dbx/schema"
 )
 
@@ -147,14 +146,4 @@ func GetTempTableName(db DB, prev string) (string, error) {
 		}
 	}
 	return tableName, nil
-}
-
-//OpenTable 是data.OpenTable 的包装
-func OpenTable(db DB, tableName string) (*data.Table, error) {
-	return data.OpenTable(db.DriverName(), db, tableName)
-}
-
-//NewTable 是data.NewTable 的包装
-func NewTable(db DB, tab *schema.Table) *data.Table {
-	return data.NewTable(db.DriverName(), db, tab)
 }
