@@ -44,7 +44,11 @@ func (d *db) Beginx() (Txer, error) {
 	return rev, nil
 }
 func (d *db) Exec(query string, args ...interface{}) (sql.Result, error) {
-	r, err := d.db.Exec(data.Bind(d.driverName, query), args...)
+	//无参数不用转换
+	if len(args) > 0 {
+		query = data.Bind(d.driverName, query)
+	}
+	r, err := d.db.Exec(query, args...)
 	if err != nil {
 		err = common.NewSQLError(err, query, args...)
 		log.Println(err)
@@ -53,7 +57,11 @@ func (d *db) Exec(query string, args ...interface{}) (sql.Result, error) {
 }
 
 func (d *db) Query(query string, args ...interface{}) (*sql.Rows, error) {
-	r, err := d.db.Query(data.Bind(d.driverName, query), args...)
+	//无参数不用转换
+	if len(args) > 0 {
+		query = data.Bind(d.driverName, query)
+	}
+	r, err := d.db.Query(query, args...)
 	if err != nil {
 		err = common.NewSQLError(err, query, args...)
 		log.Println(err)
@@ -61,12 +69,15 @@ func (d *db) Query(query string, args ...interface{}) (*sql.Rows, error) {
 	return r, err
 }
 func (d *db) QueryRow(query string, args ...interface{}) *sql.Row {
-	return d.db.QueryRow(data.Bind(d.driverName, query), args...)
+	if len(args) > 0 {
+		query = data.Bind(d.driverName, query)
+	}
+	return d.db.QueryRow(query, args...)
 }
 
 func (d *db) Prepare(query string) (*sql.Stmt, error) {
 	return d.db.Prepare(data.Bind(d.driverName, query))
 }
-func (d *db)Close()error{
+func (d *db) Close() error {
 	return d.db.Close()
 }

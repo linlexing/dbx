@@ -1,13 +1,27 @@
 package data
 
 import (
+	"time"
+
 	"github.com/jmoiron/sqlx"
 	"github.com/linlexing/dbx/common"
+	"github.com/patrickmn/go-cache"
+)
+
+var (
+	bindCache = cache.New(5*time.Minute, 10*time.Minute)
 )
 
 //Bind 将?占位符替换成实际驱动的占位符
+//发现sqlx.Rebind分配大量内存，加上缓存
 func Bind(driver, strSQL string) string {
-	return sqlx.Rebind(sqlx.BindType(driver), strSQL)
+	key := driver + ":" + strSQL
+	if x, found := bindCache.Get(key); found {
+		return x.(string)
+	}
+	x := sqlx.Rebind(sqlx.BindType(driver), strSQL)
+	bindCache.Set(key, x, cache.DefaultExpiration)
+	return x
 }
 
 //In 将一个参数类型是数组的参数对应的?，扩展成多个?，并把参数也扁平化
