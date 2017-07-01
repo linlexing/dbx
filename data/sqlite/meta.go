@@ -19,7 +19,7 @@ func init() {
 func (m *meta) Merge(db common.DB, destTable, srcTable string, pks, columns []string) error {
 	panic("not impl")
 }
-func (m *meta) Minus(db common.DB, table1, where1, table2, where2 string, primaryKeys, cols []string) string {
+func (m *meta) Minus(db table1, where1, table2, where2 string, primaryKeys, cols []string) string {
 	strSQL := ""
 	if len(where1) > 0 {
 		where1 = "where " + where1

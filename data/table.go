@@ -94,14 +94,17 @@ func (t *Table) RefreshSchema() error {
 	return nil
 }
 
-//Row 根据一个主键值返回一个记录,如果没有找到返回ErrNoRows
+//Row 根据一个主键值返回一个记录,如果没有找到返回nil
 func (t *Table) Row(pks ...interface{}) (map[string]interface{}, error) {
 	whereList := []string{}
 	if len(t.PrimaryKeys) != len(pks) {
 		return nil, fmt.Errorf("the table %s pk values number error.table pk:%#v,pkvalues:%#v", t.FullName(), t.PrimaryKeys, pks)
 	}
-	for _, onePk := range t.PrimaryKeys {
+	for i, onePk := range t.PrimaryKeys {
 		whereList = append(whereList, fmt.Sprintf("%s=?", onePk))
+		if pks[i] == nil {
+			return nil, fmt.Errorf("the pk field %s value is nil", onePk)
+		}
 	}
 	rows, err := t.Query(strings.Join(whereList, " and\n"), pks...)
 	if err != nil {
@@ -109,36 +112,42 @@ func (t *Table) Row(pks ...interface{}) (map[string]interface{}, error) {
 	}
 	defer rows.Close()
 	if !rows.Next() {
-		return nil, sql.ErrNoRows
+		return nil, nil
 	}
 	return t.ScanMap(rows)
 }
 
 //ToJSON 将一行数据转换成json,日期、二进制、int64数据转换成文本
+//注意传入的字段不一定是全字段
 func (t *Table) ToJSON(row map[string]interface{}) (map[string]interface{}, error) {
 	transRecord := map[string]interface{}{}
-	for _, col := range t.Columns {
-		v, err := col.Type.ToJSON(row[col.Name])
-		if err != nil {
+	for k, v := range row {
+		col, ok := t.columnsMap[k]
+		if !ok {
+			return nil, fmt.Errorf("not found column %s", k)
+		}
+		var err error
+		if transRecord[k], err = col.Type.ToJSON(v); err != nil {
 			return nil, err
 		}
-		transRecord[col.Name] = v
 	}
-
 	return transRecord, nil
 }
 
 //FromJSON 将一个json数据转换回row
+//注意传入的字段不一定是全字段
 func (t *Table) FromJSON(row map[string]interface{}) (map[string]interface{}, error) {
 	transRecord := map[string]interface{}{}
-	for _, col := range t.Columns {
-		v, err := col.Type.ParseJSON(row[col.Name])
-		if err != nil {
+	for k, v := range row {
+		col, ok := t.columnsMap[k]
+		if !ok {
+			return nil, fmt.Errorf("not found column %s", k)
+		}
+		var err error
+		if transRecord[k], err = col.Type.ParseJSON(v); err != nil {
 			return nil, err
 		}
-		transRecord[col.Name] = v
 	}
-
 	return transRecord, nil
 }
 

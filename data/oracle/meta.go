@@ -62,7 +62,7 @@ WHEN NOT MATCHED THEN INSERT
 	return nil
 
 }
-func (m *meta) Minus(db common.DB, table1, where1, table2, where2 string, primaryKeys, cols []string) string {
+func (m *meta) Minus(table1, where1, table2, where2 string, primaryKeys, cols []string) string {
 	strSQL := ""
 	if len(where1) > 0 {
 		where1 = "where " + where1
