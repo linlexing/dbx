@@ -32,7 +32,7 @@ func (f *Column) Eque(src *Column) bool {
 		f.Index == src.Index
 }
 
-//EqueNotIndex 不判断索引
+//EqueNoIndex 不判断索引
 func (f *Column) EqueNoIndex(src *Column) bool {
 	if f.Name != src.Name {
 		return false

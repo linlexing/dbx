@@ -44,6 +44,21 @@ func (d DataType) MarshalJSON() ([]byte, error) {
 	return json.Marshal(d.String())
 }
 
+//MarshalYAML 是支持yaml序列化
+func (d DataType) MarshalYAML() (interface{}, error) {
+	return d.String(), nil
+}
+
+//UnmarshalYAML 支持yaml反序列化
+func (d *DataType) UnmarshalYAML(unmarshal func(interface{}) error) error {
+	var outstr string
+	if err := unmarshal(&outstr); err != nil {
+		return err
+	}
+	*d = ParseDataType(outstr)
+	return nil
+}
+
 //UnmarshalJSON 实现自定义的json反序列化，主要是为了兼容前个版本
 func (d *DataType) UnmarshalJSON(v []byte) error {
 	var str string
