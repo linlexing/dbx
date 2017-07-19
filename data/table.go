@@ -273,7 +273,7 @@ func (t *Table) Exists(where string, params ...interface{}) (rev bool, err error
 	strSQL := "select 1 from " + t.FullName()
 	if len(where) > 0 {
 
-		strSQL += "where " + where
+		strSQL += " where " + where
 	}
 	rows, err := t.DB.Query(t.bind(strSQL), params...)
 	if err != nil {

@@ -15,6 +15,10 @@ type SQLError struct {
 
 //NewSQLError 构造
 func NewSQLError(err error, sql string, params ...interface{}) SQLError {
+	//如果已经是sqlerr，则不进行再次的包装，因为有ddb的存在
+	if v, ok := err.(SQLError); ok {
+		return v
+	}
 	var p interface{}
 	if len(params) == 1 {
 		p = params[0]
