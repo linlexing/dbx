@@ -172,7 +172,7 @@ func (d DataType) ParseString(v string) interface{} {
 		}
 		return tm
 	case TypeBytea:
-		str, err := base64.RawStdEncoding.DecodeString(v)
+		str, err := base64.StdEncoding.DecodeString(v)
 		if err != nil {
 			panic("can't convert to byte array,not is base64 string," + v)
 		}
@@ -226,7 +226,7 @@ func (d DataType) ToString(v interface{}) (result string) {
 	case TypeBytea:
 		switch tv := v.(type) {
 		case []byte:
-			return base64.RawStdEncoding.EncodeToString(tv)
+			return base64.StdEncoding.EncodeToString(tv)
 		default:
 			panic(fmt.Sprintf("v:%#v can't to string", v))
 		}
@@ -398,7 +398,7 @@ func (d DataType) ToJSON(v interface{}) (interface{}, error) {
 		default:
 			log.Panic(fmt.Sprintf("type:%T can't convert to bytea", v))
 		}
-		return base64.RawStdEncoding.EncodeToString(b), nil
+		return base64.StdEncoding.EncodeToString(b), nil
 
 	case TypeDatetime: //RFC3339
 		if tv, ok := v.(time.Time); ok {
@@ -437,7 +437,7 @@ func (d DataType) ParseJSON(v interface{}) (interface{}, error) {
 	switch d {
 	case TypeBytea: //base64
 		if tv, ok := v.(string); ok {
-			return base64.RawStdEncoding.DecodeString(tv)
+			return base64.StdEncoding.DecodeString(tv)
 		}
 		return nil, fmt.Errorf("the %#v not is base64 string", v)
 	case TypeDatetime: //RFC3339
