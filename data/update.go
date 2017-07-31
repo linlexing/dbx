@@ -9,12 +9,18 @@ import (
 	"github.com/linlexing/dbx/schema"
 )
 
+//UpdateSet 是update set的一个子句
+type UpdateSet struct {
+	Column string
+	Value  string
+}
+
 //Update 是一个批量更新的类
 type Update struct {
 	Table            *schema.Table
 	DataSQL          string
 	DataUniqueFields []string
-	Sets             map[string]string
+	Sets             []UpdateSet
 	AdditionSet      string
 	AdditionWhere    string
 	SQLRenderArgs    interface{}
@@ -34,7 +40,9 @@ func (u *Update) Exec(db common.DB) (icount int64, err error) {
 	sets := []string{}
 	setVals := []interface{}{}
 
-	for k, v := range u.Sets {
+	for _, set := range u.Sets {
+		k := set.Column
+		v := set.Value
 		val := v
 		if len(v) == 0 {
 			err = fmt.Errorf("%s the value is empty", k)
