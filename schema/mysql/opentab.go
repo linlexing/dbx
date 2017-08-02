@@ -95,7 +95,7 @@ func getColumns(db common.DB, schemaName, tableName string) ([]*schema.Column, e
 				          when data_type in('date','datetime','timestamp') then 'DATE'
 						  else data_type
 				    end) as DBTYPE,
-				    ifnull(CHARACTER_MAXIMUM_LENGTH,0) as DBMAXLENGTH,
+				    (case when data_type in('text') then 0 else ifnull(CHARACTER_MAXIMUM_LENGTH,0) end) as DBMAXLENGTH,
 					column_type as TRUETYPE
 				from information_schema.columns 
 				where table_name=? and table_schema= ?
