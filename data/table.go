@@ -567,7 +567,6 @@ func (t *Table) Insert(rows []map[string]interface{}) (err error) {
 
 	for _, row := range rows {
 		if err = t.checkAndConvertRow(row); err != nil {
-
 			return
 		}
 		data := []interface{}{}
@@ -575,9 +574,8 @@ func (t *Table) Insert(rows []map[string]interface{}) (err error) {
 			data = append(data, row[col])
 		}
 		if _, err = stmt.Exec(data...); err != nil {
-			return
+			return common.NewSQLError(err, strSQL, data...)
 		}
-
 	}
 
 	return
