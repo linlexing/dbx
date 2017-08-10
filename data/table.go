@@ -3,11 +3,11 @@ package data
 import (
 	"bytes"
 	"database/sql"
-	"errors"
-	"log"
-
 	"encoding/gob"
+	"errors"
 	"fmt"
+	"log"
+	"reflect"
 
 	"strconv"
 	"strings"
@@ -742,6 +742,49 @@ func (t *Table) Save(row map[string]interface{}) error {
 
 //BatchSave 批量保存记录，返回插入和更新记录数,注意性能，update采用bykey方式
 func (t *Table) BatchSave(rows []map[string]interface{}) (err error, insNum int64, updNum int64) {
+	var updateRows []map[string]interface{}
+	var insertRows []map[string]interface{}
+	//将传入的参数分成两部分
+	for i := 0; i < len(rows); i++ {
+		updateInsert := true
+		//判断元素是否已取出
+		if rows[i] == nil {
+			continue
+		}
+		for j := i + 1; j < len(rows); j++ {
+			for _, key := range t.PrimaryKeys {
+				//比较主键值是否相同
+				if !reflect.DeepEqual(rows[i][key], rows[j][key]) {
+					updateInsert = false
+				}
+			}
+			if updateInsert {
+				updateRows = append(updateRows, rows[j])
+				rows[j] = nil
+			}
+		}
+		if !updateInsert {
+			insertRows = append(insertRows, rows[i])
+		}
+	}
+	//插入数据
+	err = t.Insert(insertRows)
+	if err != nil {
+		return
+	}
+	insNum = int64(len(insertRows))
+	//存表的主键字段
+	var keys []interface{}
+	for _, key := range t.PrimaryKeys {
+		keys = append(keys, key)
+	}
+	//更新
+	for _, value := range updateRows {
+		updNum, err = t.UpdateByKey(keys, value)
+		if err != nil {
+			return
+		}
+	}
 	return
 }
 
