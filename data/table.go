@@ -740,6 +740,11 @@ func (t *Table) Save(row map[string]interface{}) error {
 	return t.insertAsPack(row)
 }
 
+//BatchSave 批量保存记录，返回插入和更新记录数,注意性能，update采用bykey方式
+func (t *Table) BatchSave(rows []map[string]interface{}) (err error, insNum int64, updNum int64) {
+	return
+}
+
 //Replace 将一批记录替换成另一批记录，自动删除旧在新中不存在，插入新在旧中不存在的，更新主键相同的
 func (t *Table) Replace(oldRows, newRows []map[string]interface{}) (insCount, upCount, delCount int64, err error) {
 
