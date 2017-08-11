@@ -741,30 +741,35 @@ func (t *Table) Save(row map[string]interface{}) error {
 }
 
 //BatchSave 批量保存记录，返回插入和更新记录数,注意性能，update采用bykey方式
-func (t *Table) BatchSave(rows []map[string]interface{}) (err error, insNum int64, updNum int64) {
+func (t *Table) BatchSave(rows []map[string]interface{}) (insNum int64, updNum int64, err error) {
+	tRows, err := t.QueryRows(" 1=1")
+	if err != nil {
+		return
+	}
+	for _, value := range rows {
+		tRows = append(tRows, value)
+	}
 	var updateRows []map[string]interface{}
 	var insertRows []map[string]interface{}
+	//记录已经比较的数量
+	num := 0
 	//将传入的参数分成两部分
-	for i := 0; i < len(rows); i++ {
-		updateInsert := true
-		//判断元素是否已取出
-		if rows[i] == nil {
-			continue
-		}
-		for j := i + 1; j < len(rows); j++ {
+	for i := len(rows) - 1; i >= 0; i-- {
+		num++
+		isUpdate := true
+		oraRow := mapfun.Pick(mapfun.UpperKeys(rows[i]), t.ColumnNames...)
+		for j := 0; j < len(tRows)-num; j++ {
 			for _, key := range t.PrimaryKeys {
-				//比较主键值是否相同
-				if !reflect.DeepEqual(rows[i][key], rows[j][key]) {
-					updateInsert = false
-				}
+				//比较主键的值是否相同
+				isUpdate = isUpdate && reflect.DeepEqual(rows[i][key], rows[j][key])
 			}
-			if updateInsert {
-				updateRows = append(updateRows, rows[j])
-				rows[j] = nil
+			if isUpdate {
+				updateRows = append(updateRows, oraRow)
+				break
 			}
 		}
-		if !updateInsert {
-			insertRows = append(insertRows, rows[i])
+		if !isUpdate {
+			insertRows = append(insertRows, oraRow)
 		}
 	}
 	//插入数据
@@ -778,13 +783,14 @@ func (t *Table) BatchSave(rows []map[string]interface{}) (err error, insNum int6
 	for _, key := range t.PrimaryKeys {
 		keys = append(keys, key)
 	}
-	//更新
+	//更新数据
 	for _, value := range updateRows {
-		updNum, err = t.UpdateByKey(keys, value)
+		_, err = t.UpdateByKey(keys, value)
 		if err != nil {
 			return
 		}
 	}
+	updNum += int64(len(updateRows))
 	return
 }
 
