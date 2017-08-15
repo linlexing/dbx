@@ -7,7 +7,6 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"reflect"
 
 	"strconv"
 	"strings"
@@ -742,55 +741,28 @@ func (t *Table) Save(row map[string]interface{}) error {
 
 //BatchSave 批量保存记录，返回插入和更新记录数,注意性能，update采用bykey方式
 func (t *Table) BatchSave(rows []map[string]interface{}) (insNum int64, updNum int64, err error) {
-	tRows, err := t.QueryRows(" 1=1")
+	//得到一个插入用的sql.Stmt
+	insertStmt, err := t.DB.Prepare(t.InsertSQL())
 	if err != nil {
 		return
 	}
+	defer insertStmt.Close()
 	for _, value := range rows {
-		tRows = append(tRows, value)
-	}
-	var updateRows []map[string]interface{}
-	var insertRows []map[string]interface{}
-	//记录已经比较的数量
-	num := 0
-	//将传入的参数分成两部分
-	for i := len(rows) - 1; i >= 0; i-- {
-		num++
-		isUpdate := true
-		oraRow := mapfun.Pick(mapfun.UpperKeys(rows[i]), t.ColumnNames...)
-		for j := 0; j < len(tRows)-num; j++ {
-			for _, key := range t.PrimaryKeys {
-				//比较主键的值是否相同
-				isUpdate = isUpdate && reflect.DeepEqual(rows[i][key], rows[j][key])
+		prama := []interface{}{}
+		for _, col := range t.ColumnNames {
+			prama = append(prama, value[col])
+		}
+		//先插入数据
+		if _, err = insertStmt.Exec(prama...); err != nil {
+			//插入失败则更新数据
+			if _, err = t.UpdateByKey(t.KeyValues(value), mapfun.Pick(value, t.ColumnNames...)); err != nil {
+				return
 			}
-			if isUpdate {
-				updateRows = append(updateRows, oraRow)
-				break
-			}
+			updNum++
+			continue
 		}
-		if !isUpdate {
-			insertRows = append(insertRows, oraRow)
-		}
+		insNum++
 	}
-	//插入数据
-	err = t.Insert(insertRows)
-	if err != nil {
-		return
-	}
-	insNum = int64(len(insertRows))
-	//存表的主键字段
-	var keys []interface{}
-	for _, key := range t.PrimaryKeys {
-		keys = append(keys, key)
-	}
-	//更新数据
-	for _, value := range updateRows {
-		_, err = t.UpdateByKey(keys, value)
-		if err != nil {
-			return
-		}
-	}
-	updNum += int64(len(updateRows))
 	return
 }
 
