@@ -747,15 +747,30 @@ func (t *Table) BatchSave(rows []map[string]interface{}) (insNum int64, updNum i
 		return
 	}
 	defer insertStmt.Close()
-	for _, value := range rows {
-		prama := []interface{}{}
+	var setList []string
+	var whereList []string
+	for _, col := range t.ColumnNames {
+		setList = append(setList, fmt.Sprintf("%s=?", col))
+	}
+	for _, key := range t.PrimaryKeys {
+		whereList = append(whereList, fmt.Sprintf("%s=?", key))
+	}
+	//得到一个更新用的sql.Stmt
+	updateStmt, err := t.DB.Prepare(fmt.Sprintf("update %s set %s where %s", t.Name, strings.Join(setList, ","),
+		strings.Join(whereList, " and ")))
+	if err != nil {
+		return
+	}
+	defer updateStmt.Close()
+	for _, row := range rows {
+		param := []interface{}{}
 		for _, col := range t.ColumnNames {
-			prama = append(prama, value[col])
+			param = append(param, row[col])
 		}
 		//先插入数据
-		if _, err = insertStmt.Exec(prama...); err != nil {
+		if _, err = insertStmt.Exec(param...); err != nil {
 			//插入失败则更新数据
-			if _, err = t.UpdateByKey(t.KeyValues(value), mapfun.Pick(value, t.ColumnNames...)); err != nil {
+			if _, err = updateStmt.Exec(append(mapfun.ValuesByKeys(row, t.ColumnNames...), t.KeyValues(row)...)...); err != nil {
 				return
 			}
 			updNum++
