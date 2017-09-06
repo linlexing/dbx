@@ -1,9 +1,9 @@
 package pageselect
 
 import (
-	"bytes"
 	"strings"
-	"text/template"
+
+	"github.com/linlexing/dbx/render"
 )
 
 func buildCondition(order, divide []string) []*ConditionLine {
@@ -51,14 +51,10 @@ func buildCondition(order, divide []string) []*ConditionLine {
 }
 
 func renderManualPageSQL(driver string, strSQL string, columnList, whereList, orderbyList []string, limit int) (string, error) {
-	tmpl, err := template.New("ManualPage").Delims("<<", ">>").Parse(strSQL)
-	if err != nil {
-		return "", err
-	}
+
 	var where string
 	var columns string
 	var orderby string
-	bys := bytes.NewBuffer(nil)
 	if len(whereList) > 0 {
 		where = "(" + strings.Join(whereList, " and ") + ")"
 	}
@@ -68,14 +64,11 @@ func renderManualPageSQL(driver string, strSQL string, columnList, whereList, or
 	if len(orderbyList) > 0 {
 		orderby = strings.Join(orderbyList, ",")
 	}
-	if err = tmpl.Execute(bys, map[string]interface{}{
+	return render.RenderSQL(strSQL, map[string]interface{}{
 		"Driver":  driver,
 		"Columns": columns,
 		"Where":   where,
 		"OrderBy": orderby,
 		"Limit":   limit,
-	}); err != nil {
-		return "", err
-	}
-	return bys.String(), nil
+	})
 }
