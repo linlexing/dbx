@@ -149,9 +149,10 @@ func (t *Table) FromJSON(row map[string]interface{}) (map[string]interface{}, er
 	}
 	return transRecord, nil
 }
+
 //SafeFromJSON 将一个json数据转换回row,忽略不能转换的字段
 //注意传入的字段不一定是全字段
-func (t *Table) SafeFromJSON(row map[string]interface{}) (map[string]interface{}) {
+func (t *Table) SafeFromJSON(row map[string]interface{}) map[string]interface{} {
 	transRecord := map[string]interface{}{}
 	for k, v := range row {
 		col, ok := t.columnsMap[k]
@@ -160,10 +161,11 @@ func (t *Table) SafeFromJSON(row map[string]interface{}) (map[string]interface{}
 		}
 		if tv, err := col.Type.ParseJSON(v); err != nil {
 			continue
+		} else {
+			transRecord[k] = tv
 		}
-		transRecord[k] = tv
 	}
-	return transRecord, nil
+	return transRecord
 }
 
 //ScanSlice 根据一个Scaner，再根据Table的字段数据类型，扫描出一个slice
