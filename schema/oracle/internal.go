@@ -14,7 +14,11 @@ import (
 func dbType(dataType schema.DataType, maxLength int) string {
 	switch dataType {
 	case schema.TypeBytea:
-		return "BLOB"
+		if maxLength <= 0 || maxLength > 4000 {
+			return "BLOB"
+		}
+		return "RAW"
+
 	case schema.TypeDatetime:
 		return "DATE"
 	case schema.TypeFloat:
