@@ -41,7 +41,9 @@ type OrderColumn struct {
 
 //PageSelect 表示一个select 类，可以附加条件和分页参数
 type PageSelect struct {
-	SQL           string
+	SQL string
+	//非空字段
+	NotNullFields []string
 	ManualPage    bool
 	Conditions    []*SQLCondition
 	Columns       []string
@@ -50,6 +52,16 @@ type PageSelect struct {
 	Divide        []string
 	Limit         int
 	SQLRenderArgs interface{} //sql语句在查询前，还会用template进行一次渲染，这里传入渲染的参数
+}
+
+//isNotNullField 返回一个字段是不是非空的，用于生成order by 子句
+func (s *PageSelect) isNotNullField(field string) bool {
+	for _, one := range s.NotNullFields {
+		if one == field {
+			return true
+		}
+	}
+	return false
 }
 
 //BuildSQL 构造sql语句，和相应的参数值
@@ -94,12 +106,13 @@ func (s *PageSelect) BuildSQL(driver string) (strSQL string, err error) {
 	}
 	if len(s.Order) > 0 {
 		for _, v := range s.Order {
+
 			if strings.HasPrefix(v, "-") {
-				orderList = append(orderList, Find(driver).SortByDesc(v[1:]))
+				orderList = append(orderList, Find(driver).SortByDesc(v[1:], s.isNotNullField(v[1:])))
 			} else if strings.HasPrefix(v, "+") {
-				orderList = append(orderList, Find(driver).SortByAsc(v[1:]))
+				orderList = append(orderList, Find(driver).SortByAsc(v[1:], s.isNotNullField(v[1:])))
 			} else {
-				orderList = append(orderList, Find(driver).SortByAsc(v))
+				orderList = append(orderList, Find(driver).SortByAsc(v, s.isNotNullField(v)))
 			}
 		}
 		if len(s.Divide) > 0 {

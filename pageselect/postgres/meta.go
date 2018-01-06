@@ -17,10 +17,17 @@ type meta struct{}
 func init() {
 	ps.Register(driverName, new(meta))
 }
-func (m *meta) SortByAsc(field string) string {
+func (m *meta) SortByAsc(field string, notNull bool) string {
+	if notNull {
+		return field
+	}
 	return field + " NULLS FIRST"
 }
-func (m *meta) SortByDesc(field string) string {
+func (m *meta) SortByDesc(field string, notNull bool) string {
+	if notNull {
+		return field + " DESC"
+	}
+
 	return field + " DESC NULLS LAST"
 }
 func (m *meta) LimitSQL(sel, strSQL, where, orderby string, limit int) string {

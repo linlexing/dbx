@@ -7,7 +7,7 @@ type PageSelecter interface {
 	IsNull() string
 
 	GetOperatorExpress(ope Operator, dataType schema.DataType, left, right string) string
-	SortByAsc(string) string
-	SortByDesc(string) string
+	SortByAsc(string, bool) string
+	SortByDesc(string, bool) string
 	LimitSQL(sel, strSQL, where, orderby string, limit int) string
 }
