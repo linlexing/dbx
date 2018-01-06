@@ -31,13 +31,17 @@ func NewSQLRenderError(err error, temp string, args interface{}) *SQLRenderError
 
 //RenderSQL 渲染一个sql,后期如果速度慢，可以加入一个模板缓存
 func RenderSQL(strSQL string, renderArgs interface{}) (string, error) {
+	return RenderSQLCustom(strSQL, "{{", "}}", renderArgs)
+}
+
+func RenderSQLCustom(strSQL, delimLeft, delimRight string, renderArgs interface{}) (string, error) {
 
 	if len(strSQL) == 0 {
 		return strSQL, nil
 	}
 	var err error
 	var t *template.Template
-	if t, err = template.New("sql").Funcs(tempFunc).Parse(strSQL); err != nil {
+	if t, err = template.New("sql").Delims(delimLeft, delimRight).Funcs(tempFunc).Parse(strSQL); err != nil {
 		return "", NewSQLRenderError(err, strSQL, renderArgs)
 	}
 

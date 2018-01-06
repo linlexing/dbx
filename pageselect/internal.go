@@ -64,7 +64,7 @@ func renderManualPageSQL(driver string, strSQL string, columnList, whereList, or
 	if len(orderbyList) > 0 {
 		orderby = strings.Join(orderbyList, ",")
 	}
-	return render.RenderSQL(strSQL, map[string]interface{}{
+	return render.RenderSQLCustom(strSQL, "<<", ">>", map[string]interface{}{
 		"Driver":  driver,
 		"Columns": columns,
 		"Where":   where,
