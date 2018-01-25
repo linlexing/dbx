@@ -78,19 +78,23 @@ func (s *PageSelect) BuildSQL(driver string) (strSQL string, err error) {
 		len(s.Columns) == 0 &&
 		len(s.Order) == 0 &&
 		s.Limit < 0 {
-		var renderSQL string
-		renderSQL, err = s.renderSQL()
-		if err != nil {
-			return
-		}
+
 		if s.ManualPage {
 
-			strSQL, err = renderManualPageSQL(driver, renderSQL, nil, nil, nil, s.Limit)
+			strSQL, err = renderManualPageSQL(driver, s.SQL, nil, nil, nil, s.Limit)
 			if err != nil {
+				fmt.Println("driver:", driver)
+				fmt.Println("renderSQL:", s.SQL)
+				fmt.Println("Limit:", s.Limit)
+
 				return
 			}
 		} else {
-			strSQL = renderSQL
+			strSQL, err = s.renderSQL()
+			if err != nil {
+				return
+			}
+
 		}
 
 		return
