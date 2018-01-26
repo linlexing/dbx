@@ -21,15 +21,25 @@ func (f *Column) Eque(src *Column) bool {
 	}
 	if f.FetchDriver == src.FetchDriver &&
 		len(f.TrueType) > 0 && len(src.TrueType) > 0 {
-		return f.TrueType == src.TrueType
+		return f.TrueType == src.TrueType &&
+			f.Index == src.Index
 	}
-	//历史原因，MaxLength <=0 只有一个含义，无限的长度
-	//历史代码中有时用了-1,有时是0，所以都是<=0的视为相等
-	return f.Type == src.Type &&
-		(f.MaxLength == src.MaxLength ||
+	if f.Type != src.Type {
+		return false
+	}
+	switch f.Type {
+	//日期、数值、整型不需要判断长度
+	case TypeDatetime, TypeFloat, TypeInt:
+		return f.Null == src.Null &&
+			f.Index == src.Index
+	default:
+		//历史原因，MaxLength <=0 只有一个含义，无限的长度
+		//历史代码中有时用了-1,有时是0，所以都是<=0的视为相等
+		return (f.MaxLength == src.MaxLength ||
 			f.MaxLength <= 0 && src.MaxLength <= 0) &&
-		f.Null == src.Null &&
-		f.Index == src.Index
+			f.Null == src.Null &&
+			f.Index == src.Index
+	}
 }
 
 //EqueNoIndex 不判断索引
@@ -41,12 +51,21 @@ func (f *Column) EqueNoIndex(src *Column) bool {
 		len(f.TrueType) > 0 && len(src.TrueType) > 0 {
 		return f.TrueType == src.TrueType
 	}
-	//历史原因，MaxLength <=0 只有一个含义，无限的长度
-	//历史代码中有时用了-1,有时是0，所以都是<=0的视为相等
-	return f.Type == src.Type &&
-		(f.MaxLength == src.MaxLength ||
+
+	if f.Type != src.Type {
+		return false
+	}
+	switch f.Type {
+	//日期、数值、整型不需要判断长度
+	case TypeDatetime, TypeFloat, TypeInt:
+		return f.Null == src.Null
+	default:
+		//历史原因，MaxLength <=0 只有一个含义，无限的长度
+		//历史代码中有时用了-1,有时是0，所以都是<=0的视为相等
+		return (f.MaxLength == src.MaxLength ||
 			f.MaxLength <= 0 && src.MaxLength <= 0) &&
-		f.Null == src.Null
+			f.Null == src.Null
+	}
 }
 
 //Clone 复制一个字段
