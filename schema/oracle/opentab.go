@@ -94,7 +94,7 @@ func getColumns(db common.DB, schemaName, table string) ([]*schema.Column, error
 						then 'BYTEA'
 						else data_type
 					end) as "DBTYPE",
-					(case when CHAR_LENGTH =0 then DATA_LENGTH else CHAR_LENGTH end) as "DBMAXLENGTH",
+					(case when data_type = 'CLOB' then 0 when CHAR_LENGTH =0 then DATA_LENGTH else CHAR_LENGTH end) as "DBMAXLENGTH",
 					data_type||
 						case
 						when data_precision is not null and nvl(data_scale,0)>0 then '('||data_precision||','||data_scale||')'
