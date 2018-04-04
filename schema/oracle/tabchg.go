@@ -59,7 +59,6 @@ func processColumn(db common.DB, tabName string, oldCol, newCol *schema.Column) 
 			if err := createColumnIndex(db, tabName, newCol.Name); err != nil {
 				return err
 			}
-			log.Printf("table %s add column index %s\n", tabName, newCol.Name)
 		}
 		return nil
 	}
@@ -94,13 +93,11 @@ func processColumn(db common.DB, tabName string, oldCol, newCol *schema.Column) 
 		if err := dropColumnIndex(db, tabName, oldCol.IndexName); err != nil {
 			return err
 		}
-		log.Printf("drop table %s column %s index %s\n", tabName, newCol.Name, oldCol.IndexName)
 	} else if !oldCol.Index && newCol.Index {
 		//新增索引
 		if err := createColumnIndex(db, tabName, oldCol.Name); err != nil {
 			return err
 		}
-		log.Printf("create table %s column %s index\n", tabName, newCol.Name)
 	}
 	return nil
 }

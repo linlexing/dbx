@@ -67,6 +67,7 @@ func dropTablePrimaryKey(db common.DB, tableName string) error {
 		return err
 	}
 	strSQL = fmt.Sprintf("ALTER TABLE %s DROP CONSTRAINT %s", tableName, pkCons)
+	log.Println(strSQL)
 	if _, err := db.Exec(strSQL); err != nil {
 		err = common.NewSQLError(err, strSQL)
 		log.Println(err)
@@ -86,6 +87,7 @@ func addTablePrimaryKey(db common.DB, tableName string, pks []string) error {
 		clearTableName = tableName
 	}
 	strSQL := fmt.Sprintf("alter table %s add constraint %s_pk primary key(%s)", tableName, clearTableName, strings.Join(pks, ","))
+	log.Println(strSQL)
 	if _, err := db.Exec(strSQL); err != nil {
 		err = common.NewSQLError(err, strSQL)
 		log.Println(err)
@@ -121,6 +123,7 @@ func dbDefineNull(c *schema.Column) string {
 func tableRename(db common.DB, oldName string, newName string) error {
 
 	strSQL := fmt.Sprintf("rename table %s TO %s", oldName, newName)
+	log.Println(strSQL)
 	if _, err := db.Exec(strSQL); err != nil {
 		log.Println(strSQL)
 		return common.NewSQLError(err, strSQL)
@@ -161,6 +164,7 @@ func tableExists(db common.DB, tabName string) (bool, error) {
 }
 func removeColumns(db common.DB, tabName string, cols []string) error {
 	strSQL := fmt.Sprintf("ALTER table %s drop(%s)", tabName, strings.Join(cols, ","))
+	log.Println(strSQL)
 	if _, err := db.Exec(strSQL); err != nil {
 		err = common.NewSQLError(err, strSQL)
 		log.Println(err)
@@ -182,6 +186,7 @@ func createColumnIndex(db common.DB, tableName, colName string) error {
 	}
 	//这里会有问题，如果表名和字段名比较长就会出错
 	strSQL := fmt.Sprintf("create index %si%s%s on %s(%s)", schemaName, tname, colName, tableName, colName)
+	log.Println(strSQL)
 	if _, err := db.Exec(strSQL); err != nil {
 		err = common.NewSQLError(err, strSQL)
 		log.Println(err)
@@ -192,6 +197,7 @@ func createColumnIndex(db common.DB, tableName, colName string) error {
 
 func dropColumnIndex(db common.DB, tableName, indexName string) error {
 	strSQL := fmt.Sprintf("drop index %s", indexName)
+	log.Println(strSQL)
 	if _, err := db.Exec(strSQL); err != nil {
 		err = common.NewSQLError(err, strSQL)
 		log.Println(err)
