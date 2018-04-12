@@ -151,7 +151,7 @@ func (s *PageSelect) BuildSQL(driver string) (strSQL string, err error) {
 		if s.Limit >= 0 {
 			strSQL = Find(driver).LimitSQL(sel, s.SQL, where, orderby, s.Limit)
 		} else {
-			strSQL = fmt.Sprintf("select %s from (%s) wholesql %s%s", sel, s.SQL, where, orderby)
+			strSQL = strings.TrimSpace(fmt.Sprintf("select %s from (%s) wholesql %s%s", sel, s.SQL, where, orderby))
 		}
 	}
 	//在最后返回前，调用render
