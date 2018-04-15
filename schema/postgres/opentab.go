@@ -56,7 +56,7 @@ func getPk(db common.DB, tableName string) ([]string, error) {
 //0代表false 1代表true
 func getTableColumns(db common.DB, schemaName, tableName string) ([]columnType, error) {
 	columns := []columnType{}
-	strSQL := `select column_name as "DBNAME",
+	strSQL := `select upper(column_name) as "DBNAME",
 					(case when is_nullable='YES' then 1 else 0 end) as "DBNULL",
 					(case when data_type in ('text', 'character varying')
 						then 'STR'
