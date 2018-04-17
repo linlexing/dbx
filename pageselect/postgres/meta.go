@@ -1,10 +1,14 @@
 package oracle
 
 import (
+	"database/sql"
 	"encoding/csv"
 	"fmt"
 	"log"
 	"strings"
+
+	"github.com/Sirupsen/logrus"
+	"github.com/linlexing/dbx/scan"
 
 	ps "github.com/linlexing/dbx/pageselect"
 	"github.com/linlexing/dbx/schema"
@@ -17,6 +21,41 @@ type meta struct{}
 func init() {
 	ps.Register(driverName, new(meta))
 }
+func fromDBType(ty string) schema.DataType {
+	switch ty {
+	case "INT8", "INT4", "INT2":
+		return schema.TypeInt
+	case "VARCHAR", "TEXT":
+		return schema.TypeString
+	case "NUMERIC":
+		return schema.TypeFloat
+	case "DATE", "TIME", "TIMETZ", "TIMESTAMP", "TIMESTAMPTZ":
+		return schema.TypeDatetime
+	case "BYTEA":
+		return schema.TypeBytea
+	default:
+		logrus.WithFields(logrus.Fields{
+			"type": ty,
+		}).Panic("invalid type")
+	}
+	return 0
+}
+func (m *meta) ColumnTypes(rows *sql.Rows) ([]*scan.ColumnType, error) {
+	cols, err := rows.ColumnTypes()
+	if err != nil {
+		return nil, err
+	}
+	rev := []*scan.ColumnType{}
+	for _, one := range cols {
+		rev = append(rev,
+			&scan.ColumnType{
+				Name: one.Name(),
+				Type: fromDBType(one.DatabaseTypeName()),
+			})
+	}
+	return rev, nil
+}
+
 func (m *meta) SortByAsc(field string, notNull bool) string {
 	if notNull {
 		return field

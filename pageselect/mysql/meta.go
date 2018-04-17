@@ -1,12 +1,15 @@
 package mysql
 
 import (
+	"database/sql"
 	"encoding/csv"
 	"fmt"
 	"log"
 	"strings"
 
+	"github.com/Sirupsen/logrus"
 	ps "github.com/linlexing/dbx/pageselect"
+	"github.com/linlexing/dbx/scan"
 	"github.com/linlexing/dbx/schema"
 )
 
@@ -16,6 +19,40 @@ type meta struct{}
 
 func init() {
 	ps.Register(driverName, new(meta))
+}
+func fromDBType(ty string) schema.DataType {
+	switch ty {
+	case "TINYINT", "INT", "SMALLINT", "MEDIUMINT", "BIGINT":
+		return schema.TypeInt
+	case "CHAR", "VARCHAR", "VARBINARY", "TEXT":
+		return schema.TypeString
+	case "FLOAT", "DOUBLE", "DECIMAL":
+		return schema.TypeFloat
+	case "DATETIME", "DATE":
+		return schema.TypeDatetime
+	case "BLOB":
+		return schema.TypeBytea
+	default:
+		logrus.WithFields(logrus.Fields{
+			"type": ty,
+		}).Panic("invalid type")
+	}
+	return 0
+}
+func (m *meta) ColumnTypes(rows *sql.Rows) ([]*scan.ColumnType, error) {
+	cols, err := rows.ColumnTypes()
+	if err != nil {
+		return nil, err
+	}
+	rev := []*scan.ColumnType{}
+	for _, one := range cols {
+		rev = append(rev,
+			&scan.ColumnType{
+				Name: one.Name(),
+				Type: fromDBType(one.DatabaseTypeName()),
+			})
+	}
+	return rev, nil
 }
 func (m *meta) SortByAsc(field string, _ bool) string {
 	return field

@@ -67,7 +67,7 @@ func dbType(dataType schema.DataType, maxLength int) string {
 	case schema.TypeFloat:
 		return "double precision"
 	case schema.TypeInt:
-		return "integer"
+		return "bigint"
 	case schema.TypeString:
 		if maxLength <= 0 {
 			return "text"

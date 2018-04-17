@@ -53,7 +53,7 @@ func tableExists(db common.DB, tabName string) (bool, error) {
 	strSQL := "SELECT count(*) FROM sqlite_master WHERE type='table' AND name=:tname"
 	var iCount int64
 
-	if err := db.QueryRow(strSQL,tabName).Scan(&iCount); err != nil {
+	if err := db.QueryRow(strSQL, tabName).Scan(&iCount); err != nil {
 		err = common.NewSQLError(err, strSQL)
 		log.Println(err)
 		return false, err
@@ -113,6 +113,10 @@ func dbType(dataType schema.DataType, maxLength int) string {
 
 	panic("not impl DBType")
 
+}
+func SqliteType(typeName string) schema.DataType {
+	a, _ := sqliteType(typeName)
+	return a
 }
 func sqliteType(typeName string) (schema.DataType, int) {
 	/*

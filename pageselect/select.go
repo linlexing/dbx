@@ -173,25 +173,8 @@ func (s *PageSelect) QueryRows(driver string, db common.DB) (result []map[string
 		log.Println(err)
 		return
 	}
-	var columns []string
-	if columns, err = rows.Columns(); err != nil {
+	if cols, err = Find(driver).ColumnTypes(rows); err != nil {
 		return
-	}
-	//go1.8 可以直接返回各列类型，但是驱动还都不支持，以后改进
-	cols = []*scan.ColumnType{}
-	//先根据预置的列类型清单获取对应的字段类型
-	for _, v := range columns {
-		col := &scan.ColumnType{
-			Name: v,
-			Type: schema.TypeString,
-		}
-		if len(s.ColumnTypes) > 0 {
-			if tCol := s.ColumnTypes.byName(col.Name); tCol != nil {
-				col.Type = tCol.Type
-			}
-		}
-
-		cols = append(cols, col)
 	}
 
 	result = []map[string]interface{}{}

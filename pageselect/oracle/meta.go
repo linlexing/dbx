@@ -1,12 +1,15 @@
 package oracle
 
 import (
+	"database/sql"
 	"encoding/csv"
 	"fmt"
 	"log"
 	"strings"
 
+	"github.com/Sirupsen/logrus"
 	ps "github.com/linlexing/dbx/pageselect"
+	"github.com/linlexing/dbx/scan"
 	"github.com/linlexing/dbx/schema"
 )
 
@@ -16,6 +19,41 @@ type meta struct{}
 
 func init() {
 	ps.Register(driverName, new(meta))
+}
+func fromDBType(ty string) schema.DataType {
+	switch ty {
+	case "SQLT_INT", "SQLT_NUM", "SQLT_UIN":
+		return schema.TypeInt
+	case "SQLT_CHR", "SQLT_STR", "SQLT_CLOB", "SQLT_VCS", "SQLT_LVC", "SQLT_AFC",
+		"SQLT_AVC", "SQLT_VST", "SQLT_LNG", "SQLT_VBI", "SQLT_BIN", "SQLT_LBI", "SQLT_LVB":
+		return schema.TypeString
+	case "SQLT_FLT", "SQLT_BDOUBLE", "SQLT_BFLOAT", "SQLT_VNU", "":
+		return schema.TypeFloat
+	case "SQLT_DAT", "SQLT_DATE", "SQLT_TIMESTAMP", "SQLT_TIMESTAMP_TZ", "SQLT_TIMESTAMP_LTZ":
+		return schema.TypeDatetime
+	case "SQLT_BLOB":
+		return schema.TypeBytea
+	default:
+		logrus.WithFields(logrus.Fields{
+			"type": ty,
+		}).Panic("invalid type")
+	}
+	return 0
+}
+func (m *meta) ColumnTypes(rows *sql.Rows) ([]*scan.ColumnType, error) {
+	cols, err := rows.ColumnTypes()
+	if err != nil {
+		return nil, err
+	}
+	rev := []*scan.ColumnType{}
+	for _, one := range cols {
+		rev = append(rev,
+			&scan.ColumnType{
+				Name: one.Name(),
+				Type: fromDBType(one.DatabaseTypeName()),
+			})
+	}
+	return rev, nil
 }
 func (m *meta) SortByAsc(field string, notNull bool) string {
 	//非空字段（一般是主键）不加NULLs first性能会有很大提升

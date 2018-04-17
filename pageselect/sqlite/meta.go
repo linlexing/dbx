@@ -8,8 +8,11 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/linlexing/dbx/scan"
+
 	ps "github.com/linlexing/dbx/pageselect"
 	"github.com/linlexing/dbx/schema"
+	"github.com/linlexing/dbx/schema/sqlite"
 	sqlite3 "github.com/mattn/go-sqlite3"
 )
 
@@ -30,6 +33,22 @@ func init() {
 			},
 		})
 }
+func (m *meta) ColumnTypes(rows *sql.Rows) ([]*scan.ColumnType, error) {
+	cols, err := rows.ColumnTypes()
+	if err != nil {
+		return nil, err
+	}
+	rev := []*scan.ColumnType{}
+	for _, one := range cols {
+		rev = append(rev,
+			&scan.ColumnType{
+				Name: one.Name(),
+				Type: sqlite.SqliteType(one.DatabaseTypeName()),
+			})
+	}
+	return rev, nil
+}
+
 func (m *meta) SortByAsc(field string, _ bool) string {
 	return field
 }
