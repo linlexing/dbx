@@ -49,7 +49,7 @@ func (m *meta) ColumnTypes(rows *sql.Rows) ([]*scan.ColumnType, error) {
 	for _, one := range cols {
 		rev = append(rev,
 			&scan.ColumnType{
-				Name: one.Name(),
+				Name: strings.ToUpper(one.Name()), //postgres默认是小写，与oracle相反，以oracle为准，全部转换成大写
 				Type: fromDBType(one.DatabaseTypeName()),
 			})
 	}
