@@ -25,7 +25,7 @@ func fromDBType(ty string) schema.DataType {
 	switch ty {
 	case "INT8", "INT4", "INT2":
 		return schema.TypeInt
-	case "VARCHAR", "TEXT":
+	case "VARCHAR", "TEXT", "JSON", "JSONB":
 		return schema.TypeString
 	case "NUMERIC":
 		return schema.TypeFloat
