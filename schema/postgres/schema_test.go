@@ -371,3 +371,34 @@ func TestOpenTable(t *testing.T) {
 		t.Error("没有索引")
 	}
 }
+func TestArrayColumn(t *testing.T) {
+	db, err := getdb()
+	if err != nil {
+		t.Error(err)
+	}
+	defer db.Close()
+	tab := schema.NewTable("test")
+	tab.PrimaryKeys = []string{"ID"}
+	tab.Columns = []*schema.Column{
+		&schema.Column{
+			Name: "ID",
+			Type: schema.TypeInt,
+			Null: false,
+		},
+		&schema.Column{
+			Name:        "strarr",
+			Type:        schema.TypeString,
+			Null:        true,
+			FetchDriver: "postgres",
+			TrueType:    "character varying[]",
+		},
+	}
+	if err = new(meta).CreateTable(db, tab); err != nil {
+		t.Error(err)
+	}
+	defer func() {
+		if _, err = db.Exec("drop table test"); err != nil {
+			t.Error(err)
+		}
+	}()
+}
