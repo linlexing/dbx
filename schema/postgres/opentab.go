@@ -126,7 +126,8 @@ func getTableIndexes(db common.DB, schemaName, tableName string) ([]indexType, e
 				    and tn.nspname = $1
 				    and a.attnum = ANY(ix.indkey)
 				    and t.relkind = 'r'
-				    and t.relname =$2
+					and t.relname =$2
+					and not ix.indisprimary
 				group by
 				   t.relname,
 				   i.relnamespace,
