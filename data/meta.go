@@ -6,6 +6,8 @@ import "github.com/linlexing/dbx/common"
 type Accesser interface {
 	Merge(db common.DB, destTable, srcTable string, pks, columns []string) error
 	Minus(table1, where1, table2, where2 string, primaryKeys, cols []string) string
+	//Concat 串联字符串，null被忽略，而不是返回null
+	Concat(vals ...string) string
 }
 
 var (

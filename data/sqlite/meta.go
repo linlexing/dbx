@@ -16,6 +16,9 @@ func init() {
 	data.Register(driverName, new(meta))
 
 }
+func (m *meta) Concat(vals ...string) string {
+	return strings.Join(vals, "||")
+}
 func (m *meta) Merge(db common.DB, destTable, srcTable string, pks, columns []string) error {
 	panic("not impl")
 }

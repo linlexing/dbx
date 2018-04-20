@@ -15,6 +15,9 @@ type meta struct{}
 func init() {
 	data.Register(driverName, new(meta))
 }
+func (m *meta) Concat(vals ...string) string {
+	return strings.Join(vals, "||")
+}
 
 //Merge 将另一个表中的数据合并进本表，要求两个表的主键相同,相同主键的被覆盖
 //columns指定字段清单,不在清单内的字段不会被update
