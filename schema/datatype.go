@@ -168,7 +168,7 @@ func (d DataType) ParseString(v string) interface{} {
 	case TypeDatetime:
 		tm, err := strToDate(v)
 		if err != nil {
-			panic(fmt.Sprintf("%s not time value", v))
+			panic(fmt.Sprintf("[%s] not time value", v))
 		}
 		return tm
 	case TypeBytea:

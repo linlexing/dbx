@@ -58,7 +58,7 @@ func getTableColumns(db common.DB, schemaName, tableName string) ([]columnType, 
 	columns := []columnType{}
 	strSQL := `select upper(column_name) as "DBNAME",
 					(case when is_nullable='YES' then 1 else 0 end) as "DBNULL",
-					(case when data_type in ('text', 'character varying','jsob','jsonb') or data_type like '%[]'
+					(case when data_type in ('text', 'character varying','jsob','jsonb','ARRAY')
 						then 'STR'
 						when  data_type in ('integer','bigint')
 						then 'INT'
