@@ -317,6 +317,7 @@ func fieldsFromStruct(vtype reflect.Type, conv converFieldName, parentName strin
 			vtype.Name(), vtype.Kind(), parentName, parentPath)
 		return
 	}
+	var preTag string
 	for i := 0; i < vtype.NumField(); i++ {
 		field := vtype.Field(i)
 		newPath := append(parentPath, i)
@@ -349,12 +350,9 @@ func fieldsFromStruct(vtype reflect.Type, conv converFieldName, parentName strin
 		tag, ok := field.Tag.Lookup("dbx")
 		//没有定义，则只有名称
 		if !ok || len(tag) == 0 {
-			sf.define, err = columnDefine(name)
-			if err != nil {
-				return
-			}
-			rev = append(rev, sf)
-			continue
+			tag = preTag
+		} else {
+			preTag = tag
 		}
 		tag = strings.ToUpper(tag)
 		//如果有定义，则必定是类型名称或者字段名+类型
@@ -396,7 +394,6 @@ func fieldsFromStruct(vtype reflect.Type, conv converFieldName, parentName strin
 		}
 		rev = append(rev, sf)
 	}
-
 	return rev, nil
 }
 func struct2Table(tableName string, vtype reflect.Type, conv converFieldName,
@@ -465,18 +462,16 @@ func mainStruct2Row(vval reflect.Value, conv converFieldName) (main map[string]i
 	main = map[string]interface{}{}
 	child = map[string][]map[string]interface{}{}
 	for _, v := range types {
-		var clist interface{}
-		if clist, err = v.get(vval); err != nil {
+		var tmpVal interface{}
+		if tmpVal, err = v.get(vval); err != nil {
 			return
 		}
 		if v.child {
-			if clist != nil {
-				child[v.childName] = clist.([]map[string]interface{})
+			if tmpVal != nil {
+				child[v.childName] = tmpVal.([]map[string]interface{})
 			}
 		} else {
-			if main[v.define.Name], err = v.get(vval); err != nil {
-				return
-			}
+			main[v.define.Name] = tmpVal
 		}
 	}
 	return

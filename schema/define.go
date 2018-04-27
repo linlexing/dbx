@@ -9,8 +9,7 @@ import (
 
 type colDef struct {
 	*Column
-	copyPrev bool
-	isPK     bool
+	isPK bool
 }
 
 func columnDefine(line string) (result *colDef, err error) {
@@ -43,7 +42,7 @@ func columnDefine(line string) (result *colDef, err error) {
 	result.Name = lineList[0]
 	if len(strings.TrimSpace(lineList[1])) == 0 {
 		//如果只有列名，则自动从上一个字段取出数据类型等定义
-		result.copyPrev = true
+		err = fmt.Errorf("%s type not define", result.Name)
 		return
 	}
 	dataType := strings.TrimSpace(lineList[1])
@@ -88,15 +87,8 @@ func columnDefine(line string) (result *colDef, err error) {
 func columnsDefine(d []*colDef) (columns []*Column, pks []string) {
 	pks = []string{}
 	columns = []*Column{}
-	var prevColumn *Column
 	for _, cd := range d {
 		col := cd.Column
-		if cd.copyPrev {
-			newcol := prevColumn.Clone()
-			newcol.Name = cd.Name
-			col = newcol
-		}
-		prevColumn = col
 		columns = append(columns, col)
 		if cd.isPK {
 			pks = append(pks, col.Name)
