@@ -390,7 +390,7 @@ func fieldsFromStruct(vtype reflect.Type, conv converFieldName, parentName strin
 		}
 		//检查字段类型是否正确
 		if err := sf.checkType(root); err != nil {
-			return nil, fmt.Errorf("field:%s error:%s", sf.fieldName, err)
+			return nil, fmt.Errorf("%s field:%s error:%s", vtype.Name(), sf.fieldName, err)
 		}
 		rev = append(rev, sf)
 	}
