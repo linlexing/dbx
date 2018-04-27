@@ -27,7 +27,7 @@ type indexType struct {
 func getPk(db common.DB, tableName string) ([]string, error) {
 	result := []string{}
 	strSQL := fmt.Sprintf(
-		`SELECT a.attname
+		`SELECT upper(a.attname)
 			FROM   pg_index i
 			JOIN   pg_attribute a ON a.attrelid = i.indrelid
 			        AND a.attnum = ANY(i.indkey)
@@ -111,7 +111,7 @@ func getTableIndexes(db common.DB, schemaName, tableName string) ([]indexType, e
 	strSQL := `select
 					(select nspname from pg_namespace where oid=i.relnamespace) as "INDEXOWNER",
 					i.relname as "INDEXNAME",
-				    min(a.attname) as "COLUMNNAME"
+				    upper(min(a.attname)) as "COLUMNNAME"
 				from
 				    pg_class t,
 				    pg_class i,
