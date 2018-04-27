@@ -30,6 +30,7 @@ func removeColumns(db common.DB, tabName string, cols []string) error {
 		strList = append(strList, "DROP COLUMN "+v)
 	}
 	strSQL = fmt.Sprintf("ALTER table %s %s", tabName, strings.Join(strList, ","))
+	log.Println(strSQL)
 	if _, err := db.Exec(strSQL); err != nil {
 		err = common.NewSQLError(err, strSQL)
 		log.Println(err)
@@ -41,6 +42,7 @@ func removeColumns(db common.DB, tabName string, cols []string) error {
 func tableRename(db common.DB, oldName string, newName string) error {
 
 	strSQL := fmt.Sprintf("ALTER table %s RENAME TO %s", oldName, newName)
+	log.Println(strSQL)
 	if _, err := db.Exec(strSQL); err != nil {
 		err = common.NewSQLError(err, strSQL)
 		log.Println(err)
@@ -50,6 +52,7 @@ func tableRename(db common.DB, oldName string, newName string) error {
 }
 func dropColumnIndex(db common.DB, tableName, indexName string) error {
 	strSQL := fmt.Sprintf("drop index %s", indexName)
+	log.Println(strSQL)
 	if _, err := db.Exec(strSQL); err != nil {
 		err = common.NewSQLError(err, strSQL)
 		log.Println(err)
@@ -94,6 +97,7 @@ func dropTablePrimaryKey(db common.DB, tableName string) error {
 		return err
 	}
 	strSQL = fmt.Sprintf("ALTER TABLE %s DROP CONSTRAINT %s", tableName, pkCons)
+	log.Println(strSQL)
 	if _, err := db.Exec(strSQL); err != nil {
 		err = common.NewSQLError(err, strSQL)
 		log.Println(err)
@@ -107,6 +111,7 @@ func dropTablePrimaryKey(db common.DB, tableName string) error {
 //只有当表不存在主键时，才可以新增主键
 func addTablePrimaryKey(db common.DB, tableName string, pks []string) error {
 	strSQL := fmt.Sprintf("alter table %s add primary key(%s)", tableName, strings.Join(pks, ","))
+	log.Println(strSQL)
 	if _, err := db.Exec(strSQL); err != nil {
 		err = common.NewSQLError(err, strSQL)
 		log.Println(err)
