@@ -70,5 +70,5 @@ func renderManualPageSQL(driver string, strSQL string, columnList, whereList, or
 		"Where":   where,
 		"OrderBy": orderby,
 		"Limit":   limit,
-	})
+	}, nil)
 }

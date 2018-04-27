@@ -3,6 +3,7 @@ package data
 import (
 	"fmt"
 	"strings"
+	"text/template"
 
 	"github.com/linlexing/dbx/common"
 	"github.com/linlexing/dbx/render"
@@ -23,6 +24,7 @@ type Update struct {
 	Sets             []UpdateSet
 	AdditionSet      string
 	AdditionWhere    string
+	BeforeSQL        string
 	SQLRenderArgs    interface{}
 }
 
@@ -93,6 +95,20 @@ func (u *Update) Exec(db common.DB) (icount int64, err error) {
 	strSQL, err = render.RenderSQL(strSQL, u.SQLRenderArgs)
 	if err != nil {
 		return
+	}
+	if len(u.BeforeSQL) > 0 {
+		var strBefore string
+		strBefore, err = render.RenderSQL(u.BeforeSQL, u.SQLRenderArgs, template.FuncMap{
+			"DataSQL": func() string {
+				return u.DataSQL
+			},
+		})
+		if err != nil {
+			return
+		}
+		if _, err = db.Exec(strBefore); err != nil {
+			return
+		}
 	}
 	sr, err := db.Exec(strSQL, setVals...)
 	if err != nil {
