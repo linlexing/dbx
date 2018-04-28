@@ -348,9 +348,12 @@ func fieldsFromStruct(vtype reflect.Type, conv converFieldName, parentName strin
 			name = conv.ConvertFieldName(sf.parentName, name)
 		}
 		tag, ok := field.Tag.Lookup("dbx")
-		//没有定义，则只有名称
 		if !ok || len(tag) == 0 {
+			//没有定义，则只有名称
 			tag = preTag
+			if len(tag) == 0 {
+				tag = name
+			}
 		} else {
 			preTag = tag
 		}
