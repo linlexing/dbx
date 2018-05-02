@@ -39,7 +39,7 @@ func dbType(dataType schema.DataType, maxLength int) string {
 	panic("not impl DBType")
 
 }
-func dropTablePrimaryKey(db common.DB, tableName string) error {
+func dropTablePrimaryKeySQL(db common.DB, tableName string) ([]string, error) {
 	ns := strings.Split(tableName, ".")
 	var strSQL string
 	var params []interface{}
@@ -56,29 +56,20 @@ func dropTablePrimaryKey(db common.DB, tableName string) error {
 			strings.ToUpper(tableName)}
 	}
 	var pkCons string
-	row := db.QueryRow(strSQL, params...)
-	if err := row.Scan(&pkCons); err != nil {
+	if err := db.QueryRow(strSQL, params...).Scan(&pkCons); err != nil {
 		//如果找不到主键，则不需删除
 		if err == sql.ErrNoRows {
-			return nil
+			return nil, nil
 		}
 		err = common.NewSQLError(err, strSQL, params...)
 		log.Println(err)
-		return err
+		return nil, err
 	}
-	strSQL = fmt.Sprintf("ALTER TABLE %s DROP CONSTRAINT %s", tableName, pkCons)
-	log.Println(strSQL)
-	if _, err := db.Exec(strSQL); err != nil {
-		err = common.NewSQLError(err, strSQL)
-		log.Println(err)
-		return err
-	}
-
-	return nil
+	return []string{fmt.Sprintf("ALTER TABLE %s DROP CONSTRAINT %s", tableName, pkCons)}, nil
 }
 
-//addTablePrimaryKey 新增主键
-func addTablePrimaryKey(db common.DB, tableName string, pks []string) error {
+//addTablePrimaryKeySQL 新增主键
+func addTablePrimaryKeySQL(tableName string, pks []string) []string {
 	ns := strings.Split(tableName, ".")
 	var clearTableName string
 	if len(ns) > 1 {
@@ -86,15 +77,7 @@ func addTablePrimaryKey(db common.DB, tableName string, pks []string) error {
 	} else {
 		clearTableName = tableName
 	}
-	strSQL := fmt.Sprintf("alter table %s add constraint %s_pk primary key(%s)", tableName, clearTableName, strings.Join(pks, ","))
-	log.Println(strSQL)
-	if _, err := db.Exec(strSQL); err != nil {
-		err = common.NewSQLError(err, strSQL)
-		log.Println(err)
-		return err
-	}
-
-	return nil
+	return []string{fmt.Sprintf("alter table %s add constraint %s_pk primary key(%s)", tableName, clearTableName, strings.Join(pks, ","))}
 }
 func colDBType(c *schema.Column) string {
 	if c.FetchDriver == driverName && len(c.TrueType) > 0 {
@@ -119,17 +102,9 @@ func dbDefineNull(c *schema.Column) string {
 	return fmt.Sprintf("%s %s%s", c.Name, colDBType(c), nullStr)
 }
 
-//tableRename 处理表改名，旧名可以是多个，任意一个对上就改名，如果都没有存在，则不处理，也不返回出错
-func tableRename(db common.DB, oldName string, newName string) error {
-
-	strSQL := fmt.Sprintf("rename table %s TO %s", oldName, newName)
-	log.Println(strSQL)
-	if _, err := db.Exec(strSQL); err != nil {
-		log.Println(strSQL)
-		return common.NewSQLError(err, strSQL)
-	}
-
-	return nil
+//tableRenameSQL 处理表改名，旧名可以是多个，任意一个对上就改名，如果都没有存在，则不处理，也不返回出错
+func tableRenameSQL(oldName string, newName string) []string {
+	return []string{fmt.Sprintf("rename table %s TO %s", oldName, newName)}
 }
 func tableExists(db common.DB, tabName string) (bool, error) {
 	var schemaName string
@@ -162,19 +137,12 @@ func tableExists(db common.DB, tabName string) (bool, error) {
 	}
 	return iCount > 0, nil
 }
-func removeColumns(db common.DB, tabName string, cols []string) error {
-	strSQL := fmt.Sprintf("ALTER table %s drop(%s)", tabName, strings.Join(cols, ","))
-	log.Println(strSQL)
-	if _, err := db.Exec(strSQL); err != nil {
-		err = common.NewSQLError(err, strSQL)
-		log.Println(err)
-		return err
-	}
-	return nil
+func removeColumnsSQL(tabName string, cols []string) []string {
+	return []string{fmt.Sprintf("ALTER table %s drop(%s)", tabName, strings.Join(cols, ","))}
 }
 
 //createColumnIndex 新增单字段索引
-func createColumnIndex(db common.DB, tableName, colName string) error {
+func createColumnIndexSQL(tableName, colName string) []string {
 	ns := strings.Split(tableName, ".")
 	schemaName := ""
 	tname := ""
@@ -185,23 +153,9 @@ func createColumnIndex(db common.DB, tableName, colName string) error {
 		tname = tableName
 	}
 	//这里会有问题，如果表名和字段名比较长就会出错
-	strSQL := fmt.Sprintf("create index %si%s%s on %s(%s)", schemaName, tname, colName, tableName, colName)
-	log.Println(strSQL)
-	if _, err := db.Exec(strSQL); err != nil {
-		err = common.NewSQLError(err, strSQL)
-		log.Println(err)
-		return err
-	}
-	return nil
+	return []string{fmt.Sprintf("create index %si%s%s on %s(%s)", schemaName, tname, colName, tableName, colName)}
 }
 
-func dropColumnIndex(db common.DB, tableName, indexName string) error {
-	strSQL := fmt.Sprintf("drop index %s", indexName)
-	log.Println(strSQL)
-	if _, err := db.Exec(strSQL); err != nil {
-		err = common.NewSQLError(err, strSQL)
-		log.Println(err)
-		return err
-	}
-	return nil
+func dropColumnIndexSQL(tableName, indexName string) []string {
+	return []string{fmt.Sprintf("drop index %s", indexName)}
 }

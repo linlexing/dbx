@@ -38,15 +38,8 @@ func getTempTableName(db common.DB, prev string) (string, error) {
 	}
 	return tableName, nil
 }
-func tableRename(db common.DB, oldName string, newName string) error {
-
-	strSQL := fmt.Sprintf("ALTER table %s RENAME TO %s", oldName, newName)
-	if _, err := db.Exec(strSQL); err != nil {
-		err = common.NewSQLError(err, strSQL)
-		log.Println(err)
-		return err
-	}
-	return nil
+func tableRenameSQL(oldName string, newName string) []string {
+	return []string{fmt.Sprintf("ALTER table %s RENAME TO %s", oldName, newName)}
 }
 func tableExists(db common.DB, tabName string) (bool, error) {
 
@@ -63,7 +56,7 @@ func tableExists(db common.DB, tabName string) (bool, error) {
 }
 
 //createColumnIndex 新增单字段索引
-func createColumnIndex(db common.DB, tableName, colName string) error {
+func createColumnIndexSQL(tableName, colName string) []string {
 	ns := strings.Split(tableName, ".")
 	schemaName := ""
 	tname := ""
@@ -74,22 +67,10 @@ func createColumnIndex(db common.DB, tableName, colName string) error {
 		tname = tableName
 	}
 	//这里会有问题，如果表名和字段名比较长就会出错
-	strSQL := fmt.Sprintf("create index %si%s%s on %s(%s)", schemaName, tname, colName, tableName, colName)
-	if _, err := db.Exec(strSQL); err != nil {
-		err = common.NewSQLError(err, strSQL)
-		log.Println(err)
-		return err
-	}
-	return nil
+	return []string{fmt.Sprintf("create index %si%s%s on %s(%s)", schemaName, tname, colName, tableName, colName)}
 }
-func dropColumnIndex(db common.DB, tableName, indexName string) error {
-	strSQL := fmt.Sprintf("drop index %s", indexName)
-	if _, err := db.Exec(strSQL); err != nil {
-		err = common.NewSQLError(err, strSQL)
-		log.Println(err)
-		return err
-	}
-	return nil
+func dropColumnIndexSQL(tableName, indexName string) []string {
+	return []string{fmt.Sprintf("drop index %s", indexName)}
 }
 
 func dbType(dataType schema.DataType, maxLength int) string {

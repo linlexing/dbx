@@ -72,11 +72,19 @@ func (t *Table) check() error {
 	return nil
 }
 
-//Update 更新一个表的结构至数据库中，会自动处理表改名、字段改名以及字段修改、索引修改等操作,
-//先自动去数据库取出旧表结构
+//Update 更新一个表结构到数据库中
 func (t *Table) Update(driver string, db common.DB) error {
-	if err := t.check(); err != nil {
+	list, err := t.Extract(driver, db)
+	if err != nil {
 		return err
+	}
+	return common.BatchRunAndPrint(db, list)
+}
+
+//Extract 提取更新一个表的结构所需要的SQL语句清单
+func (t *Table) Extract(driver string, db common.DB) ([]string, error) {
+	if err := t.check(); err != nil {
+		return nil, err
 	}
 	mt := Find(driver)
 	sch := &tableSchema{
@@ -91,7 +99,7 @@ func (t *Table) Update(driver string, db common.DB) error {
 		}
 		for _, v := range t.FormerName {
 			if _, ok := uname[v]; ok {
-				return fmt.Errorf("FormerName:%s dup", v)
+				return nil, fmt.Errorf("FormerName:%s dup", v)
 			}
 		}
 		//并根据曾用名去获取之前的表结构
@@ -99,7 +107,7 @@ func (t *Table) Update(driver string, db common.DB) error {
 			if b, _ := mt.TableExists(db, v); b {
 				oldTable, err := mt.OpenTable(db, v)
 				if err != nil {
-					return err
+					return nil, err
 				}
 				sch.oldTable = oldTable
 				break
@@ -110,17 +118,18 @@ func (t *Table) Update(driver string, db common.DB) error {
 	if sch.oldTable == nil {
 		b, err := mt.TableExists(db, t.FullName())
 		if err != nil {
-			return err
+			return nil, err
 		}
 		if b {
 			sch.oldTable, err = mt.OpenTable(db, t.FullName())
 			if err != nil {
-				return err
+				return nil, err
 			}
 		}
 	}
-	return sch.update()
+	return sch.extract()
 }
+
 func (t *Table) findColumnAnyName(names ...string) *Column {
 	//用map作为检索索引
 	idx := map[string]bool{}
@@ -177,7 +186,7 @@ func (t *Table) DefineScript(src string) error {
 	if len(pks) > 0 {
 		t.PrimaryKeys = pks
 		//将所有的主键设置成NOT NULL
-		for _,v :=range t.PrimaryKeys{
+		for _, v := range t.PrimaryKeys {
 			t.ColumnByName(v).Null = false
 		}
 	}

@@ -2,102 +2,68 @@ package oracle
 
 import (
 	"fmt"
-	"log"
 
 	"github.com/linlexing/dbx/common"
 	"github.com/linlexing/dbx/schema"
 )
 
-func (m *meta) ChangeTable(db common.DB, change *schema.TableSchemaChange) error {
+func (m *meta) ChangeTableSQL(db common.DB, change *schema.TableSchemaChange) (rev []string, err error) {
 	tabName := change.NewName
 	//处理表更名,处理过后，所有后续操作都在新表名上进行
 	if change.OldName != change.NewName {
-		if err := tableRename(db, change.OldName, change.NewName); err != nil {
-			return err
-		}
+		rev = append(rev, tableRenameSQL(change.OldName, change.NewName)...)
 	}
 	//如果主键变更，则需要先除去主键
 	if change.PKChange {
-		if err := dropTablePrimaryKey(db, tabName); err != nil {
-			return err
+		list, err := dropTablePrimaryKeySQL(db, tabName)
+		if err != nil {
+			return nil, err
 		}
+		rev = append(rev, list...)
 	}
 	//逐个处理字段
 	for _, cf := range change.ChangeFields {
-
-		if err := processColumn(db, tabName, cf.OldField, cf.NewField); err != nil {
-			return err
-		}
+		rev = append(rev, processColumnSQL(tabName, cf.OldField, cf.NewField)...)
 	}
 	//最后删除字段
 	if len(change.RemoveFields) > 0 {
-		if err := removeColumns(db, tabName, change.RemoveFields); err != nil {
-			return err
-		}
+		rev = append(rev, removeColumnsSQL(tabName, change.RemoveFields)...)
 	}
 	//如果主键变过，则新增主键
 	if change.PKChange {
-		if err := addTablePrimaryKey(db, tabName, change.PK); err != nil {
-			return err
-		}
+		rev = append(rev, addTablePrimaryKeySQL(tabName, change.PK)...)
 	}
-	return nil
+	return
 }
-func processColumn(db common.DB, tabName string, oldCol, newCol *schema.Column) error {
-	var strSQL string
+func processColumnSQL(tabName string, oldCol, newCol *schema.Column) (rev []string) {
 	//如果是新增字段
 	if oldCol == nil {
-		strSQL = fmt.Sprintf("alter table %s add %s", tabName, dbDefine(newCol))
-		if _, err := db.Exec(strSQL); err != nil {
-			err = common.NewSQLError(err, strSQL)
-			log.Println(err)
-			return err
-		}
-		log.Println(strSQL)
+		rev = append(rev, fmt.Sprintf("alter table %s add %s", tabName, dbDefine(newCol)))
 		//处理索引
 		if newCol.Index {
-			if err := createColumnIndex(db, tabName, newCol.Name); err != nil {
-				return err
-			}
+			rev = append(rev, createColumnIndexSQL(tabName, newCol.Name)...)
 		}
-		return nil
+		return
 	}
 	//如果是更名，需要先处理
 	if oldCol.Name != newCol.Name {
-		strSQL = fmt.Sprintf("alter table %s rename column %s to %s", tabName, oldCol.Name, newCol.Name)
-		if _, err := db.Exec(strSQL); err != nil {
-			err = common.NewSQLError(err, strSQL)
-			log.Println(err)
-			return err
-		}
-		log.Println(strSQL)
+		rev = append(rev, fmt.Sprintf("alter table %s rename column %s to %s", tabName, oldCol.Name, newCol.Name))
 	}
 	if !oldCol.EqueNoIndex(newCol) {
 		if oldCol.Null != newCol.Null {
-			strSQL = fmt.Sprintf("alter table %s MODIFY %s", tabName, dbDefineNull(newCol))
-
+			rev = append(rev, fmt.Sprintf("alter table %s MODIFY %s", tabName, dbDefineNull(newCol)))
 		} else {
-			strSQL = fmt.Sprintf("alter table %s MODIFY %s %s", tabName, newCol.Name, colDBType(newCol))
+			rev = append(rev, fmt.Sprintf("alter table %s MODIFY %s %s", tabName, newCol.Name, colDBType(newCol)))
 		}
-		if _, err := db.Exec(strSQL); err != nil {
-			err = common.NewSQLError(err, strSQL)
-			log.Println(err)
-			return err
-		}
-		log.Println(strSQL)
 	}
 	//处理索引,字段更名的操作，oracle、postgres、mysql都是安全的，所以不需处理
 	//ref:http://stackoverflow.com/questions/6732896/does-rename-column-take-care-of-indexes
 	if oldCol.Index && !newCol.Index {
 		//删除索引
-		if err := dropColumnIndex(db, tabName, oldCol.IndexName); err != nil {
-			return err
-		}
+		rev = append(rev, dropColumnIndexSQL(tabName, oldCol.IndexName)...)
 	} else if !oldCol.Index && newCol.Index {
 		//新增索引
-		if err := createColumnIndex(db, tabName, oldCol.Name); err != nil {
-			return err
-		}
+		rev = append(rev, createColumnIndexSQL(tabName, oldCol.Name)...)
 	}
-	return nil
+	return
 }

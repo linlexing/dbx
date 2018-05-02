@@ -47,15 +47,15 @@ func (t *tableSchema) checkTableColumns(tab *Table) error {
 	return nil
 }
 
-//update 将定义更新到数据库中
-func (t *tableSchema) update() error {
+//extract 提取修改数据库结构的sql语句
+func (t *tableSchema) extract() ([]string, error) {
 	//先检查字段名称是否合法
 	if err := t.checkTableColumns(t.newTable); err != nil {
-		return err
+		return nil, err
 	}
 	//如果没有旧表，则是新增表
 	if t.oldTable == nil {
-		return t.mt.CreateTable(t.db, t.newTable)
+		return t.mt.CreateTableSQL(t.db, t.newTable)
 	}
 	//处理表更名,处理过后，所有后续操作都在新表名上进行
 	schg := &TableSchemaChange{
@@ -92,13 +92,11 @@ func (t *tableSchema) update() error {
 		}
 	}
 	//最后删除没有处理过的旧字段
-
 	for k, prc := range oldColumnProcesses {
 		if !prc {
 			schg.RemoveFields = append(schg.RemoveFields, k)
 
 		}
 	}
-	return t.mt.ChangeTable(t.db, schg)
-
+	return t.mt.ChangeTableSQL(t.db, schg)
 }

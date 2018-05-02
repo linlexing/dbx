@@ -9,18 +9,12 @@ import (
 	"github.com/linlexing/dbx/schema"
 )
 
-func removeColumns(db common.DB, tabName string, cols []string) error {
-	var strSQL string
+func removeColumnsSQL(tabName string, cols []string) []string {
 	strList := []string{}
 	for _, v := range cols {
 		strList = append(strList, "DROP COLUMN "+v)
 	}
-	strSQL = fmt.Sprintf("ALTER table %s %s", tabName, strings.Join(strList, ","))
-	if _, err := db.Exec(strSQL); err != nil {
-		log.Println(strSQL)
-		return common.NewSQLError(err, strSQL)
-	}
-	return nil
+	return []string{fmt.Sprintf("ALTER table %s %s", tabName, strings.Join(strList, ","))}
 }
 func tableExists(db common.DB, tabName string) (bool, error) {
 	schemaName := ""
@@ -51,20 +45,13 @@ func tableExists(db common.DB, tabName string) (bool, error) {
 	return iCount > 0, nil
 }
 
-//tableRename 处理表改名，旧名可以是多个，任意一个对上就改名，如果都没有存在，则不处理，也不返回出错
-func tableRename(db common.DB, oldName string, newName string) error {
-
-	strSQL := fmt.Sprintf("rename table %s TO %s", oldName, newName)
-	if _, err := db.Exec(strSQL); err != nil {
-		log.Println(strSQL)
-		return common.NewSQLError(err, strSQL)
-	}
-
-	return nil
+//tableRenameSQL 处理表改名，旧名可以是多个，任意一个对上就改名，如果都没有存在，则不处理，也不返回出错
+func tableRenameSQL(oldName string, newName string) []string {
+	return []string{fmt.Sprintf("rename table %s TO %s", oldName, newName)}
 }
 
-//CreateColumnIndex 新增单字段索引
-func createColumnIndex(db common.DB, tableName, colName string) error {
+//createColumnIndexSQL 新增单字段索引
+func createColumnIndexSQL(tableName, colName string) []string {
 	ns := strings.Split(tableName, ".")
 	schema := ""
 	tname := ""
@@ -75,42 +62,22 @@ func createColumnIndex(db common.DB, tableName, colName string) error {
 		tname = tableName
 	}
 	//这里会有问题，如果表名和字段名比较长就会出错
-	strSQL := fmt.Sprintf("create index %si%s%s on %s(%s)", schema, tname, colName, tableName, colName)
-	if _, err := db.Exec(strSQL); err != nil {
-		log.Println(strSQL)
-		return common.NewSQLError(err, strSQL)
-	}
-	return nil
-}
-func dropColumnIndex(db common.DB, tableName, indexName string) error {
-	strSQL := fmt.Sprintf("drop index %s on %s", indexName, tableName)
-	if _, err := db.Exec(strSQL); err != nil {
-		log.Println(strSQL)
-		return common.NewSQLError(err, strSQL)
-	}
-	return nil
+	return []string{fmt.Sprintf("create index %si%s%s on %s(%s)", schema, tname, colName, tableName, colName)}
 }
 
-//dropTablePrimaryKey 删除主键
-func dropTablePrimaryKey(db common.DB, tableName string) error {
-	strSQL := fmt.Sprintf("ALTER TABLE %s DROP PRIMARY KEY", tableName)
-	if _, err := db.Exec(strSQL); err != nil {
-		log.Println(strSQL)
-		return common.NewSQLError(err, strSQL)
-	}
-	return nil
+func dropColumnIndexSQL(tableName, indexName string) []string {
+	return []string{fmt.Sprintf("drop index %s on %s", indexName, tableName)}
 }
 
-//addTablePrimaryKey 新增主键
-func addTablePrimaryKey(db common.DB, tableName string, pks []string) error {
-	strSQL := fmt.Sprintf("alter table %s add primary key(%s)", tableName, strings.Join(pks, ","))
-	if _, err := db.Exec(strSQL); err != nil {
-		log.Println(strSQL)
-		return common.NewSQLError(err, strSQL)
-	}
-	return nil
+//dropTablePrimaryKeySQL 删除主键
+func dropTablePrimaryKeySQL(tableName string) []string {
+	return []string{fmt.Sprintf("ALTER TABLE %s DROP PRIMARY KEY", tableName)}
 }
 
+//addTablePrimaryKeySQL 新增主键
+func addTablePrimaryKeySQL(tableName string, pks []string) []string {
+	return []string{fmt.Sprintf("alter table %s add primary key(%s)", tableName, strings.Join(pks, ","))}
+}
 func dbDefine(c *schema.Column) string {
 	nullStr := ""
 	typeStr := ""
