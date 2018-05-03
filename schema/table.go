@@ -13,7 +13,8 @@ const (
 )
 
 var (
-	columnReg *regexp.Regexp
+	columnReg      *regexp.Regexp
+	columnTrueType *regexp.Regexp
 )
 
 func init() {
@@ -22,6 +23,11 @@ func init() {
 		panic(err)
 	}
 	columnReg = r
+	r, err = regexp.Compile(`(?i)(postgres|oci8|sqlite3|mysql)\s+(.+)`)
+	if err != nil {
+		panic(err)
+	}
+	columnTrueType = r
 }
 
 //Table 代表数据库中一个物理表
@@ -174,7 +180,7 @@ func (t *Table) DefineScript(src string) error {
 				pks = append(pks, strings.TrimSpace(v))
 			}
 		} else {
-			col, err := columnDefine(line)
+			col, err := columnDefine(line, "", "")
 			if err != nil {
 				return fmt.Errorf("line %d,%s", i, err)
 			}

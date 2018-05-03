@@ -317,7 +317,7 @@ func fieldsFromStruct(vtype reflect.Type, conv converFieldName, parentName strin
 			vtype.Name(), vtype.Kind(), parentName, parentPath)
 		return
 	}
-	var preTag string
+	var preDefineTag, preTrueTypeTag string
 	for i := 0; i < vtype.NumField(); i++ {
 		field := vtype.Field(i)
 		newPath := append(parentPath, i)
@@ -347,19 +347,24 @@ func fieldsFromStruct(vtype reflect.Type, conv converFieldName, parentName strin
 		if conv != nil {
 			name = conv.ConvertFieldName(sf.parentName, name)
 		}
-		tag, ok := field.Tag.Lookup("dbx")
-		if !ok || len(tag) == 0 {
-			//没有定义，则只有名称
-			tag = preTag
-			if len(tag) == 0 {
-				tag = name
-			}
+		defineTag, defineOk := field.Tag.Lookup("dbx")
+		trueTypeTag, typeTypeOk := field.Tag.Lookup("dbx_t")
+		formerNameTag, _ := field.Tag.Lookup("dbx_fname")
+		//只有定义和实际类型都没定义时，才从上个字段复制定义
+		if !defineOk && !typeTypeOk {
+			defineTag = preDefineTag
+			trueTypeTag = preTrueTypeTag
 		} else {
-			preTag = tag
+			preDefineTag = defineTag
+			preTrueTypeTag = trueTypeTag
 		}
-		tag = strings.ToUpper(tag)
+		if len(defineTag) == 0 {
+			//没有定义，则只有名称
+			defineTag = name
+		}
+		defineTag = strings.ToUpper(defineTag)
 		//如果有定义，则必定是类型名称或者字段名+类型
-		tags := strings.Fields(tag)
+		tags := strings.Fields(defineTag)
 
 		//如果不是任意一种类型名或子表，则说明是完整的定义，即名称开始
 		if !strings.HasPrefix(tags[0], TypeString.String()) &&
@@ -373,7 +378,7 @@ func fieldsFromStruct(vtype reflect.Type, conv converFieldName, parentName strin
 				sf.child = true
 				sf.childName = tags[0]
 			} else {
-				sf.define, err = columnDefine(tag)
+				sf.define, err = columnDefine(defineTag, trueTypeTag, formerNameTag)
 				if err != nil {
 					return
 				}
@@ -382,11 +387,11 @@ func fieldsFromStruct(vtype reflect.Type, conv converFieldName, parentName strin
 			continue
 		}
 		//到这就说明，是省略名称的定义，补上大写的名称
-		if tag == "CHILD" {
+		if defineTag == "CHILD" {
 			sf.child = true
 			sf.childName = name
 		} else {
-			sf.define, err = columnDefine(name + " " + tag)
+			sf.define, err = columnDefine(name+" "+defineTag, trueTypeTag, formerNameTag)
 			if err != nil {
 				return
 			}

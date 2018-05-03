@@ -12,7 +12,7 @@ type colDef struct {
 	isPK bool
 }
 
-func columnDefine(line string) (result *colDef, err error) {
+func columnDefine(line, trueTypeLine, formerNameTag string) (result *colDef, err error) {
 	//先去除注释
 	result = &colDef{
 		Column: &Column{},
@@ -82,6 +82,34 @@ func columnDefine(line string) (result *colDef, err error) {
 	//主键一定是not null
 	result.Null = !(notNull || result.isPK)
 	result.Index = index
+	//下面处理truetype
+	lineList = columnTrueType.FindStringSubmatch(trueTypeLine)
+	if len(lineList) == 0 {
+		return
+	}
+	//第一个是整行，需要去除
+	lineList = lineList[1:]
+	if len(lineList) == 0 {
+		return
+	}
+	if len(lineList) != 2 {
+		err = fmt.Errorf("TrueType (%s) not is [db type]", trueTypeLine)
+		return
+	}
+	dbName, typeName := strings.TrimSpace(lineList[0]), strings.TrimSpace(lineList[1])
+	if len(dbName) == 0 {
+		err = fmt.Errorf("TrueType define dbname can't is empty")
+		return
+	}
+	if len(typeName) == 0 {
+		err = fmt.Errorf("TrueType define typename can't is empty")
+		return
+	}
+	result.FetchDriver = dbName
+	result.TrueType = typeName
+	if len(formerNameTag) > 0 {
+		result.FormerName = strings.Split(formerNameTag, ",")
+	}
 	return
 }
 func columnsDefine(d []*colDef) (columns []*Column, pks []string) {

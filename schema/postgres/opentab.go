@@ -123,10 +123,10 @@ func getTableIndexes(db common.DB, schemaName, tableName string) ([]indexType, e
 				    and i.oid = ix.indexrelid
 				    and a.attrelid = t.oid
 				    and t.relnamespace=tn.oid 
-				    and tn.nspname = $1
+				    and tn.nspname ilike $1
 				    and a.attnum = ANY(ix.indkey)
 				    and t.relkind = 'r'
-					and t.relname =$2
+					and t.relname ilike $2
 					and not ix.indisprimary
 				group by
 				   t.relname,

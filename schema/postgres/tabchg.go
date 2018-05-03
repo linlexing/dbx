@@ -49,7 +49,7 @@ func processColumnSQL(tabName string, oldCol, newCol *schema.Column) (rev []stri
 	if oldCol.Name != newCol.Name {
 		rev = append(rev, fmt.Sprintf("alter table %s rename %s to %s", tabName, oldCol.Name, newCol.Name))
 	}
-	if !oldCol.Eque(newCol) {
+	if !oldCol.EqueNoIndex(newCol) {
 
 		//去掉最后的notnull
 		//去掉定义中的字段名，因为中间多了个type字样
