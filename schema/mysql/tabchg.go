@@ -48,7 +48,7 @@ func processColumnSQL(tabName string, oldCol, newCol *schema.Column) []string {
 	if oldCol.Name != newCol.Name {
 		rev = append(rev, fmt.Sprintf("alter table %s CHANGE column %s %s", tabName, oldCol.Name, dbDefine(newCol)))
 	}
-	if !oldCol.EqueNoIndex(newCol) {
+	if !oldCol.EqueNoIndexAndName(newCol) {
 		rev = append(rev, fmt.Sprintf("alter table %s MODIFY %s", tabName, dbDefine(newCol)))
 	}
 	//处理索引,字段更名的操作，oracle、postgres、mysql都是安全的，所以不需处理

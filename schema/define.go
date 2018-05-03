@@ -17,6 +17,10 @@ func columnDefine(line, trueTypeLine, formerNameTag string) (result *colDef, err
 	result = &colDef{
 		Column: &Column{},
 	}
+	if len(formerNameTag) > 0 {
+		result.FormerName = strings.Split(formerNameTag, ",")
+	}
+
 	if idx := strings.Index(line, comment); idx >= 0 {
 		line = line[:idx]
 	}
@@ -107,9 +111,6 @@ func columnDefine(line, trueTypeLine, formerNameTag string) (result *colDef, err
 	}
 	result.FetchDriver = dbName
 	result.TrueType = typeName
-	if len(formerNameTag) > 0 {
-		result.FormerName = strings.Split(formerNameTag, ",")
-	}
 	return
 }
 func columnsDefine(d []*colDef) (columns []*Column, pks []string) {

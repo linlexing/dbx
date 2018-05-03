@@ -3,7 +3,6 @@ package schema
 import (
 	"errors"
 	"fmt"
-	"reflect"
 
 	"github.com/linlexing/dbx/common"
 )
@@ -46,6 +45,25 @@ func (t *tableSchema) checkTableColumns(tab *Table) error {
 	}
 	return nil
 }
+func (t *tableSchema) pkIsChanged() bool {
+	if len(t.oldTable.PrimaryKeys) != len(t.newTable.PrimaryKeys) {
+		return true
+	}
+	//判断是否是改名
+	beforeChangeName := []string{}
+	for _, v := range t.newTable.PrimaryKeys {
+		if fld := t.oldTable.findColumnAnyName(append([]string{v},
+			t.newTable.ColumnByName(v).FormerName...)...); fld != nil {
+			beforeChangeName = append(beforeChangeName, fld.Name)
+		}
+	}
+	for i, one := range beforeChangeName {
+		if one != t.oldTable.PrimaryKeys[i] {
+			return true
+		}
+	}
+	return false
+}
 
 //extract 提取修改数据库结构的sql语句
 func (t *tableSchema) extract() ([]string, error) {
@@ -66,17 +84,15 @@ func (t *tableSchema) extract() ([]string, error) {
 	}
 
 	//如果主键变更，则需要先除去主键
-	if !reflect.DeepEqual(t.oldTable.PrimaryKeys, t.newTable.PrimaryKeys) {
-		schg.PKChange = true
+	//主键改名不属于主键变动
+	schg.PKChange = t.pkIsChanged()
 
-	}
 	//逐个处理字段，每处理一个字段，旧表字段就标上标记，最后删除没有标记的字段
 	oldColumnProcesses := map[string]bool{}
 	for _, v := range t.oldTable.Columns {
 		oldColumnProcesses[v.Name] = false
 	}
 	for _, col := range t.newTable.Columns {
-
 		//用曾用名+现有名称去找旧字段
 		oldCol := t.oldTable.findColumnAnyName(append(col.FormerName, col.Name)...)
 		if oldCol != nil {

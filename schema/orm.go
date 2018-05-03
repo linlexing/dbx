@@ -345,7 +345,7 @@ func fieldsFromStruct(vtype reflect.Type, conv converFieldName, parentName strin
 		}
 		name := strings.ToUpper(field.Name)
 		if conv != nil {
-			name = conv.ConvertFieldName(sf.parentName, name)
+			name = strings.ToUpper(conv.ConvertFieldName(sf.parentName, field.Name))
 		}
 		defineTag, defineOk := field.Tag.Lookup("dbx")
 		trueTypeTag, typeTypeOk := field.Tag.Lookup("dbx_t")

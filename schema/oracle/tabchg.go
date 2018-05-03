@@ -49,7 +49,7 @@ func processColumnSQL(tabName string, oldCol, newCol *schema.Column) (rev []stri
 	if oldCol.Name != newCol.Name {
 		rev = append(rev, fmt.Sprintf("alter table %s rename column %s to %s", tabName, oldCol.Name, newCol.Name))
 	}
-	if !oldCol.EqueNoIndex(newCol) {
+	if !oldCol.EqueNoIndexAndName(newCol) {
 		if oldCol.Null != newCol.Null {
 			rev = append(rev, fmt.Sprintf("alter table %s MODIFY %s", tabName, dbDefineNull(newCol)))
 		} else {

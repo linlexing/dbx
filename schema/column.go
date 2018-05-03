@@ -42,11 +42,8 @@ func (f *Column) Eque(src *Column) bool {
 	}
 }
 
-//EqueNoIndex 不判断索引
-func (f *Column) EqueNoIndex(src *Column) bool {
-	if f.Name != src.Name {
-		return false
-	}
+//EqueNoIndexAndName 不判断索引和名称
+func (f *Column) EqueNoIndexAndName(src *Column) bool {
 	if f.FetchDriver == src.FetchDriver &&
 		len(f.TrueType) > 0 && len(src.TrueType) > 0 {
 		return f.TrueType == src.TrueType
@@ -71,7 +68,8 @@ func (f *Column) EqueNoIndex(src *Column) bool {
 //Clone 复制一个字段
 func (f *Column) Clone() *Column {
 	var fns []string
-	if f.FormerName != nil {
+	if len(f.FormerName) > 0 {
+		fns = make([]string, len(f.FormerName))
 		copy(fns, f.FormerName)
 	}
 	return &Column{f.Name, f.Type, f.MaxLength, f.Null,
