@@ -73,7 +73,7 @@ func getTableColumns(db common.DB, schemaName, tableName string) ([]columnType, 
 					(case when character_maximum_length is null then 0 else character_maximum_length end) as "DBMAXLENGTH",
 					(SELECT format_type(a.atttypid, a.atttypmod)
 						FROM pg_attribute a 
-							JOIN pg_class b ON (a.attrelid = b.relfilenode)
+							JOIN pg_class b ON (a.attrelid = b.oid)
 							JOIN pg_namespace c ON (c.oid = b.relnamespace)
 						WHERE
 							b.relname = outa.table_name AND
