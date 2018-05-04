@@ -18,7 +18,7 @@ func columnDefine(line, trueTypeLine, formerNameTag string) (result *colDef, err
 		Column: &Column{},
 	}
 	if len(formerNameTag) > 0 {
-		result.FormerName = strings.Split(formerNameTag, ",")
+		result.FormerName = strings.Fields(formerNameTag)
 	}
 
 	if idx := strings.Index(line, comment); idx >= 0 {
