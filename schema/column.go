@@ -44,6 +44,12 @@ func (f *Column) Eque(src *Column) bool {
 
 //EqueNoIndexAndName 不判断索引和名称
 func (f *Column) EqueNoIndexAndName(src *Column) bool {
+	if !f.EqueType(src) {
+		return false
+	}
+	return f.Null == src.Null
+}
+func (f *Column) EqueType(src *Column) bool {
 	if f.FetchDriver == src.FetchDriver &&
 		len(f.TrueType) > 0 && len(src.TrueType) > 0 {
 		return f.TrueType == src.TrueType
@@ -55,13 +61,12 @@ func (f *Column) EqueNoIndexAndName(src *Column) bool {
 	switch f.Type {
 	//日期、数值、整型不需要判断长度
 	case TypeDatetime, TypeFloat, TypeInt:
-		return f.Null == src.Null
+		return true
 	default:
 		//历史原因，MaxLength <=0 只有一个含义，无限的长度
 		//历史代码中有时用了-1,有时是0，所以都是<=0的视为相等
 		return (f.MaxLength == src.MaxLength ||
-			f.MaxLength <= 0 && src.MaxLength <= 0) &&
-			f.Null == src.Null
+			f.MaxLength <= 0 && src.MaxLength <= 0)
 	}
 }
 
