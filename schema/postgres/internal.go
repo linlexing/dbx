@@ -86,7 +86,7 @@ func dbDefine(c *schema.Column) string {
 	if !c.Null {
 		nullStr = " NOT NULL"
 	}
-	return fmt.Sprintf("%s %s%s", c.Name, colDBType(c), nullStr)
+	return fmt.Sprintf("%s\t%s%s", c.Name, colDBType(c), nullStr)
 }
 
 func dbDefineNull(c *schema.Column) string {
@@ -94,5 +94,5 @@ func dbDefineNull(c *schema.Column) string {
 	if !c.Null {
 		nullStr = " NOT NULL"
 	}
-	return fmt.Sprintf("%s %s%s", c.Name, colDBType(c), nullStr)
+	return fmt.Sprintf("%s\t%s%s", c.Name, colDBType(c), nullStr)
 }
