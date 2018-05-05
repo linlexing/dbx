@@ -88,7 +88,7 @@ func (m *meta) CreateTableSQL(db common.DB, tab *schema.Table) (rev []string, _ 
 	outBuf := bytes.NewBuffer(nil)
 	w := tabwriter.NewWriter(outBuf, 0, 0, 1, ' ', 0)
 	if len(tab.PrimaryKeys) > 0 {
-		fmt.Fprintf(w, "CREATE TABLE %s(\n  %s,\n  CONSTRAINT %s_pkey PRIMARY KEY(%s)\n)",
+		fmt.Fprintf(w, "CREATE TABLE %s(\n  %s,\n  CONSTRAINT %s_PKEY PRIMARY KEY(%s)\n)",
 			tab.FullName(), strings.Join(cols, ",\n  "), tab.Name, strings.Join(tab.PrimaryKeys, ","))
 		w.Flush()
 		rev = append(rev, outBuf.String())
@@ -107,10 +107,10 @@ func (m *meta) CreateTableSQL(db common.DB, tab *schema.Table) (rev []string, _ 
 	return
 }
 func (m *meta) DropIndexIfExistsSQL(db common.DB, indexName, tableName string) ([]string, error) {
-	return []string{fmt.Sprintf("drop index if exists %s", indexName)}, nil
+	return []string{fmt.Sprintf("DROP INDEX IF EXISTS %s", indexName)}, nil
 
 }
 
 func (m *meta) CreateIndexIfNotExistsSQL(db common.DB, indexName, tableName, express string) ([]string, error) {
-	return []string{fmt.Sprintf("create index if not exists %s on %s(%s)", indexName, tableName, express)}, nil
+	return []string{fmt.Sprintf("CREATE INDEX IF NOT EXISTS %s ON %s(%s)", indexName, tableName, express)}, nil
 }

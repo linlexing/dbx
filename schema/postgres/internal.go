@@ -14,7 +14,7 @@ import (
 //createColumnIndex 新增单字段索引
 func createColumnIndexSQL(tableName, colName string) []string {
 	//这里会有问题，如果表名和字段名比较长就会出错
-	return []string{fmt.Sprintf("create index on %s(%s)", tableName, colName)}
+	return []string{fmt.Sprintf("CREATE INDEX ON %s(%s)", tableName, colName)}
 }
 
 func removeColumnsSQL(tabName string, cols []string) []string {
@@ -22,14 +22,14 @@ func removeColumnsSQL(tabName string, cols []string) []string {
 	for _, v := range cols {
 		strList = append(strList, "DROP COLUMN "+v)
 	}
-	return []string{fmt.Sprintf("ALTER table %s %s", tabName, strings.Join(strList, ","))}
+	return []string{fmt.Sprintf("ALTER TABLE %s %s", tabName, strings.Join(strList, ","))}
 }
 
 func tableRenameSQL(oldName string, newName string) []string {
-	return []string{fmt.Sprintf("ALTER table %s RENAME TO %s", oldName, newName)}
+	return []string{fmt.Sprintf("ALTER TABLE %s RENAME TO %s", oldName, newName)}
 }
 func dropColumnIndexSQL(tableName, indexName string) []string {
-	return []string{fmt.Sprintf("drop index %s", indexName)}
+	return []string{fmt.Sprintf("DROP INDEX %s", indexName)}
 }
 func dbType(dataType schema.DataType, maxLength int) string {
 	switch dataType {
@@ -72,7 +72,7 @@ func dropTablePrimaryKeySQL(db common.DB, tableName string) ([]string, error) {
 //addTablePrimaryKey 新增主键
 //只有当表不存在主键时，才可以新增主键
 func addTablePrimaryKeySQL(tableName string, pks []string) []string {
-	return []string{fmt.Sprintf("alter table %s add primary key(%s)", tableName, strings.Join(pks, ","))}
+	return []string{fmt.Sprintf("ALTER TABLE %s ADD PRIMARY KEY(%s)", tableName, strings.Join(pks, ","))}
 }
 func colDBType(c *schema.Column) string {
 	if c.FetchDriver == driverName && len(c.TrueType) > 0 {

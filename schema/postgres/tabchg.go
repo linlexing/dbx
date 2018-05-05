@@ -38,7 +38,7 @@ func (m *meta) ChangeTableSQL(db common.DB, change *schema.TableSchemaChange) (r
 func processColumnSQL(tabName string, oldCol, newCol *schema.Column) (rev []string) {
 	//如果是新增字段
 	if oldCol == nil {
-		rev = append(rev, fmt.Sprintf("alter table %s add %s", tabName, dbDefine(newCol)))
+		rev = append(rev, fmt.Sprintf("ALTER TABLE %s ADD %s", tabName, dbDefine(newCol)))
 		//处理索引
 		if newCol.Index {
 			rev = append(rev, createColumnIndexSQL(tabName, newCol.Name)...)
@@ -47,7 +47,7 @@ func processColumnSQL(tabName string, oldCol, newCol *schema.Column) (rev []stri
 	}
 	//如果是更名，需要先处理
 	if oldCol.Name != newCol.Name {
-		rev = append(rev, fmt.Sprintf("alter table %s rename %s to %s", tabName, oldCol.Name, newCol.Name))
+		rev = append(rev, fmt.Sprintf("ALTER TABLE %s RENAME %s to %s", tabName, oldCol.Name, newCol.Name))
 	}
 	if !oldCol.EqueNoIndexAndName(newCol) {
 
@@ -55,18 +55,18 @@ func processColumnSQL(tabName string, oldCol, newCol *schema.Column) (rev []stri
 		//去掉定义中的字段名，因为中间多了个type字样
 		if !oldCol.EqueType(newCol) {
 			rev = append(rev, fmt.Sprintf(
-				"alter table %s ALTER COLUMN %s type %s",
+				"ALTER TABLE %s ALTER COLUMN %s TYPE %s",
 				tabName, newCol.Name, colDBType(newCol)))
 		}
 		//再改not null
 		if oldCol.Null && !newCol.Null {
 			rev = append(rev, fmt.Sprintf(
-				"alter table %s alter column %s set not null",
+				"ALTER TABLE %s ALTER COLUMN %s SET NOT NULL",
 				tabName, newCol.Name))
 		}
 		if !oldCol.Null && newCol.Null {
 			rev = append(rev, fmt.Sprintf(
-				"alter table %s alter column %s drop not null",
+				"ALTER TABLE %s ALTER COLUMN %s DROP NOT NULL",
 				tabName, newCol.Name))
 		}
 	}
