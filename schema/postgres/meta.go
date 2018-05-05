@@ -1,10 +1,12 @@
 package postgres
 
 import (
+	"bytes"
 	"fmt"
 	"log"
 	"sort"
 	"strings"
+	"text/tabwriter"
 
 	"github.com/linlexing/dbx/common"
 	"github.com/linlexing/dbx/schema"
@@ -83,15 +85,18 @@ func (m *meta) CreateTableSQL(db common.DB, tab *schema.Table) (rev []string, _ 
 	for _, v := range tab.Columns {
 		cols = append(cols, dbDefine(v))
 	}
-
+	outBuf := bytes.NewBuffer(nil)
+	w := tabwriter.NewWriter(outBuf, 0, 0, 1, ' ', 0)
 	if len(tab.PrimaryKeys) > 0 {
-		rev = append(rev, fmt.Sprintf(
-			"CREATE TABLE %s(\n\t%s,\n\tCONSTRAINT %s_pkey PRIMARY KEY(%s)\n)",
-			tab.FullName(), strings.Join(cols, ",\n\t"), tab.Name, strings.Join(tab.PrimaryKeys, ",")))
+		fmt.Fprintf(w, "CREATE TABLE %s(\n  %s,\n  CONSTRAINT %s_pkey PRIMARY KEY(%s)\n)",
+			tab.FullName(), strings.Join(cols, ",\n  "), tab.Name, strings.Join(tab.PrimaryKeys, ","))
+		w.Flush()
+		rev = append(rev, outBuf.String())
 	} else {
-		rev = append(rev, fmt.Sprintf(
-			"CREATE TABLE %s(\n\t%s\n)",
-			tab.FullName(), strings.Join(cols, ",\n\t")))
+		fmt.Fprintf(w, "CREATE TABLE %s(\n  %s\n)",
+			tab.FullName(), strings.Join(cols, ",\n  "))
+		w.Flush()
+		rev = append(rev, outBuf.String())
 	}
 	//最后处理索引
 	for _, col := range tab.Columns {

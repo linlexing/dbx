@@ -84,15 +84,15 @@ func colDBType(c *schema.Column) string {
 func dbDefine(c *schema.Column) string {
 	nullStr := ""
 	if !c.Null {
-		nullStr = " NOT NULL"
+		nullStr = "\tNOT NULL"
 	}
 	return fmt.Sprintf("%s\t%s%s", c.Name, colDBType(c), nullStr)
 }
 
 func dbDefineNull(c *schema.Column) string {
-	nullStr := " NULL"
+	nullStr := "\tNULL"
 	if !c.Null {
-		nullStr = " NOT NULL"
+		nullStr = "\tNOT NULL"
 	}
 	return fmt.Sprintf("%s\t%s%s", c.Name, colDBType(c), nullStr)
 }
