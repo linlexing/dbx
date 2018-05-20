@@ -33,6 +33,8 @@ func fromDBType(ty string) schema.DataType {
 		return schema.TypeDatetime
 	case "BYTEA":
 		return schema.TypeBytea
+	case "": //USER-DEFINED 返回的是nil
+		return schema.TypeString
 	default:
 		logrus.WithFields(logrus.Fields{
 			"type": ty,
