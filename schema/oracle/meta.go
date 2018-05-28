@@ -73,7 +73,7 @@ func (m *meta) CreateTableSQL(db common.DB, tab *schema.Table) (rev []string, er
 			rev = append(rev, createColumnIndexSQL(tab.FullName(), col.Name)...)
 		}
 	}
-	return nil, nil
+	return
 }
 
 //DropIndexIfExistsSQL 删除一个存在的索引，不存在返回nil
