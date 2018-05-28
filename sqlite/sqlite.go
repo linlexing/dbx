@@ -1,4 +1,4 @@
-package oracle
+package sqlite
 
 import (
 	_ "github.com/linlexing/dbx/data/sqlite"

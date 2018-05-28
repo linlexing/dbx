@@ -1,4 +1,4 @@
-package oracle
+package mysql
 
 import (
 	_ "github.com/linlexing/dbx/data/mysql"

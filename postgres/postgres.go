@@ -1,4 +1,4 @@
-package oracle
+package postgres
 
 import (
 	_ "github.com/linlexing/dbx/data/postgres"
