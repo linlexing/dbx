@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/davecgh/go-spew/spew"
+
 	"strconv"
 	"strings"
 	"time"
@@ -634,14 +636,27 @@ func (t *Table) RemoveByKeyValues(keyValues ...interface{}) (delCount int64, err
 	return
 
 }
+func numberOfDigits(f float64) int {
+	ls := strings.Split(strconv.FormatFloat(f, 'f', -1, 64), ".")
+	if len(ls) > 1 {
+		return len(ls[1])
+	}
+	return 0
+}
 func (t *Table) buildWhere(row map[string]interface{}) (string, []interface{}) {
 	strWhere := []string{}
 	newRow := []interface{}{}
 	for k, v := range row {
 		//如果是没有长度的string，即text，以及bytea、datetime不参与where条件
+		//float因为精度问题，超过六位小数不能用来做where
 		fld := t.ColumnByName(k)
+		if v == nil {
+			strWhere = append(strWhere, fmt.Sprintf("%s is null", k))
+			continue
+		}
 		if fld.Type == schema.TypeBytea ||
 			fld.Type == schema.TypeDatetime ||
+			(fld.Type == schema.TypeFloat && numberOfDigits(v.(float64)) > 6) ||
 			(fld.Type == schema.TypeString && fld.MaxLength <= 0) {
 			continue
 		}
@@ -718,6 +733,10 @@ func (t *Table) UpdateByWhere(row map[string]interface{}, where string, params .
 		return
 	}
 	upCount, err = sqlr.RowsAffected()
+	if upCount == 0 {
+		log.Println(strSQL)
+		spew.Dump(setVals)
+	}
 	return
 }
 
@@ -738,7 +757,12 @@ func (t *Table) Update(oldData, newData map[string]interface{}) (upCount int64, 
 		return
 	}
 	whereStr, whereVals := t.buildWhere(oldData)
-	return t.UpdateByWhere(newData, whereStr, whereVals...)
+	//仅修改差异部分
+	chgs := mapfun.Changes(oldData, newData)
+	if len(chgs) == 0 {
+		return
+	}
+	return t.UpdateByWhere(chgs, whereStr, whereVals...)
 }
 
 //Save 保存一个记录，先尝试用keyvalue去update，如果更新到记录为0再insert，
