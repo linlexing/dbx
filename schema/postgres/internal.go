@@ -37,7 +37,8 @@ func dbType(dataType schema.DataType, maxLength int) string {
 	case schema.TypeBytea:
 		return "bytea"
 	case schema.TypeDatetime:
-		return "timestamp without time zone"
+		//为了支持多国语言，必须要考虑时区的问题，时间需要保存时区
+		return "timestamp with time zone"
 	case schema.TypeFloat:
 		return "double precision"
 	case schema.TypeInt:

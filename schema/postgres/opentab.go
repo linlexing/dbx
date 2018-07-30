@@ -63,7 +63,7 @@ func getTableColumns(db common.DB, schemaName, tableName string) ([]columnType, 
 						then 'STR'
 						when  data_type in ('integer','bigint')
 						then 'INT'
-						when data_type in ('timestamp with time zone', 'timestamp without time zone')
+						when data_type in ('timestamp(6) with time zone','timestamp with time zone','timestamp(6) without time zone', 'timestamp without time zone')
 						then 'DATE'
 						when data_type in('numeric','double precision','real')
 						then 'FLOAT'
