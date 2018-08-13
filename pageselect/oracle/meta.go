@@ -73,8 +73,8 @@ func (m *meta) LimitSQL(sel, strSQL, where, orderby string, limit int) string {
 		"select * from (select %s from (%s) wholesql %s%s) where rownum<=%d",
 		sel, strSQL, where, orderby, limit)
 }
-func (m *meta) IsNull() string {
-	return "nvl"
+func (m *meta) Sum(col string) string {
+	return fmt.Sprintf("sum(cast(nvl(%s,0) as decimal(29,6)))", col)
 }
 
 func valueExpress(dataType schema.DataType, value string) string {

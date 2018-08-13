@@ -32,13 +32,6 @@ func Find(driver string) PageSelecter {
 
 }
 
-//OrderColumn 排序的字段
-type OrderColumn struct {
-	Name  string
-	Order string //DESC ASC
-	Value interface{}
-}
-
 //PageSelect 表示一个select 类，可以附加条件和分页参数
 type PageSelect struct {
 	SQL string
@@ -206,7 +199,8 @@ func (s *PageSelect) renderSQL() (string, error) {
 func (s *PageSelect) BuildTotalSQL(driver string, cols ...string) (strSQL string, err error) {
 	totalCoumns := []string{}
 	for _, col := range cols {
-		totalCoumns = append(totalCoumns, fmt.Sprintf("sum(cast(%s(%s,0) as decimal(29,6))) as %[2]s", Find(driver).IsNull(), col))
+		// totalCoumns = append(totalCoumns, fmt.Sprintf("sum(cast(%s(%s,0) as decimal(29,6))) as %[2]s", Find(driver).IsNull(), col))
+		totalCoumns = append(totalCoumns, fmt.Sprintf("%s as %s", Find(driver).Sum(col), col))
 	}
 	if len(totalCoumns) == 0 {
 		return

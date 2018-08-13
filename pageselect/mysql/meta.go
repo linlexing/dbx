@@ -57,8 +57,8 @@ func (m *meta) ColumnTypes(rows *sql.Rows) ([]*scan.ColumnType, error) {
 func (m *meta) SortByAsc(field string, _ bool) string {
 	return field
 }
-func (m *meta) IsNull() string {
-	return "ifnull"
+func (m *meta) Sum(col string) string {
+	return fmt.Sprintf("sum(cast(ifnull(%s,0) as decimal(29,6)))", col)
 }
 func (m *meta) SortByDesc(field string, _ bool) string {
 	return field + " DESC"

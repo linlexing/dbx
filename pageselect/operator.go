@@ -71,13 +71,14 @@ func (o Operator) MarshalJSON() ([]byte, error) {
 func (o Operator) MarshalYAML() (interface{}, error) {
 	return o.String(), nil
 }
+
 //UnmarshalYAML 支持yaml反序列化
 func (o *Operator) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	var outstr string
 	if err := unmarshal(&outstr); err != nil {
 		return err
 	}
-	opt, err := ParseString(outstr)
+	opt, err := ParseOperatorFromString(outstr)
 	if err != nil {
 		return err
 	}
@@ -91,7 +92,7 @@ func (o *Operator) UnmarshalJSON(v []byte) error {
 	if err := json.Unmarshal(v, &outstr); err != nil {
 		return err
 	}
-	opt, err := ParseString(outstr)
+	opt, err := ParseOperatorFromString(outstr)
 	if err != nil {
 		return err
 	}
@@ -99,8 +100,8 @@ func (o *Operator) UnmarshalJSON(v []byte) error {
 	return err
 }
 
-//ParseString 将一个字符串转换成Operator值
-func ParseString(str string) (Operator, error) {
+//ParseOperatorFromString 将一个字符串转换成Operator值
+func ParseOperatorFromString(str string) (Operator, error) {
 	switch str {
 	case "=":
 		return OperatorEqu, nil
