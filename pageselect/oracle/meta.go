@@ -22,12 +22,14 @@ func init() {
 }
 func fromDBType(ty string) schema.DataType {
 	switch ty {
-	case "SQLT_INT", "SQLT_NUM", "SQLT_UIN":
+	case "SQLT_INT", "SQLT_UIN": //, "SQLT_NUM":
 		return schema.TypeInt
 	case "SQLT_CHR", "SQLT_STR", "SQLT_CLOB", "SQLT_VCS", "SQLT_LVC", "SQLT_AFC",
 		"SQLT_AVC", "SQLT_VST", "SQLT_LNG", "SQLT_VBI", "SQLT_BIN", "SQLT_LBI", "SQLT_LVB":
 		return schema.TypeString
-	case "SQLT_FLT", "SQLT_BDOUBLE", "SQLT_BFLOAT", "SQLT_VNU", "":
+	case "SQLT_FLT", "SQLT_BDOUBLE", "SQLT_BFLOAT", "SQLT_VNU",
+		"SQLT_NUM", /*number,int都是这个类型，目前驱动不支持精度查询，如果放int，解析小数就出错，所以放这里*/
+		"":
 		return schema.TypeFloat
 	case "SQLT_DAT", "SQLT_DATE", "SQLT_TIMESTAMP", "SQLT_TIMESTAMP_TZ", "SQLT_TIMESTAMP_LTZ":
 		return schema.TypeDatetime

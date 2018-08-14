@@ -169,6 +169,13 @@ func (s *PageSelect) QueryRows(driver string, db common.DB) (result []map[string
 	if cols, err = Find(driver).ColumnTypes(rows); err != nil {
 		return
 	}
+	//go1.8 可以直接返回各列类型，但是oci8驱动支持有问题，number区分不了整型和浮点
+	//所以，还需要从传入的字段类型中取原始类型进行修正
+	for _, v := range cols {
+		if fc := s.ColumnTypes.byName(v.Name); fc != nil {
+			v.Type = fc.Type
+		}
+	}
 
 	result = []map[string]interface{}{}
 	defer rows.Close()
