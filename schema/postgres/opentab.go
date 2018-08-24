@@ -61,7 +61,7 @@ func getTableColumns(db common.DB, schemaName, tableName string) ([]columnType, 
 					(case when data_type in ('text', 'character varying','jsob','jsonb','ARRAY','USER-DEFINED',
 						'uuid','boolean','daterange','int8range','numrange','tsrange')
 						then 'STR'
-						when  data_type in ('integer','bigint')
+						when  data_type in ('smallint','integer','bigint')
 						then 'INT'
 						when data_type in ('timestamp(6) with time zone','timestamp with time zone','timestamp(6) without time zone', 'timestamp without time zone')
 						then 'DATE'
