@@ -128,24 +128,24 @@ func (d DataType) ChineseString() string {
 //字符串转换成时间，按照各种可能的格式
 func strToDate(s string) (tm time.Time, err error) {
 	if len(s) == 8 {
-		return time.Parse("20060102", s)
+		return time.ParseInLocation("20060102", s, time.Local)
 	}
 	if len(s) == 10 {
-		return time.Parse("2006-01-02", s)
+		return time.ParseInLocation("2006-01-02", s, time.Local)
 	}
 
-	tm, err = time.Parse("2006-01-02 15:04:05", s)
+	tm, err = time.ParseInLocation("2006-01-02 15:04:05", s, time.Local)
 	if err != nil {
-		tm, err = time.Parse("2006-01-02T15:04:05", s)
+		tm, err = time.ParseInLocation("2006-01-02T15:04:05", s, time.Local)
 	}
 	if err != nil {
-		tm, err = time.Parse("2006-01-02 15:04:05.999999999 -0700 MST", s)
+		tm, err = time.ParseInLocation("2006-01-02 15:04:05.999999999 -0700 MST", s, time.Local)
 	}
 	if err != nil {
-		tm, err = time.Parse(time.RFC3339, s)
+		tm, err = time.ParseInLocation(time.RFC3339, s, time.Local)
 	}
 	if err != nil {
-		tm, err = time.Parse(time.RFC3339Nano, s)
+		tm, err = time.ParseInLocation(time.RFC3339Nano, s, time.Local)
 	}
 	return
 }
