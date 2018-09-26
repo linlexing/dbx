@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"os"
 
 	"github.com/davecgh/go-spew/spew"
 
@@ -734,8 +735,9 @@ func (t *Table) UpdateByWhere(row map[string]interface{}, where string, params .
 	}
 	upCount, err = sqlr.RowsAffected()
 	if upCount == 0 {
-		log.Println(strSQL)
-		spew.Dump(setVals)
+		os.Stdout.WriteString(fmt.Sprintf(
+			"---------[%v] update nothing-----------\n%s\n%s",
+			time.Now(), strSQL, spew.Sdump(setVals)))
 	}
 	return
 }
