@@ -88,9 +88,9 @@ func getColumns(db common.DB, schemaName, tableName string) ([]*schema.Column, e
 		strSQL := `select 
 					column_name as DBNAME,
 				    (case when is_nullable='YES' then 1 else 0 end) as DBNULL,
-				    (case when data_type in('varchar','text','char') then 'STR'
-						  when data_type in('bigint','int') then 'INT'
-						  when data_type in('decimal','double') then 'FLOAT'
+				    (case when data_type in('varchar','text','char','varbinary') then 'STR'
+						  when data_type in('bigint','int','smallint','tinyint','mediumint') then 'INT'
+						  when data_type in('decimal','double','float') then 'FLOAT'
 				          when data_type ='blob' then 'BYTEA'
 				          when data_type in('date','datetime','timestamp') then 'DATE'
 						  else data_type

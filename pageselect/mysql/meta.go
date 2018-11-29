@@ -28,7 +28,7 @@ func fromDBType(ty string) schema.DataType {
 		return schema.TypeString
 	case "FLOAT", "DOUBLE", "DECIMAL":
 		return schema.TypeFloat
-	case "DATETIME", "DATE":
+	case "DATETIME", "DATE", "TIMESTAMP":
 		return schema.TypeDatetime
 	case "BLOB":
 		return schema.TypeBytea
