@@ -194,6 +194,7 @@ func (s *PageSelect) QueryRows(driver string, db common.DB) (result []map[string
 		result = append(result, oneRecord)
 
 	}
+	err = rows.Err()
 	return
 }
 

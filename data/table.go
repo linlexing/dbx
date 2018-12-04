@@ -114,7 +114,7 @@ func (t *Table) Row(pks ...interface{}) (map[string]interface{}, error) {
 	}
 	defer rows.Close()
 	if !rows.Next() {
-		return nil, nil
+		return nil, rows.Err()
 	}
 	return t.ScanMap(rows)
 }
@@ -261,6 +261,7 @@ func (t *Table) KeyExists(pks ...interface{}) (result bool, err error) {
 	}
 	defer rows.Close()
 	result = rows.Next()
+	err = rows.Err()
 	return
 
 }
@@ -303,6 +304,7 @@ func (t *Table) Exists(where string, params ...interface{}) (rev bool, err error
 	}
 	defer rows.Close()
 	rev = rows.Next()
+	err = rows.Err
 	return
 }
 

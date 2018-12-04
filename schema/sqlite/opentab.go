@@ -53,7 +53,7 @@ func getTableInfo(db common.DB, tableName string) ([]tableColumn, error) {
 		}
 		tabCols = append(tabCols, col)
 	}
-	return tabCols, nil
+	return tabCols, rows.Err()
 }
 func getTableIndex(db common.DB, tableName string) ([]tableIndex, error) {
 	rev := []tableIndex{}
@@ -78,7 +78,7 @@ func getTableIndex(db common.DB, tableName string) ([]tableIndex, error) {
 		rev = append(rev, idx)
 
 	}
-	return rev, nil
+	return rev, rows.Err()
 }
 func getIndexInfo(db common.DB, indexName string) ([]indexInfo, error) {
 	//每个索引再去找定义
@@ -102,7 +102,7 @@ func getIndexInfo(db common.DB, indexName string) ([]indexInfo, error) {
 		}
 		rev = append(rev, idxInfo)
 	}
-	return rev, nil
+	return rev, rows.Err()
 }
 func (m *meta) OpenTable(db common.DB, tableName string) (*schema.Table, error) {
 	pks := []string{}

@@ -58,7 +58,7 @@ func getPk(db common.DB, tableName string) ([]string, error) {
 		}
 		pks = append(pks, ColumnName)
 	}
-	return pks, nil
+	return pks, rows.Err()
 }
 func getColumns(db common.DB, schemaName, tableName string) ([]*schema.Column, error) {
 	if len(schemaName) == 0 {
@@ -118,7 +118,7 @@ func getColumns(db common.DB, schemaName, tableName string) ([]*schema.Column, e
 			}
 			columns = append(columns, row)
 		}
-		return nil
+		return rows.Err()
 	}(); err != nil {
 		return nil, err
 	}
@@ -146,7 +146,7 @@ func getColumns(db common.DB, schemaName, tableName string) ([]*schema.Column, e
 				return err
 			}
 		}
-		return nil
+		return rows.Err()
 	}(); err != nil {
 		return nil, err
 	}

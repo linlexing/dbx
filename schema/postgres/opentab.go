@@ -49,7 +49,7 @@ func getPk(db common.DB, tableName string) ([]string, error) {
 		result = append(result, oneColName)
 	}
 
-	return result, nil
+	return result, rows.Err()
 }
 
 //columnType中DBNULL被定义为int类型
@@ -102,7 +102,7 @@ func getTableColumns(db common.DB, schemaName, tableName string) ([]columnType, 
 		}
 		columns = append(columns, col)
 	}
-	return columns, nil
+	return columns, rows.Err()
 
 }
 
@@ -155,7 +155,7 @@ func getTableIndexes(db common.DB, schemaName, tableName string) ([]indexType, e
 		}
 		indexes = append(indexes, idx)
 	}
-	return indexes, nil
+	return indexes, rows.Err()
 
 }
 func getColumns(db common.DB, schemaName, table string) ([]*schema.Column, error) {

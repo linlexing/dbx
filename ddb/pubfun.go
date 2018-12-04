@@ -66,6 +66,7 @@ func ScanStrings(db common.Queryer, strSQL string, args ...interface{}) (strs []
 		}
 		strs = append(strs, str)
 	}
+	err = rows.Err()
 	return
 }
 
@@ -117,6 +118,7 @@ func QueryMaps(db common.Queryer, strSQL string,
 		}
 		rev = append(rev, row)
 	}
+	err = rows.Err()
 	return
 }
 
