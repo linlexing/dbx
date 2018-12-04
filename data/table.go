@@ -304,7 +304,7 @@ func (t *Table) Exists(where string, params ...interface{}) (rev bool, err error
 	}
 	defer rows.Close()
 	rev = rows.Next()
-	err = rows.Err
+	err = rows.Err()
 	return
 }
 
