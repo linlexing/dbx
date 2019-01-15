@@ -738,7 +738,7 @@ func (t *Table) UpdateByWhere(row map[string]interface{}, where string, params .
 	upCount, err = sqlr.RowsAffected()
 	if upCount == 0 {
 		if _, er := os.Stdout.WriteString(fmt.Sprintf(
-			"---------[%v] update nothing-----------\n%s\n%s",
+			"---------[%v] update nothing,maybe is insert-------\n%s\n%s",
 			time.Now(), strSQL, spew.Sdump(setVals))); er != nil {
 			panic(er)
 		}
