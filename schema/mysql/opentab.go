@@ -22,6 +22,15 @@ func getPk(db common.DB, tableName string) ([]string, error) {
 		log.Println(strSQL)
 		return nil, common.NewSQLError(err, strSQL)
 	}
+	// 判断取数是13列还是14列
+	var mysqlVer = true
+	colums, err := rows.Columns()
+	if err != nil {
+		return nil, common.NewSQLError(err, strSQL)
+	}
+	if len(colums) == 14 {
+		mysqlVer = false
+	}
 	defer rows.Close()
 
 	for rows.Next() {
@@ -38,24 +47,47 @@ func getPk(db common.DB, tableName string) ([]string, error) {
 		var IndexType sql.RawBytes
 		var Comment sql.RawBytes
 		var IndexComment sql.RawBytes
+		var Visible sql.RawBytes
 
-		if err := rows.Scan(
-			&Table,
-			&NonUnique,
-			&KeyName,
-			&SeqInIndex,
-			&ColumnName,
-			&Collation,
-			&Cardinality,
-			&SubPart,
-			&Packed,
-			&Null,
-			&IndexType,
-			&Comment,
-			&IndexComment); err != nil {
-			log.Println(err)
-			return nil, err
+		if mysqlVer {
+			if err := rows.Scan(
+				&Table,
+				&NonUnique,
+				&KeyName,
+				&SeqInIndex,
+				&ColumnName,
+				&Collation,
+				&Cardinality,
+				&SubPart,
+				&Packed,
+				&Null,
+				&IndexType,
+				&Comment,
+				&IndexComment); err != nil {
+				log.Println(err)
+				return nil, err
+			}
+		} else {
+			if err := rows.Scan(
+				&Table,
+				&NonUnique,
+				&KeyName,
+				&SeqInIndex,
+				&ColumnName,
+				&Collation,
+				&Cardinality,
+				&SubPart,
+				&Packed,
+				&Null,
+				&IndexType,
+				&Comment,
+				&IndexComment,
+				&Visible); err != nil {
+				log.Println(err)
+				return nil, err
+			}
 		}
+
 		pks = append(pks, ColumnName)
 	}
 	return pks, rows.Err()
