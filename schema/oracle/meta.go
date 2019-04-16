@@ -94,18 +94,22 @@ func (m *meta) DropIndexIfExistsSQL(db common.DB, indexName, tableName string) (
 
 }
 
-func (m *meta) CreateIndexIfNotExistsSQL(db common.DB, indexName, tableName, express string) ([]string, error) {
+func (m *meta) CreateIndexIfNotExistsSQL(db common.DB, unique bool, indexName, tableName, express string) ([]string, error) {
+	idx := "index"
+	if unique {
+		idx = "unique index"
+	}
 	return []string{fmt.Sprintf(`
 		DECLARE
-		  COUNT_INDEXES INTEGER;
+			COUNT_INDEXES INTEGER;
 		BEGIN
-		  SELECT COUNT(*) INTO COUNT_INDEXES
-		    FROM USER_INDEXES
-		    WHERE INDEX_NAME = '%s';
+			SELECT COUNT(*) INTO COUNT_INDEXES
+			FROM USER_INDEXES
+			WHERE INDEX_NAME = '%s';
 
-		  IF COUNT_INDEXES = 0 THEN
-		    EXECUTE IMMEDIATE '%s';
-		  END IF;
+			IF COUNT_INDEXES = 0 THEN
+				EXECUTE IMMEDIATE '%s';
+			END IF;
 		END;`, strings.ToUpper(indexName),
-		fmt.Sprintf("create index %s on %s(%s)", indexName, tableName, express))}, nil
+		fmt.Sprintf("create %s %s on %s(%s)", idx, indexName, tableName, express))}, nil
 }

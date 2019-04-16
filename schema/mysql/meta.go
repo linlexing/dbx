@@ -78,6 +78,6 @@ func (m *meta) CreateTableSQL(db common.DB, tab *schema.Table) ([]string, error)
 func (m *meta) DropIndexIfExistsSQL(db common.DB, indexName, tableName string) ([]string, error) {
 	panic(errors.New("not impl"))
 }
-func (m *meta) CreateIndexIfNotExistsSQL(db common.DB, indexName, tableName, express string) ([]string, error) {
+func (m *meta) CreateIndexIfNotExistsSQL(db common.DB, unique bool, indexName, tableName, express string) ([]string, error) {
 	panic(errors.New("not impl"))
 }

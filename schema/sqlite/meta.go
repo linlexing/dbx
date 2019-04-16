@@ -106,6 +106,10 @@ func (m *meta) DropIndexIfExistsSQL(db common.DB, indexName, tableName string) (
 	return []string{fmt.Sprintf("drop index if exists %s", indexName)}, nil
 }
 
-func (m *meta) CreateIndexIfNotExistsSQL(db common.DB, indexName, tableName, express string) ([]string, error) {
-	return []string{fmt.Sprintf("create index if not exists %s on %s(%s)", indexName, tableName, express)}, nil
+func (m *meta) CreateIndexIfNotExistsSQL(db common.DB, unique bool, indexName, tableName, express string) ([]string, error) {
+	idx := "index"
+	if unique {
+		idx = "unique index"
+	}
+	return []string{fmt.Sprintf("create %s if not exists %s on %s(%s)", idx, indexName, tableName, express)}, nil
 }

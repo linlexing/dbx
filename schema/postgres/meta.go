@@ -112,6 +112,10 @@ func (m *meta) DropIndexIfExistsSQL(db common.DB, indexName, tableName string) (
 
 }
 
-func (m *meta) CreateIndexIfNotExistsSQL(db common.DB, indexName, tableName, express string) ([]string, error) {
-	return []string{fmt.Sprintf("CREATE INDEX IF NOT EXISTS %s ON %s(%s)", indexName, tableName, express)}, nil
+func (m *meta) CreateIndexIfNotExistsSQL(db common.DB, unique bool, indexName, tableName, express string) ([]string, error) {
+	idx := "INDEX"
+	if unique {
+		idx = "UNIQUE INDEX"
+	}
+	return []string{fmt.Sprintf("CREATE %s IF NOT EXISTS %s ON %s(%s)", idx, indexName, tableName, express)}, nil
 }
