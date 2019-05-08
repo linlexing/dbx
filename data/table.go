@@ -351,7 +351,7 @@ func (t *Table) checkAndConvertRow(row map[string]interface{}) error {
 }
 
 //ImportFromTable 从另一个表中导入数据，表中列数量、名称、类型必须一致
-func (t *Table) ImportFromTable(srcTable *Table, progressFunc func(string), where string,
+func (t *Table) ImportFromTable(srcTable *Table, progressFunc func(string, interface{}), where string,
 	args ...interface{}) (iCount int64, err error) {
 	if len(t.ColumnNames) != len(srcTable.ColumnNames) {
 		return -1, errors.New("column number not equ")
@@ -373,7 +373,7 @@ func (t *Table) ImportFromTable(srcTable *Table, progressFunc func(string), wher
 //ImportFrom 从一个查询中导入数据,其列必须与表中数量一致,且序号类型一致，因为可能是异构数据库
 //所以不能用直接的CreateTableAs,由于数据可能比较多，采用5秒钟提交一次事务，
 //所以Table.DB必须是TxDB
-func (t *Table) ImportFrom(db common.Queryer, progressFunc func(string), query string,
+func (t *Table) ImportFrom(db common.Queryer, progressFunc func(string, interface{}), query string,
 	args ...interface{}) (iCount int64, err error) {
 	var rowCount int64
 	strSQL := fmt.Sprintf("select count(*) from (%s) out_count", query)
@@ -381,7 +381,7 @@ func (t *Table) ImportFrom(db common.Queryer, progressFunc func(string), query s
 		err = common.NewSQLError(err, strSQL, args...)
 		return
 	}
-	progressFunc(fmt.Sprintf("start import table %s,total %d records", t.FullName(), rowCount))
+	progressFunc(fmt.Sprintf("start import table %s,total %d records", t.FullName(), rowCount), nil)
 
 	rows, err := db.Query(query, args...)
 	if err != nil {
@@ -453,7 +453,7 @@ func (t *Table) ImportFrom(db common.Queryer, progressFunc func(string), query s
 				log.Println(err)
 				return 0, err
 			}
-			progressFunc(fmt.Sprintf("\t%.2f%%\t%d/%d\t%.2fs", 100.0*float64(iCount)/float64(rowCount), iCount, rowCount, totalSec))
+			progressFunc(fmt.Sprintf("\t%.2f%%\t%d/%d\t%.2fs", 100.0*float64(iCount)/float64(rowCount), iCount, rowCount, totalSec), nil)
 			startTime = time.Now()
 		}
 	}
@@ -474,7 +474,7 @@ func (t *Table) ImportFrom(db common.Queryer, progressFunc func(string), query s
 		}
 	}
 	finished = true
-	progressFunc(fmt.Sprintf("%s,total %d records imported %.2fs", t.FullName(), iCount, time.Since(beginTime).Seconds()))
+	progressFunc(fmt.Sprintf("%s,total %d records imported %.2fs", t.FullName(), iCount, time.Since(beginTime).Seconds()), nil)
 	return
 }
 
