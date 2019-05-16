@@ -30,9 +30,10 @@ func getPk(db common.DB, tableName string) ([]string, error) {
 		`SELECT upper(a.attname)
 			FROM   pg_index i
 			JOIN   pg_attribute a ON a.attrelid = i.indrelid
-			        AND a.attnum = ANY(i.indkey)
+				AND a.attnum = ANY(i.indkey)
 			WHERE  i.indrelid = '%s'::regclass
-			AND    i.indisprimary;`, tableName)
+			AND    i.indisprimary
+			order by array_position(i.indkey,a.attnum)`, tableName)
 
 	rows, err := db.Query(strSQL)
 	if err != nil {
