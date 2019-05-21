@@ -3,7 +3,6 @@ package condition
 import (
 	"bytes"
 	"encoding/csv"
-	"fmt"
 	"strings"
 
 	"github.com/antlr/antlr4/runtime/Go/antlr"
@@ -44,6 +43,9 @@ func (s *SqlWhereVisitorImpl) Visit(tree antlr.ParseTree) interface{} {
 func (s *SqlWhereVisitorImpl) VisitWhereClause(ctx *parser.WhereClauseContext) interface{} {
 	return ctx.LogicExpression().Accept(s)
 }
+func isColumn(expr parser.IExprContext) bool {
+	return expr.(*parser.ExprContext).ColumnName() != nil
+}
 func (s *SqlWhereVisitorImpl) VisitLogicExpression(ctx *parser.LogicExpressionContext) interface{} {
 	//逻辑关系隔开的条件
 	if logicExpression1, logicalOperator, logicExpression2 :=
@@ -59,6 +61,41 @@ func (s *SqlWhereVisitorImpl) VisitLogicExpression(ctx *parser.LogicExpressionCo
 	}
 	//运算符隔开的单个条件
 	if expr1, operate, expr2 := ctx.Expr(0), ctx.ComparisonOperator(), ctx.Expr(1); expr1 != nil && operate != nil && expr2 != nil {
+		if funcCall := expr1.(*parser.ExprContext).FunctionCall(); funcCall != nil {
+
+			switch tv := funcCall.(*parser.FunctionCallContext).CommonFunction().(type) {
+			case *parser.CommonFunctionContext:
+				// tv := fc.(*parser.CommonFunctionContext)
+				if strings.ToUpper(tv.FunctionName().GetText()) == "LENGTH" {
+					if exprList := tv.FunctionArg().(*parser.FunctionArgContext).AllExpr(); len(exprList) == 1 &&
+						isColumn(exprList[0]) {
+						var ope pageselect.Operator
+						switch operate.GetText() {
+						case "=":
+							ope = pageselect.OperatorLengthEqu
+						case ">":
+							ope = pageselect.OperatorLengthGreaterThan
+						case "<":
+							ope = pageselect.OperatorLengthLessThan
+						case "<=":
+							ope = pageselect.OperatorLengthLessThanOrEqu
+						case ">=":
+							ope = pageselect.OperatorLengthGreaterThanOrEqu
+						case "<>":
+							ope = pageselect.OperatorLengthNotEqu
+						default:
+							panic("invalid length opereate " + operate.GetText())
+						}
+						return NewConditionNode(tv.FunctionArg().GetText(), ope, decodeSignStringIf(expr2.GetText()))
+					}
+				}
+				return NewPlainNode(getText(ctx))
+
+			}
+		}
+		if !isColumn(expr1) {
+			return NewPlainNode(getText(ctx))
+		}
 		var ope pageselect.Operator
 		switch operate.GetText() {
 		case "=":
@@ -75,20 +112,26 @@ func (s *SqlWhereVisitorImpl) VisitLogicExpression(ctx *parser.LogicExpressionCo
 			ope = pageselect.OperatorNotEqu
 		case "~":
 			ope = pageselect.OperatorRegexp
+		case "!~":
+			ope = pageselect.OperatorNotRegexp
 		default:
 			panic("invalid opereate " + operate.GetText())
 		}
 		return NewConditionNode(expr1.GetText(), ope, decodeSignStringIf(expr2.GetText()))
+
 	}
 	//BETWEEN
 	if expr1, between, expr2, expr3 :=
 		ctx.Expr(0), ctx.BETWEEN(), ctx.Expr(1), ctx.Expr(2); expr1 != nil &&
 		between != nil && expr2 != nil && expr3 != nil {
 
-		return NewPlainNode(fmt.Sprintf("%s BETWEEN %s AND %s", expr1.GetText(), expr2.GetText(), expr3.GetText()))
+		return NewPlainNode(getText(ctx))
 	}
 	//IN/NOT IN
 	if not, in, expr := ctx.NOT(), ctx.IN(), ctx.AllExpr(); in != nil && len(expr) > 2 {
+		if !isColumn(expr[0]) {
+			return NewPlainNode(getText(ctx))
+		}
 		var ope pageselect.Operator
 		if not != nil {
 			ope = pageselect.OperatorNotIn
@@ -106,11 +149,15 @@ func (s *SqlWhereVisitorImpl) VisitLogicExpression(ctx *parser.LogicExpressionCo
 			panic(err)
 		}
 		return NewConditionNode(expr[0].GetText(), ope, bys.String())
+
 	}
 	//LIKE/NOT LIKE
 	if not, like, field, val :=
 		ctx.NOT(), ctx.LIKE(), ctx.Expr(0), ctx.Expr(1); like != nil &&
 		field != nil && val != nil {
+		if !isColumn(field) {
+			return NewPlainNode(getText(ctx))
+		}
 		str := decodeSignStringIf(val.GetText())
 		first := str[0]
 		last := str[len(str)-1]
@@ -151,6 +198,9 @@ func (s *SqlWhereVisitorImpl) VisitLogicExpression(ctx *parser.LogicExpressionCo
 	//LIKE/NOT LIKE
 	if is, not, null, field :=
 		ctx.IS(), ctx.NOT(), ctx.NULL(), ctx.Expr(0); is != nil && null != nil && field != nil {
+		if !isColumn(field) {
+			return NewPlainNode(getText(ctx))
+		}
 		if not != nil {
 			return NewConditionNode(field.GetText(), pageselect.OperatorIsNotNull, "")
 		}

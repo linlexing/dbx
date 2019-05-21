@@ -46,11 +46,8 @@ type SqlVisitor interface {
 	// Visit a parse tree produced by SqlParser#value.
 	VisitValue(ctx *ValueContext) interface{}
 
-	// Visit a parse tree produced by SqlParser#aggregateFunctionCall.
-	VisitAggregateFunctionCall(ctx *AggregateFunctionCallContext) interface{}
-
-	// Visit a parse tree produced by SqlParser#commonFunctionCall.
-	VisitCommonFunctionCall(ctx *CommonFunctionCallContext) interface{}
+	// Visit a parse tree produced by SqlParser#functionCall.
+	VisitFunctionCall(ctx *FunctionCallContext) interface{}
 
 	// Visit a parse tree produced by SqlParser#aggregateFunction.
 	VisitAggregateFunction(ctx *AggregateFunctionContext) interface{}

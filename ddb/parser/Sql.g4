@@ -120,8 +120,8 @@ value
  ;
 
 functionCall
- : aggregateFunction  # aggregateFunctionCall
- | commonFunction  # commonFunctionCall
+ : aggregateFunction
+ | commonFunction
  ;
 
 aggregateFunction
@@ -162,7 +162,7 @@ logicExpression
 comparisonOperator
  : '=' | '>' | '<'
  | '>=' | '<=' | '<>'
- | '~'
+ | '~' | '!~'
  ;
 //'~' => regexp
 

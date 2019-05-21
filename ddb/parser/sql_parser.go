@@ -17,7 +17,7 @@ var _ = strconv.Itoa
 
 
 var parserATN = []uint16{
-	3, 24715, 42794, 33075, 47597, 16764, 15335, 30598, 22884, 3, 54, 325, 
+	3, 24715, 42794, 33075, 47597, 16764, 15335, 30598, 22884, 3, 55, 325, 
 	4, 2, 9, 2, 4, 3, 9, 3, 4, 4, 9, 4, 4, 5, 9, 5, 4, 6, 9, 6, 4, 7, 9, 7, 
 	4, 8, 9, 8, 4, 9, 9, 9, 4, 10, 9, 10, 4, 11, 9, 11, 4, 12, 9, 12, 4, 13, 
 	9, 13, 4, 14, 9, 14, 4, 15, 9, 15, 4, 16, 9, 16, 4, 17, 9, 17, 4, 18, 9, 
@@ -54,8 +54,8 @@ var parserATN = []uint16{
 	29, 3, 29, 3, 29, 3, 29, 5, 29, 316, 10, 29, 3, 29, 3, 29, 3, 29, 3, 29, 
 	3, 29, 5, 29, 323, 10, 29, 3, 29, 2, 4, 24, 42, 30, 2, 4, 6, 8, 10, 12, 
 	14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 34, 36, 38, 40, 42, 44, 46, 48, 
-	50, 52, 54, 56, 2, 8, 4, 2, 50, 50, 52, 52, 4, 2, 3, 3, 5, 5, 3, 2, 6, 
-	7, 3, 2, 21, 24, 3, 2, 11, 17, 3, 2, 42, 43, 2, 344, 2, 58, 3, 2, 2, 2, 
+	50, 52, 54, 56, 2, 8, 4, 2, 51, 51, 53, 53, 4, 2, 3, 3, 5, 5, 3, 2, 6, 
+	7, 3, 2, 22, 25, 3, 2, 11, 18, 3, 2, 43, 44, 2, 344, 2, 58, 3, 2, 2, 2, 
 	4, 60, 3, 2, 2, 2, 6, 62, 3, 2, 2, 2, 8, 64, 3, 2, 2, 2, 10, 66, 3, 2, 
 	2, 2, 12, 68, 3, 2, 2, 2, 14, 70, 3, 2, 2, 2, 16, 72, 3, 2, 2, 2, 18, 74, 
 	3, 2, 2, 2, 20, 95, 3, 2, 2, 2, 22, 104, 3, 2, 2, 2, 24, 119, 3, 2, 2, 
@@ -63,12 +63,12 @@ var parserATN = []uint16{
 	3, 2, 2, 2, 34, 174, 3, 2, 2, 2, 36, 182, 3, 2, 2, 2, 38, 201, 3, 2, 2, 
 	2, 40, 203, 3, 2, 2, 2, 42, 261, 3, 2, 2, 2, 44, 274, 3, 2, 2, 2, 46, 276, 
 	3, 2, 2, 2, 48, 286, 3, 2, 2, 2, 50, 288, 3, 2, 2, 2, 52, 291, 3, 2, 2, 
-	2, 54, 301, 3, 2, 2, 2, 56, 311, 3, 2, 2, 2, 58, 59, 7, 50, 2, 2, 59, 3, 
-	3, 2, 2, 2, 60, 61, 7, 50, 2, 2, 61, 5, 3, 2, 2, 2, 62, 63, 7, 50, 2, 2, 
-	63, 7, 3, 2, 2, 2, 64, 65, 7, 50, 2, 2, 65, 9, 3, 2, 2, 2, 66, 67, 9, 2, 
-	2, 2, 67, 11, 3, 2, 2, 2, 68, 69, 7, 49, 2, 2, 69, 13, 3, 2, 2, 2, 70, 
-	71, 7, 51, 2, 2, 71, 15, 3, 2, 2, 2, 72, 73, 7, 53, 2, 2, 73, 17, 3, 2, 
-	2, 2, 74, 75, 7, 19, 2, 2, 75, 76, 5, 20, 11, 2, 76, 77, 7, 20, 2, 2, 77, 
+	2, 54, 301, 3, 2, 2, 2, 56, 311, 3, 2, 2, 2, 58, 59, 7, 51, 2, 2, 59, 3, 
+	3, 2, 2, 2, 60, 61, 7, 51, 2, 2, 61, 5, 3, 2, 2, 2, 62, 63, 7, 51, 2, 2, 
+	63, 7, 3, 2, 2, 2, 64, 65, 7, 51, 2, 2, 65, 9, 3, 2, 2, 2, 66, 67, 9, 2, 
+	2, 2, 67, 11, 3, 2, 2, 2, 68, 69, 7, 50, 2, 2, 69, 13, 3, 2, 2, 2, 70, 
+	71, 7, 52, 2, 2, 71, 15, 3, 2, 2, 2, 72, 73, 7, 54, 2, 2, 73, 17, 3, 2, 
+	2, 2, 74, 75, 7, 20, 2, 2, 75, 76, 5, 20, 11, 2, 76, 77, 7, 21, 2, 2, 77, 
 	79, 5, 36, 19, 2, 78, 80, 5, 40, 21, 2, 79, 78, 3, 2, 2, 2, 79, 80, 3, 
 	2, 2, 2, 80, 82, 3, 2, 2, 2, 81, 83, 5, 46, 24, 2, 82, 81, 3, 2, 2, 2, 
 	82, 83, 3, 2, 2, 2, 83, 85, 3, 2, 2, 2, 84, 86, 5, 50, 26, 2, 85, 84, 3, 
@@ -79,7 +79,7 @@ var parserATN = []uint16{
 	2, 2, 2, 96, 101, 3, 2, 2, 2, 97, 98, 7, 4, 2, 2, 98, 100, 5, 22, 12, 2, 
 	99, 97, 3, 2, 2, 2, 100, 103, 3, 2, 2, 2, 101, 99, 3, 2, 2, 2, 101, 102, 
 	3, 2, 2, 2, 102, 21, 3, 2, 2, 2, 103, 101, 3, 2, 2, 2, 104, 109, 5, 24, 
-	13, 2, 105, 107, 7, 18, 2, 2, 106, 105, 3, 2, 2, 2, 106, 107, 3, 2, 2, 
+	13, 2, 105, 107, 7, 19, 2, 2, 106, 105, 3, 2, 2, 2, 106, 107, 3, 2, 2, 
 	2, 107, 108, 3, 2, 2, 2, 108, 110, 5, 10, 6, 2, 109, 106, 3, 2, 2, 2, 109, 
 	110, 3, 2, 2, 2, 110, 23, 3, 2, 2, 2, 111, 112, 8, 13, 1, 2, 112, 120, 
 	5, 2, 2, 2, 113, 120, 5, 28, 15, 2, 114, 120, 5, 26, 14, 2, 115, 116, 7, 
@@ -96,13 +96,13 @@ var parserATN = []uint16{
 	2, 140, 143, 5, 30, 16, 2, 141, 143, 5, 32, 17, 2, 142, 140, 3, 2, 2, 2, 
 	142, 141, 3, 2, 2, 2, 143, 29, 3, 2, 2, 2, 144, 145, 9, 5, 2, 2, 145, 146, 
 	7, 9, 2, 2, 146, 147, 5, 34, 18, 2, 147, 148, 7, 10, 2, 2, 148, 157, 3, 
-	2, 2, 2, 149, 150, 7, 25, 2, 2, 150, 153, 7, 9, 2, 2, 151, 154, 7, 3, 2, 
+	2, 2, 2, 149, 150, 7, 26, 2, 2, 150, 153, 7, 9, 2, 2, 151, 154, 7, 3, 2, 
 	2, 152, 154, 5, 34, 18, 2, 153, 151, 3, 2, 2, 2, 153, 152, 3, 2, 2, 2, 
 	154, 155, 3, 2, 2, 2, 155, 157, 7, 10, 2, 2, 156, 144, 3, 2, 2, 2, 156, 
 	149, 3, 2, 2, 2, 157, 31, 3, 2, 2, 2, 158, 159, 5, 8, 5, 2, 159, 160, 7, 
 	9, 2, 2, 160, 161, 5, 34, 18, 2, 161, 162, 7, 10, 2, 2, 162, 173, 3, 2, 
-	2, 2, 163, 164, 7, 26, 2, 2, 164, 173, 5, 34, 18, 2, 165, 166, 7, 48, 2, 
-	2, 166, 167, 7, 9, 2, 2, 167, 168, 5, 34, 18, 2, 168, 169, 7, 18, 2, 2, 
+	2, 2, 163, 164, 7, 27, 2, 2, 164, 173, 5, 34, 18, 2, 165, 166, 7, 49, 2, 
+	2, 166, 167, 7, 9, 2, 2, 167, 168, 5, 34, 18, 2, 168, 169, 7, 19, 2, 2, 
 	169, 170, 5, 6, 4, 2, 170, 171, 7, 10, 2, 2, 171, 173, 3, 2, 2, 2, 172, 
 	158, 3, 2, 2, 2, 172, 163, 3, 2, 2, 2, 172, 165, 3, 2, 2, 2, 173, 33, 3, 
 	2, 2, 2, 174, 179, 5, 24, 13, 2, 175, 176, 7, 4, 2, 2, 176, 178, 5, 24, 
@@ -115,50 +115,50 @@ var parserATN = []uint16{
 	3, 2, 2, 2, 193, 194, 3, 2, 2, 2, 194, 37, 3, 2, 2, 2, 195, 193, 3, 2, 
 	2, 2, 196, 202, 5, 4, 3, 2, 197, 198, 7, 9, 2, 2, 198, 199, 5, 18, 10, 
 	2, 199, 200, 7, 10, 2, 2, 200, 202, 3, 2, 2, 2, 201, 196, 3, 2, 2, 2, 201, 
-	197, 3, 2, 2, 2, 202, 39, 3, 2, 2, 2, 203, 204, 7, 27, 2, 2, 204, 205, 
+	197, 3, 2, 2, 2, 202, 39, 3, 2, 2, 2, 203, 204, 7, 28, 2, 2, 204, 205, 
 	5, 42, 22, 2, 205, 41, 3, 2, 2, 2, 206, 207, 8, 22, 1, 2, 207, 208, 5, 
 	24, 13, 2, 208, 209, 5, 44, 23, 2, 209, 210, 5, 24, 13, 2, 210, 262, 3, 
-	2, 2, 2, 211, 213, 5, 24, 13, 2, 212, 214, 7, 35, 2, 2, 213, 212, 3, 2, 
-	2, 2, 213, 214, 3, 2, 2, 2, 214, 215, 3, 2, 2, 2, 215, 216, 7, 37, 2, 2, 
-	216, 217, 5, 24, 13, 2, 217, 218, 7, 38, 2, 2, 218, 219, 5, 24, 13, 2, 
-	219, 262, 3, 2, 2, 2, 220, 222, 5, 24, 13, 2, 221, 223, 7, 35, 2, 2, 222, 
+	2, 2, 2, 211, 213, 5, 24, 13, 2, 212, 214, 7, 36, 2, 2, 213, 212, 3, 2, 
+	2, 2, 213, 214, 3, 2, 2, 2, 214, 215, 3, 2, 2, 2, 215, 216, 7, 38, 2, 2, 
+	216, 217, 5, 24, 13, 2, 217, 218, 7, 39, 2, 2, 218, 219, 5, 24, 13, 2, 
+	219, 262, 3, 2, 2, 2, 220, 222, 5, 24, 13, 2, 221, 223, 7, 36, 2, 2, 222, 
 	221, 3, 2, 2, 2, 222, 223, 3, 2, 2, 2, 223, 224, 3, 2, 2, 2, 224, 225, 
-	7, 39, 2, 2, 225, 226, 7, 9, 2, 2, 226, 231, 5, 24, 13, 2, 227, 228, 7, 
+	7, 40, 2, 2, 225, 226, 7, 9, 2, 2, 226, 231, 5, 24, 13, 2, 227, 228, 7, 
 	4, 2, 2, 228, 230, 5, 24, 13, 2, 229, 227, 3, 2, 2, 2, 230, 233, 3, 2, 
 	2, 2, 231, 229, 3, 2, 2, 2, 231, 232, 3, 2, 2, 2, 232, 234, 3, 2, 2, 2, 
 	233, 231, 3, 2, 2, 2, 234, 235, 7, 10, 2, 2, 235, 262, 3, 2, 2, 2, 236, 
-	238, 5, 24, 13, 2, 237, 239, 7, 35, 2, 2, 238, 237, 3, 2, 2, 2, 238, 239, 
-	3, 2, 2, 2, 239, 240, 3, 2, 2, 2, 240, 241, 7, 46, 2, 2, 241, 242, 5, 24, 
-	13, 2, 242, 262, 3, 2, 2, 2, 243, 244, 5, 24, 13, 2, 244, 246, 7, 36, 2, 
-	2, 245, 247, 7, 35, 2, 2, 246, 245, 3, 2, 2, 2, 246, 247, 3, 2, 2, 2, 247, 
-	248, 3, 2, 2, 2, 248, 249, 7, 40, 2, 2, 249, 262, 3, 2, 2, 2, 250, 251, 
-	7, 47, 2, 2, 251, 252, 7, 9, 2, 2, 252, 253, 5, 18, 10, 2, 253, 254, 7, 
+	238, 5, 24, 13, 2, 237, 239, 7, 36, 2, 2, 238, 237, 3, 2, 2, 2, 238, 239, 
+	3, 2, 2, 2, 239, 240, 3, 2, 2, 2, 240, 241, 7, 47, 2, 2, 241, 242, 5, 24, 
+	13, 2, 242, 262, 3, 2, 2, 2, 243, 244, 5, 24, 13, 2, 244, 246, 7, 37, 2, 
+	2, 245, 247, 7, 36, 2, 2, 246, 245, 3, 2, 2, 2, 246, 247, 3, 2, 2, 2, 247, 
+	248, 3, 2, 2, 2, 248, 249, 7, 41, 2, 2, 249, 262, 3, 2, 2, 2, 250, 251, 
+	7, 48, 2, 2, 251, 252, 7, 9, 2, 2, 252, 253, 5, 18, 10, 2, 253, 254, 7, 
 	10, 2, 2, 254, 262, 3, 2, 2, 2, 255, 256, 7, 9, 2, 2, 256, 257, 5, 42, 
-	22, 2, 257, 258, 7, 10, 2, 2, 258, 262, 3, 2, 2, 2, 259, 260, 7, 35, 2, 
+	22, 2, 257, 258, 7, 10, 2, 2, 258, 262, 3, 2, 2, 2, 259, 260, 7, 36, 2, 
 	2, 260, 262, 5, 42, 22, 5, 261, 206, 3, 2, 2, 2, 261, 211, 3, 2, 2, 2, 
 	261, 220, 3, 2, 2, 2, 261, 236, 3, 2, 2, 2, 261, 243, 3, 2, 2, 2, 261, 
 	250, 3, 2, 2, 2, 261, 255, 3, 2, 2, 2, 261, 259, 3, 2, 2, 2, 262, 271, 
-	3, 2, 2, 2, 263, 264, 12, 4, 2, 2, 264, 265, 7, 38, 2, 2, 265, 270, 5, 
-	42, 22, 5, 266, 267, 12, 3, 2, 2, 267, 268, 7, 41, 2, 2, 268, 270, 5, 42, 
+	3, 2, 2, 2, 263, 264, 12, 4, 2, 2, 264, 265, 7, 39, 2, 2, 265, 270, 5, 
+	42, 22, 5, 266, 267, 12, 3, 2, 2, 267, 268, 7, 42, 2, 2, 268, 270, 5, 42, 
 	22, 4, 269, 263, 3, 2, 2, 2, 269, 266, 3, 2, 2, 2, 270, 273, 3, 2, 2, 2, 
 	271, 269, 3, 2, 2, 2, 271, 272, 3, 2, 2, 2, 272, 43, 3, 2, 2, 2, 273, 271, 
-	3, 2, 2, 2, 274, 275, 9, 6, 2, 2, 275, 45, 3, 2, 2, 2, 276, 277, 7, 28, 
-	2, 2, 277, 278, 7, 29, 2, 2, 278, 283, 5, 48, 25, 2, 279, 280, 7, 4, 2, 
+	3, 2, 2, 2, 274, 275, 9, 6, 2, 2, 275, 45, 3, 2, 2, 2, 276, 277, 7, 29, 
+	2, 2, 277, 278, 7, 30, 2, 2, 278, 283, 5, 48, 25, 2, 279, 280, 7, 4, 2, 
 	2, 280, 282, 5, 48, 25, 2, 281, 279, 3, 2, 2, 2, 282, 285, 3, 2, 2, 2, 
 	283, 281, 3, 2, 2, 2, 283, 284, 3, 2, 2, 2, 284, 47, 3, 2, 2, 2, 285, 283, 
-	3, 2, 2, 2, 286, 287, 5, 24, 13, 2, 287, 49, 3, 2, 2, 2, 288, 289, 7, 34, 
-	2, 2, 289, 290, 5, 42, 22, 2, 290, 51, 3, 2, 2, 2, 291, 292, 7, 30, 2, 
-	2, 292, 293, 7, 29, 2, 2, 293, 298, 5, 54, 28, 2, 294, 295, 7, 4, 2, 2, 
+	3, 2, 2, 2, 286, 287, 5, 24, 13, 2, 287, 49, 3, 2, 2, 2, 288, 289, 7, 35, 
+	2, 2, 289, 290, 5, 42, 22, 2, 290, 51, 3, 2, 2, 2, 291, 292, 7, 31, 2, 
+	2, 292, 293, 7, 30, 2, 2, 293, 298, 5, 54, 28, 2, 294, 295, 7, 4, 2, 2, 
 	295, 297, 5, 54, 28, 2, 296, 294, 3, 2, 2, 2, 297, 300, 3, 2, 2, 2, 298, 
 	296, 3, 2, 2, 2, 298, 299, 3, 2, 2, 2, 299, 53, 3, 2, 2, 2, 300, 298, 3, 
 	2, 2, 2, 301, 303, 5, 24, 13, 2, 302, 304, 9, 7, 2, 2, 303, 302, 3, 2, 
-	2, 2, 303, 304, 3, 2, 2, 2, 304, 309, 3, 2, 2, 2, 305, 306, 7, 31, 2, 2, 
-	306, 310, 7, 32, 2, 2, 307, 308, 7, 31, 2, 2, 308, 310, 7, 33, 2, 2, 309, 
+	2, 2, 303, 304, 3, 2, 2, 2, 304, 309, 3, 2, 2, 2, 305, 306, 7, 32, 2, 2, 
+	306, 310, 7, 33, 2, 2, 307, 308, 7, 32, 2, 2, 308, 310, 7, 34, 2, 2, 309, 
 	305, 3, 2, 2, 2, 309, 307, 3, 2, 2, 2, 309, 310, 3, 2, 2, 2, 310, 55, 3, 
-	2, 2, 2, 311, 322, 7, 44, 2, 2, 312, 313, 5, 12, 7, 2, 313, 314, 7, 4, 
+	2, 2, 2, 311, 322, 7, 45, 2, 2, 312, 313, 5, 12, 7, 2, 313, 314, 7, 4, 
 	2, 2, 314, 316, 3, 2, 2, 2, 315, 312, 3, 2, 2, 2, 315, 316, 3, 2, 2, 2, 
 	316, 317, 3, 2, 2, 2, 317, 323, 5, 12, 7, 2, 318, 319, 5, 12, 7, 2, 319, 
-	320, 7, 45, 2, 2, 320, 321, 5, 12, 7, 2, 321, 323, 3, 2, 2, 2, 322, 315, 
+	320, 7, 46, 2, 2, 320, 321, 5, 12, 7, 2, 321, 323, 3, 2, 2, 2, 322, 315, 
 	3, 2, 2, 2, 322, 318, 3, 2, 2, 2, 323, 57, 3, 2, 2, 2, 38, 79, 82, 85, 
 	88, 91, 95, 101, 106, 109, 119, 130, 132, 138, 142, 153, 156, 172, 179, 
 	184, 189, 193, 201, 213, 222, 231, 238, 246, 261, 269, 271, 283, 298, 303, 
@@ -169,15 +169,15 @@ var deserializedATN = deserializer.DeserializeFromUInt16(parserATN)
 
 var literalNames = []string{
 	"", "'*'", "','", "'/'", "'+'", "'-'", "'||'", "'('", "')'", "'='", "'>'", 
-	"'<'", "'>='", "'<='", "'<>'", "'~'",
+	"'<'", "'>='", "'<='", "'<>'", "'~'", "'!~'",
 }
 var symbolicNames = []string{
-	"", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "AS", "SELECT", 
-	"FROM", "MAX", "SUM", "AVG", "MIN", "COUNT", "DISTINCT", "WHERE", "GROUP", 
-	"BY", "ORDER", "NULLS", "FIRST", "LAST", "HAVING", "NOT", "IS", "BETWEEN", 
-	"AND", "IN", "NULL", "OR", "ASC", "DESC", "LIMIT", "OFFSET", "LIKE", "EXISTS", 
-	"CAST", "DECIMAL_LITERAL", "ID", "TEXT_STRING", "TEXT_ALIAS", "BIND_VARIABLE", 
-	"WS",
+	"", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "AS", 
+	"SELECT", "FROM", "MAX", "SUM", "AVG", "MIN", "COUNT", "DISTINCT", "WHERE", 
+	"GROUP", "BY", "ORDER", "NULLS", "FIRST", "LAST", "HAVING", "NOT", "IS", 
+	"BETWEEN", "AND", "IN", "NULL", "OR", "ASC", "DESC", "LIMIT", "OFFSET", 
+	"LIKE", "EXISTS", "CAST", "DECIMAL_LITERAL", "ID", "TEXT_STRING", "TEXT_ALIAS", 
+	"BIND_VARIABLE", "WS",
 }
 
 var ruleNames = []string{
@@ -232,43 +232,44 @@ const (
 	SqlParserT__12 = 13
 	SqlParserT__13 = 14
 	SqlParserT__14 = 15
-	SqlParserAS = 16
-	SqlParserSELECT = 17
-	SqlParserFROM = 18
-	SqlParserMAX = 19
-	SqlParserSUM = 20
-	SqlParserAVG = 21
-	SqlParserMIN = 22
-	SqlParserCOUNT = 23
-	SqlParserDISTINCT = 24
-	SqlParserWHERE = 25
-	SqlParserGROUP = 26
-	SqlParserBY = 27
-	SqlParserORDER = 28
-	SqlParserNULLS = 29
-	SqlParserFIRST = 30
-	SqlParserLAST = 31
-	SqlParserHAVING = 32
-	SqlParserNOT = 33
-	SqlParserIS = 34
-	SqlParserBETWEEN = 35
-	SqlParserAND = 36
-	SqlParserIN = 37
-	SqlParserNULL = 38
-	SqlParserOR = 39
-	SqlParserASC = 40
-	SqlParserDESC = 41
-	SqlParserLIMIT = 42
-	SqlParserOFFSET = 43
-	SqlParserLIKE = 44
-	SqlParserEXISTS = 45
-	SqlParserCAST = 46
-	SqlParserDECIMAL_LITERAL = 47
-	SqlParserID = 48
-	SqlParserTEXT_STRING = 49
-	SqlParserTEXT_ALIAS = 50
-	SqlParserBIND_VARIABLE = 51
-	SqlParserWS = 52
+	SqlParserT__15 = 16
+	SqlParserAS = 17
+	SqlParserSELECT = 18
+	SqlParserFROM = 19
+	SqlParserMAX = 20
+	SqlParserSUM = 21
+	SqlParserAVG = 22
+	SqlParserMIN = 23
+	SqlParserCOUNT = 24
+	SqlParserDISTINCT = 25
+	SqlParserWHERE = 26
+	SqlParserGROUP = 27
+	SqlParserBY = 28
+	SqlParserORDER = 29
+	SqlParserNULLS = 30
+	SqlParserFIRST = 31
+	SqlParserLAST = 32
+	SqlParserHAVING = 33
+	SqlParserNOT = 34
+	SqlParserIS = 35
+	SqlParserBETWEEN = 36
+	SqlParserAND = 37
+	SqlParserIN = 38
+	SqlParserNULL = 39
+	SqlParserOR = 40
+	SqlParserASC = 41
+	SqlParserDESC = 42
+	SqlParserLIMIT = 43
+	SqlParserOFFSET = 44
+	SqlParserLIKE = 45
+	SqlParserEXISTS = 46
+	SqlParserCAST = 47
+	SqlParserDECIMAL_LITERAL = 48
+	SqlParserID = 49
+	SqlParserTEXT_STRING = 50
+	SqlParserTEXT_ALIAS = 51
+	SqlParserBIND_VARIABLE = 52
+	SqlParserWS = 53
 )
 
 // SqlParser rules.
@@ -2269,8 +2270,24 @@ func NewFunctionCallContext(parser antlr.Parser, parent antlr.ParserRuleContext,
 
 func (s *FunctionCallContext) GetParser() antlr.Parser { return s.parser }
 
-func (s *FunctionCallContext) CopyFrom(ctx *FunctionCallContext) {
-	s.BaseParserRuleContext.CopyFrom(ctx.BaseParserRuleContext)
+func (s *FunctionCallContext) AggregateFunction() IAggregateFunctionContext {
+	var t = s.GetTypedRuleContext(reflect.TypeOf((*IAggregateFunctionContext)(nil)).Elem(), 0)
+
+	if t == nil {
+		return nil
+	}
+
+	return t.(IAggregateFunctionContext)
+}
+
+func (s *FunctionCallContext) CommonFunction() ICommonFunctionContext {
+	var t = s.GetTypedRuleContext(reflect.TypeOf((*ICommonFunctionContext)(nil)).Elem(), 0)
+
+	if t == nil {
+		return nil
+	}
+
+	return t.(ICommonFunctionContext)
 }
 
 func (s *FunctionCallContext) GetRuleContext() antlr.RuleContext {
@@ -2282,110 +2299,28 @@ func (s *FunctionCallContext) ToStringTree(ruleNames []string, recog antlr.Recog
 }
 
 
-
-
-type AggregateFunctionCallContext struct {
-	*FunctionCallContext
-}
-
-func NewAggregateFunctionCallContext(parser antlr.Parser, ctx antlr.ParserRuleContext) *AggregateFunctionCallContext {
-	var p = new(AggregateFunctionCallContext)
-
-	p.FunctionCallContext = NewEmptyFunctionCallContext()
-	p.parser = parser
-	p.CopyFrom(ctx.(*FunctionCallContext))
-
-	return p
-}
-
-func (s *AggregateFunctionCallContext) GetRuleContext() antlr.RuleContext {
-	return s
-}
-
-func (s *AggregateFunctionCallContext) AggregateFunction() IAggregateFunctionContext {
-	var t = s.GetTypedRuleContext(reflect.TypeOf((*IAggregateFunctionContext)(nil)).Elem(), 0)
-
-	if t == nil {
-		return nil
-	}
-
-	return t.(IAggregateFunctionContext)
-}
-
-
-func (s *AggregateFunctionCallContext) EnterRule(listener antlr.ParseTreeListener) {
+func (s *FunctionCallContext) EnterRule(listener antlr.ParseTreeListener) {
 	if listenerT, ok := listener.(SqlListener); ok {
-		listenerT.EnterAggregateFunctionCall(s)
+		listenerT.EnterFunctionCall(s)
 	}
 }
 
-func (s *AggregateFunctionCallContext) ExitRule(listener antlr.ParseTreeListener) {
+func (s *FunctionCallContext) ExitRule(listener antlr.ParseTreeListener) {
 	if listenerT, ok := listener.(SqlListener); ok {
-		listenerT.ExitAggregateFunctionCall(s)
+		listenerT.ExitFunctionCall(s)
 	}
 }
 
-func (s *AggregateFunctionCallContext) Accept(visitor antlr.ParseTreeVisitor) interface{} {
+func (s *FunctionCallContext) Accept(visitor antlr.ParseTreeVisitor) interface{} {
 	switch t := visitor.(type) {
 	case SqlVisitor:
-		return t.VisitAggregateFunctionCall(s)
+		return t.VisitFunctionCall(s)
 
 	default:
 		return t.VisitChildren(s)
 	}
 }
 
-
-type CommonFunctionCallContext struct {
-	*FunctionCallContext
-}
-
-func NewCommonFunctionCallContext(parser antlr.Parser, ctx antlr.ParserRuleContext) *CommonFunctionCallContext {
-	var p = new(CommonFunctionCallContext)
-
-	p.FunctionCallContext = NewEmptyFunctionCallContext()
-	p.parser = parser
-	p.CopyFrom(ctx.(*FunctionCallContext))
-
-	return p
-}
-
-func (s *CommonFunctionCallContext) GetRuleContext() antlr.RuleContext {
-	return s
-}
-
-func (s *CommonFunctionCallContext) CommonFunction() ICommonFunctionContext {
-	var t = s.GetTypedRuleContext(reflect.TypeOf((*ICommonFunctionContext)(nil)).Elem(), 0)
-
-	if t == nil {
-		return nil
-	}
-
-	return t.(ICommonFunctionContext)
-}
-
-
-func (s *CommonFunctionCallContext) EnterRule(listener antlr.ParseTreeListener) {
-	if listenerT, ok := listener.(SqlListener); ok {
-		listenerT.EnterCommonFunctionCall(s)
-	}
-}
-
-func (s *CommonFunctionCallContext) ExitRule(listener antlr.ParseTreeListener) {
-	if listenerT, ok := listener.(SqlListener); ok {
-		listenerT.ExitCommonFunctionCall(s)
-	}
-}
-
-func (s *CommonFunctionCallContext) Accept(visitor antlr.ParseTreeVisitor) interface{} {
-	switch t := visitor.(type) {
-	case SqlVisitor:
-		return t.VisitCommonFunctionCall(s)
-
-	default:
-		return t.VisitChildren(s)
-	}
-}
 
 
 
@@ -2414,7 +2349,6 @@ func (p *SqlParser) FunctionCall() (localctx IFunctionCallContext) {
 
 	switch p.GetTokenStream().LA(1) {
 	case SqlParserMAX, SqlParserSUM, SqlParserAVG, SqlParserMIN, SqlParserCOUNT:
-		localctx = NewAggregateFunctionCallContext(p, localctx)
 		p.EnterOuterAlt(localctx, 1)
 		{
 			p.SetState(138)
@@ -2423,7 +2357,6 @@ func (p *SqlParser) FunctionCall() (localctx IFunctionCallContext) {
 
 
 	case SqlParserDISTINCT, SqlParserCAST, SqlParserID:
-		localctx = NewCommonFunctionCallContext(p, localctx)
 		p.EnterOuterAlt(localctx, 2)
 		{
 			p.SetState(139)
@@ -4120,7 +4053,7 @@ func (p *SqlParser) ComparisonOperator() (localctx IComparisonOperatorContext) {
 		p.SetState(272)
 		_la = p.GetTokenStream().LA(1)
 
-		if !((((_la) & -(0x1f+1)) == 0 && ((1 << uint(_la)) & ((1 << SqlParserT__8) | (1 << SqlParserT__9) | (1 << SqlParserT__10) | (1 << SqlParserT__11) | (1 << SqlParserT__12) | (1 << SqlParserT__13) | (1 << SqlParserT__14))) != 0)) {
+		if !((((_la) & -(0x1f+1)) == 0 && ((1 << uint(_la)) & ((1 << SqlParserT__8) | (1 << SqlParserT__9) | (1 << SqlParserT__10) | (1 << SqlParserT__11) | (1 << SqlParserT__12) | (1 << SqlParserT__13) | (1 << SqlParserT__14) | (1 << SqlParserT__15))) != 0)) {
 			p.GetErrorHandler().RecoverInline(p)
 		} else {
 			p.GetErrorHandler().ReportMatch(p)

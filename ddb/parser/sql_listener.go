@@ -47,11 +47,8 @@ type SqlListener interface {
 	// EnterValue is called when entering the value production.
 	EnterValue(c *ValueContext)
 
-	// EnterAggregateFunctionCall is called when entering the aggregateFunctionCall production.
-	EnterAggregateFunctionCall(c *AggregateFunctionCallContext)
-
-	// EnterCommonFunctionCall is called when entering the commonFunctionCall production.
-	EnterCommonFunctionCall(c *CommonFunctionCallContext)
+	// EnterFunctionCall is called when entering the functionCall production.
+	EnterFunctionCall(c *FunctionCallContext)
 
 	// EnterAggregateFunction is called when entering the aggregateFunction production.
 	EnterAggregateFunction(c *AggregateFunctionContext)
@@ -134,11 +131,8 @@ type SqlListener interface {
 	// ExitValue is called when exiting the value production.
 	ExitValue(c *ValueContext)
 
-	// ExitAggregateFunctionCall is called when exiting the aggregateFunctionCall production.
-	ExitAggregateFunctionCall(c *AggregateFunctionCallContext)
-
-	// ExitCommonFunctionCall is called when exiting the commonFunctionCall production.
-	ExitCommonFunctionCall(c *CommonFunctionCallContext)
+	// ExitFunctionCall is called when exiting the functionCall production.
+	ExitFunctionCall(c *FunctionCallContext)
 
 	// ExitAggregateFunction is called when exiting the aggregateFunction production.
 	ExitAggregateFunction(c *AggregateFunctionContext)

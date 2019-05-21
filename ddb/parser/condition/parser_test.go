@@ -22,9 +22,13 @@ import (
 // }
 func TestMain(t *testing.T) {
 	t.Log("start")
-	stream := antlr.NewInputStream(`where not(a is not null or a BETWEEN 2 and 3) and  
-	1='exists(select count(*) from ''bb'' where bbc.aa=a)' and a=2 and (b=c or 1=2) or 
-	test||23 like '%aa' and c like 'aa%'`)
+	stream := antlr.NewInputStream(`where 
+	a=1 and 
+	b=1 and
+	c=1 or
+	d=1 and
+	e=1 and
+	f=1`)
 	lexer := parser.NewSqlLexer(stream)
 	cs := antlr.NewCommonTokenStream(lexer, 0)
 	p := parser.NewSqlParser(cs)
@@ -33,7 +37,10 @@ func TestMain(t *testing.T) {
 	p.BuildParseTrees = true
 	tree := p.WhereClause()
 	visitor := new(SqlWhereVisitorImpl)
-	spew.Dump(visitor.Visit(tree))
+	node := visitor.Visit(tree)
+	spew.Dump(node)
+	println("========================")
+	println(node.(*Node).WhereString())
 	// t.Log(tree.ToStringTree(nil, p))
 	// antlr.ParseTreeWalkerDefault.Walk(NewTreeShapeListener(), tree)
 }

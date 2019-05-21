@@ -60,11 +60,7 @@ func (v *BaseSqlVisitor) VisitValue(ctx *ValueContext) interface{} {
 	return v.VisitChildren(ctx)
 }
 
-func (v *BaseSqlVisitor) VisitAggregateFunctionCall(ctx *AggregateFunctionCallContext) interface{} {
-	return v.VisitChildren(ctx)
-}
-
-func (v *BaseSqlVisitor) VisitCommonFunctionCall(ctx *CommonFunctionCallContext) interface{} {
+func (v *BaseSqlVisitor) VisitFunctionCall(ctx *FunctionCallContext) interface{} {
 	return v.VisitChildren(ctx)
 }
 

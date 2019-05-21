@@ -99,17 +99,11 @@ func (s *BaseSqlListener) EnterValue(ctx *ValueContext) {}
 // ExitValue is called when production value is exited.
 func (s *BaseSqlListener) ExitValue(ctx *ValueContext) {}
 
-// EnterAggregateFunctionCall is called when production aggregateFunctionCall is entered.
-func (s *BaseSqlListener) EnterAggregateFunctionCall(ctx *AggregateFunctionCallContext) {}
+// EnterFunctionCall is called when production functionCall is entered.
+func (s *BaseSqlListener) EnterFunctionCall(ctx *FunctionCallContext) {}
 
-// ExitAggregateFunctionCall is called when production aggregateFunctionCall is exited.
-func (s *BaseSqlListener) ExitAggregateFunctionCall(ctx *AggregateFunctionCallContext) {}
-
-// EnterCommonFunctionCall is called when production commonFunctionCall is entered.
-func (s *BaseSqlListener) EnterCommonFunctionCall(ctx *CommonFunctionCallContext) {}
-
-// ExitCommonFunctionCall is called when production commonFunctionCall is exited.
-func (s *BaseSqlListener) ExitCommonFunctionCall(ctx *CommonFunctionCallContext) {}
+// ExitFunctionCall is called when production functionCall is exited.
+func (s *BaseSqlListener) ExitFunctionCall(ctx *FunctionCallContext) {}
 
 // EnterAggregateFunction is called when production aggregateFunction is entered.
 func (s *BaseSqlListener) EnterAggregateFunction(ctx *AggregateFunctionContext) {}
