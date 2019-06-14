@@ -42,8 +42,9 @@ func Openx(driverName, cnt string) (TxDB, error) {
 		return nil, err
 	}
 	rev := &db{
-		db:         d,
-		driverName: driverName,
+		db:            d,
+		driverName:    driverName,
+		connectString: cnt,
 	}
 	return rev, nil
 }

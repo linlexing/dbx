@@ -12,6 +12,7 @@ import (
 type DB interface {
 	common.DB
 	DriverName() string
+	ConnectString() string
 }
 
 //TxDB 一个能返回DriverName 的TxDB,并且所有的sql统一使用?作为参数占位符
@@ -19,15 +20,25 @@ type TxDB interface {
 	common.TxDB
 	Beginx() (Txer, error)
 	DriverName() string
+	ConnectString() string
+	Ping() error
 }
 
 type db struct {
-	db         *sql.DB
-	driverName string
+	db            *sql.DB
+	driverName    string
+	connectString string
+}
+
+func (d *db) Ping() error {
+	return d.db.Ping()
 }
 
 func (d *db) DriverName() string {
 	return d.driverName
+}
+func (d *db) ConnectString() string {
+	return d.connectString
 }
 func (d *db) Begin() (*sql.Tx, error) {
 	return d.db.Begin()
@@ -38,8 +49,9 @@ func (d *db) Beginx() (Txer, error) {
 		return nil, err
 	}
 	rev := &tx{
-		driverName: d.driverName,
-		tx:         t,
+		driverName:    d.DriverName(),
+		tx:            t,
+		connectString: d.ConnectString(),
 	}
 	return rev, nil
 }

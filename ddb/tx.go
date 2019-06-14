@@ -11,16 +11,21 @@ import (
 type Txer interface {
 	common.Txer
 	DriverName() string
+	ConnectString() string
 }
 
 //Tx 一个能存贮driverName的tx
 type tx struct {
 	tx         *sql.Tx
 	driverName string
+	connectString string
 }
 
 func (t *tx) DriverName() string {
 	return t.driverName
+}
+func (t *tx)ConnectString()string{
+	return t.connectString
 }
 
 func (t *tx) Exec(query string, args ...interface{}) (sql.Result, error) {
