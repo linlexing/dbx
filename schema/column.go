@@ -4,14 +4,14 @@ package schema
 type Column struct {
 	Name        string
 	Type        DataType
-	MaxLength   int
-	Null        bool
-	TrueType    string
-	FetchDriver string //上次获取字段信息时，数据库驱动的名称
+	MaxLength   int    `json:",omitempty"`
+	Null        bool   `json:",omitempty"`
+	TrueType    string `json:",omitempty"`
+	FetchDriver string `json:",omitempty"` //上次获取字段信息时，数据库驱动的名称
 
-	Index      bool
-	IndexName  string   //如果该字段有索引，存放数据库中索引的名称
-	FormerName []string //曾用名，可以放多个，一个字段改名后，旧名称应当永久不使用，方便从任意版本更新到最新版本
+	Index      bool     `json:",omitempty"`
+	IndexName  string   `json:",omitempty"` //如果该字段有索引，存放数据库中索引的名称
+	FormerName []string `json:",omitempty"` //曾用名，可以放多个，一个字段改名后，旧名称应当永久不使用，方便从任意版本更新到最新版本
 }
 
 //Eque 判定两个字段定义是否相等
