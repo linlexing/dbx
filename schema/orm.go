@@ -404,6 +404,7 @@ func fieldsFromStruct(vtype reflect.Type, conv converFieldName, parentName strin
 	}
 	return rev, nil
 }
+
 func struct2Table(tableName string, vtype reflect.Type, conv converFieldName,
 	parentName string, parentPath []int, root bool) ([]*Table, error) {
 	list, err := fieldsFromStruct(vtype, conv, parentName, parentPath, root)
