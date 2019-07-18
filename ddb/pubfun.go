@@ -61,11 +61,11 @@ func ScanStrings(db common.Queryer, strSQL string, args ...interface{}) (strs []
 
 	strs = []string{}
 	for rows.Next() {
-		var str string
+		var str sql.NullString
 		if err = rows.Scan(&str); err != nil {
 			return
 		}
-		strs = append(strs, str)
+		strs = append(strs, str.String)
 	}
 	err = rows.Err()
 	return
