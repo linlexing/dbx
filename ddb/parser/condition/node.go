@@ -34,12 +34,15 @@ type Node struct {
 	Children  []*Node
 }
 
+//NewLogicNode 分配一个逻辑节点，and、or
 func NewLogicNode(nodeType NodeType, children []*Node) *Node {
 	return &Node{
 		NodeType: nodeType,
 		Children: children,
 	}
 }
+
+//NewConditionNode 分配一个条件节点
 func NewConditionNode(field string, operate pageselect.Operator, value string) *Node {
 	return &Node{
 		NodeType: NodeCondition,
@@ -48,6 +51,8 @@ func NewConditionNode(field string, operate pageselect.Operator, value string) *
 		Value:    value,
 	}
 }
+
+//NewPlainNode 分配一个文本条件节点
 func NewPlainNode(text string) *Node {
 	return &Node{
 		NodeType:  NodePlain,
@@ -190,8 +195,25 @@ func (node *Node) string(prev string) string {
 		panic("not impl")
 	}
 }
+
+//WhereString 返回规范化的where条件
 func (node *Node) WhereString() string {
 	return node.string("")
+}
+
+//ReferToColumns 条件中涉及到的列
+func (node *Node) ReferToColumns() []string {
+	rev := []string{}
+	switch node.NodeType {
+	case NodeAnd, NodeOr:
+		for _, one := range node.Children {
+			rev = append(rev, one.ReferToColumns()...)
+		}
+	case NodeCondition:
+		rev = append(rev, node.Field)
+	case NodePlain:
+	}
+	return rev
 }
 
 //ParserNode 根据一个where条件，返回node

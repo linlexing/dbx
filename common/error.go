@@ -2,6 +2,7 @@ package common
 
 import (
 	"fmt"
+	"reflect"
 	"strings"
 	"time"
 )
@@ -32,6 +33,9 @@ func NewSQLError(err error, sql string, params ...interface{}) SQLError {
 	}
 }
 func (e SQLError) Error() string {
+	if yes, table := isDuplicatePKErrorPostgres(e.Err); yes {
+		return "DuplicatePKError:" + table
+	}
 	l := 0
 	content := fmt.Sprintf("%#v", e.Params)
 	switch tv := e.Params.(type) {
@@ -52,4 +56,19 @@ func (e SQLError) Error() string {
 		content = strings.Join(list, "\n")
 	}
 	return fmt.Sprintf("%s\n%s\nparams len is %d,content is:\n%s", e.Err, e.SQL, l, content)
+}
+
+//isDuplicatePKErrorPostgres 是否主键重复错误，以后可以优化成用reflect来读取结构值
+func isDuplicatePKErrorPostgres(err error) (yes bool, table string) {
+	v := reflect.ValueOf(err)
+	if v.Kind() != reflect.Ptr {
+		return
+	}
+	v = v.Elem()
+	if vt := v.Type(); vt.PkgPath() == "github.com/lib/pq" && vt.Name() == "Error" {
+		if v.FieldByName("Code").String() == "23505" {
+			return true, v.FieldByName("Table").String()
+		}
+	}
+	return false, ""
 }
