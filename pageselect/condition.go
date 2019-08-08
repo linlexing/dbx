@@ -7,6 +7,13 @@ import (
 	"github.com/linlexing/dbx/schema"
 )
 
+const (
+	//AND 逻辑
+	AND = "AND"
+	//OR 逻辑
+	OR = "OR"
+)
+
 //ConditionLine 条件一行
 type ConditionLine struct {
 	LeftBrackets string
@@ -16,6 +23,7 @@ type ConditionLine struct {
 	Value         string
 	RightBrackets string
 	Logic         string
+	PlainText     string //与上面的条件成and关系
 }
 
 //SQLCondition 模板条件,多行并且可以带一段高级条件
@@ -28,9 +36,19 @@ type SQLCondition struct {
 //GetExpress 根据条件返回一个SQL条件
 func (c *ConditionLine) GetExpress(driver string, dataType schema.DataType) string {
 	//加上括号
-	return fmt.Sprintf("%s%s%s", c.LeftBrackets,
-		Find(driver).GetOperatorExpress(c.Operators, dataType, c.ColumnName, c.Value),
-		c.RightBrackets)
+	rev := ""
+	if len(c.ColumnName) > 0 {
+		rev = fmt.Sprintf("%s%s%s", c.LeftBrackets,
+			Find(driver).GetOperatorExpress(c.Operators, dataType, c.ColumnName, c.Value),
+			c.RightBrackets)
+	}
+	if len(c.PlainText) > 0 {
+		if len(rev) > 0 {
+			rev += " " + AND + " "
+		}
+		rev += "(" + c.PlainText + ")"
+	}
+	return rev
 }
 
 //BuildWhere 构造where条件，可选传入一个schema.Table来更准确地界定每列的数据类型
@@ -59,7 +77,7 @@ func (c *SQLCondition) BuildWhere(driver string, cols ColumnTypes) string {
 	}
 	if len(c.PlainText) > 0 {
 		if len(strLines) > 0 {
-			return fmt.Sprintf("(\n%s\n) and (\n%s\n)", strings.Join(strLines, "\n"), c.PlainText)
+			return fmt.Sprintf("(\n%s\n) %s (\n%s\n)", strings.Join(strLines, "\n"), AND, c.PlainText)
 		}
 		return c.PlainText
 

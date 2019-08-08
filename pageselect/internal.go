@@ -29,14 +29,14 @@ func buildCondition(order, divide []string) []*ConditionLine {
 					ColumnName: colName,
 					Operators:  opt,
 					Value:      divide[j],
-					Logic:      "AND",
+					Logic:      AND,
 				})
 			} else {
 				lines = append(lines, &ConditionLine{
 					ColumnName: colName,
 					Operators:  OperatorEqu, // "=",
 					Value:      divide[j],
-					Logic:      "AND",
+					Logic:      AND,
 				})
 			}
 		}
@@ -44,7 +44,7 @@ func buildCondition(order, divide []string) []*ConditionLine {
 			lines[0].LeftBrackets = "("
 			lines[len(lines)-1].RightBrackets = ")"
 		}
-		lines[len(lines)-1].Logic = "OR"
+		lines[len(lines)-1].Logic = OR
 		result = append(result, lines...)
 	}
 	return result
@@ -56,7 +56,7 @@ func renderManualPageSQL(driver string, strSQL string, columnList, whereList, or
 	var columns string
 	var orderby string
 	if len(whereList) > 0 {
-		where = "(" + strings.Join(whereList, " and ") + ")"
+		where = "(" + strings.Join(whereList, " "+AND+" ") + ")"
 	}
 	if len(columnList) > 0 {
 		columns = strings.Join(columnList, ",")

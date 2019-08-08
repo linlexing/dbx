@@ -231,3 +231,53 @@ func ParserNode(val string) *Node {
 	return visitor.Visit(tree).(*Node)
 
 }
+
+//ConditionLines 遍历树，返回条件数组
+func (node *Node) ConditionLines() []*pageselect.ConditionLine {
+	rev := []*pageselect.ConditionLine{}
+	switch node.NodeType {
+	case NodeAnd:
+		for _, one := range node.Children {
+			subConts := one.ConditionLines()
+			//如果已经有条件，且子条件是多行，则需要加上括号和and
+			if len(rev) > 0 && len(subConts) > 1 {
+				subConts[0].LeftBrackets += "("
+				subConts[len(subConts)-1].RightBrackets += ")"
+			}
+			if len(rev) > 0 {
+				rev[len(rev)-1].Logic = pageselect.AND
+			}
+			rev = append(rev, subConts...)
+		}
+	case NodeOr:
+		for _, one := range node.Children {
+			subConts := one.ConditionLines()
+			//如果已经有条件，且子条件是多行，则需要加上括号和and
+			if len(rev) > 0 && len(subConts) > 1 {
+				subConts[0].LeftBrackets += "("
+				subConts[len(subConts)-1].RightBrackets += ")"
+			}
+			if len(rev) > 0 {
+				rev[len(rev)-1].Logic = pageselect.OR
+			}
+			rev = append(rev, subConts...)
+		}
+		//OR最后需要加上括号
+		if len(rev) > 1 {
+			rev[0].LeftBrackets += "("
+			rev[len(rev)-1].RightBrackets += ")"
+		}
+
+	case NodeCondition:
+		rev = append(rev, &pageselect.ConditionLine{
+			ColumnName: node.Field,
+			Operators:  node.Operate,
+			Value:      node.Value,
+		})
+	case NodePlain:
+		rev = append(rev, &pageselect.ConditionLine{
+			PlainText: node.PlainText,
+		})
+	}
+	return rev
+}

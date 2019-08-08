@@ -136,7 +136,7 @@ func (s *PageSelect) BuildSQL(driver string) (strSQL string, err error) {
 			sel = strings.Join(s.Columns, ",")
 		}
 		if len(whereList) > 0 {
-			where = " where " + strings.Join(whereList, " and ")
+			where = " where " + strings.Join(whereList, " "+AND+" ")
 		}
 		if len(orderList) > 0 {
 			orderby = " order by " + strings.Join(orderList, ",")
@@ -238,7 +238,7 @@ func (s *PageSelect) BuildTotalSQL(driver string, cols ...string) (strSQL string
 
 	} else {
 		if len(whereList) > 0 {
-			where = " where " + strings.Join(whereList, " and ")
+			where = " where " + strings.Join(whereList, " "+AND+" ")
 		}
 		strSQL = fmt.Sprintf("select %s from (%s) wholesql %s", strings.Join(totalCoumns, ","), s.SQL, where)
 	}
@@ -271,7 +271,7 @@ func (s *PageSelect) BuildRowCountSQL(driver string) (strSQL string, err error) 
 		}
 	} else {
 		if len(whereList) > 0 {
-			where = " where " + strings.Join(whereList, " and ")
+			where = " where " + strings.Join(whereList, " "+AND+" ")
 		}
 		strSQL = fmt.Sprintf("select count(*) from (%s) wholesql %s", s.SQL, where)
 	}
