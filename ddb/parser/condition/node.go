@@ -114,11 +114,14 @@ func (node *Node) string(prev string) string {
 		return prev + "(\n" + strings.Join(list, " OR\n") + "\n" + prev + ")"
 	case NodeCondition:
 		switch node.Operate {
-		case pageselect.OperatorEqu, pageselect.OperatorNotEqu, pageselect.OperatorGreaterThan,
+		case pageselect.OperatorEqu, pageselect.OperatorGreaterThan,
 			pageselect.OperatorGreaterThanOrEqu, pageselect.OperatorLessThan,
 			pageselect.OperatorLessThanOrEqu, pageselect.OperatorRegexp, pageselect.OperatorNotRegexp:
 			return prev +
 				fmt.Sprintf("%s %s %s", node.Field, node.Operate.String(), signString(node.Value))
+		case pageselect.OperatorNotEqu:
+			return prev +
+				fmt.Sprintf("%s <> %s", node.Field, signString(node.Value))
 		//OperatorLike 包含
 		case pageselect.OperatorLike:
 			return prev +
@@ -150,7 +153,7 @@ func (node *Node) string(prev string) string {
 				list = append(list, signString(one))
 			}
 			return prev +
-				fmt.Sprintf("%s NOT IN (%s)", node.Field, strfun.EncodeCSV(list))
+				fmt.Sprintf("%s IN (%s)", node.Field, strfun.EncodeCSV(list))
 			//OperatorNotIn 不在列表
 		case pageselect.OperatorNotIn:
 			list := []string{}
@@ -158,7 +161,7 @@ func (node *Node) string(prev string) string {
 				list = append(list, signString(one))
 			}
 			return prev +
-				fmt.Sprintf("%s IN (%s)", node.Field, strfun.EncodeCSV(list))
+				fmt.Sprintf("%s NOT IN (%s)", node.Field, strfun.EncodeCSV(list))
 			//OperatorIsNull 为空
 		case pageselect.OperatorIsNull:
 			return prev +
