@@ -116,11 +116,17 @@ func (node *Node) string(prev string) string {
 		switch node.Operate {
 		case pageselect.OperatorEqu, pageselect.OperatorNotEqu, pageselect.OperatorGreaterThan,
 			pageselect.OperatorGreaterThanOrEqu, pageselect.OperatorLessThan,
-			pageselect.OperatorLessThanOrEqu, pageselect.OperatorLike,
-			pageselect.OperatorNotLike, pageselect.OperatorRegexp, pageselect.OperatorNotRegexp:
+			pageselect.OperatorLessThanOrEqu, pageselect.OperatorRegexp, pageselect.OperatorNotRegexp:
 			return prev +
-				fmt.Sprintf("%s %s %s", node.Field, node.Operate.String(), node.Value)
-
+				fmt.Sprintf("%s %s %s", node.Field, node.Operate.String(), signString(node.Value))
+		//OperatorLike 包含
+		case pageselect.OperatorLike:
+			return prev +
+				fmt.Sprintf("%s LIKE %s", node.Field, signString("%"+node.Value+"%"))
+		//OperatorNotLike 不包含
+		case pageselect.OperatorNotLike:
+			return prev +
+				fmt.Sprintf("%s NOT LIKE %s", node.Field, signString(node.Value))
 			//OperatorPrefix 前缀
 		case pageselect.OperatorPrefix:
 			return prev +
@@ -156,11 +162,11 @@ func (node *Node) string(prev string) string {
 			//OperatorIsNull 为空
 		case pageselect.OperatorIsNull:
 			return prev +
-				fmt.Sprintf("%s IN NULL", node.Field)
+				fmt.Sprintf("%s IS NULL", node.Field)
 			//OperatorIsNotNull is not null
 		case pageselect.OperatorIsNotNull:
 			return prev +
-				fmt.Sprintf("%s IN NOT NULL", node.Field)
+				fmt.Sprintf("%s IS NOT NULL", node.Field)
 
 			//OperatorLengthEqu 长度等于
 		case pageselect.OperatorLengthEqu:

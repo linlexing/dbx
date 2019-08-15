@@ -18,6 +18,9 @@ type SqlWhereVisitorImpl struct {
 
 //去除单引号，如果有的话
 func decodeSignStringIf(str string) string {
+	if len(str) < 2 {
+		return str
+	}
 	if str[0] == '\'' && str[len(str)-1] == '\'' {
 		return strings.ReplaceAll(str[1:len(str)-1], "''", "'")
 	}
@@ -159,8 +162,13 @@ func (s *SqlWhereVisitorImpl) VisitLogicExpression(ctx *parser.LogicExpressionCo
 			return NewPlainNode(getText(ctx))
 		}
 		str := decodeSignStringIf(val.GetText())
-		first := str[0]
-		last := str[len(str)-1]
+		var first, last byte
+		if len(str) > 0 {
+			first = str[0]
+		}
+		if len(str) > 1 {
+			last = str[len(str)-1]
+		}
 
 		var ope pageselect.Operator
 		var valStr string
@@ -195,7 +203,7 @@ func (s *SqlWhereVisitorImpl) VisitLogicExpression(ctx *parser.LogicExpressionCo
 		}
 		return NewConditionNode(field.GetText(), ope, valStr)
 	}
-	//LIKE/NOT LIKE
+	//IS NULL/IS NOT NULL
 	if is, not, null, field :=
 		ctx.IS(), ctx.NOT(), ctx.NULL(), ctx.Expr(0); is != nil && null != nil && field != nil {
 		if !isColumn(field) {
