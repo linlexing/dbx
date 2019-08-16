@@ -13,6 +13,15 @@ import (
 	"github.com/linlexing/dbx/schema"
 )
 
+const (
+	//OrderAsc 升序
+	OrderAsc = "+"
+	//OrderDesc 降序
+	OrderDesc = "-"
+	//OrderNone 无排序
+	OrderNone = ""
+)
+
 var (
 	opeExpre = map[string]PageSelecter{}
 )
@@ -87,11 +96,8 @@ func (s *PageSelect) BuildSQL(driver string) (strSQL string, err error) {
 			if err != nil {
 				return
 			}
-
 		}
-
 		return
-
 	}
 	//where
 	if len(s.Conditions) > 0 {
@@ -104,9 +110,9 @@ func (s *PageSelect) BuildSQL(driver string) (strSQL string, err error) {
 	if len(s.Order) > 0 {
 		for _, v := range s.Order {
 
-			if strings.HasPrefix(v, "-") {
+			if strings.HasPrefix(v, OrderDesc) {
 				orderList = append(orderList, Find(driver).SortByDesc(v[1:], s.isNotNullField(v[1:])))
-			} else if strings.HasPrefix(v, "+") {
+			} else if strings.HasPrefix(v, OrderAsc) {
 				orderList = append(orderList, Find(driver).SortByAsc(v[1:], s.isNotNullField(v[1:])))
 			} else {
 				orderList = append(orderList, Find(driver).SortByAsc(v, s.isNotNullField(v)))
