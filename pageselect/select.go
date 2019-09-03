@@ -327,10 +327,14 @@ func (s *PageSelect) RowCount(db common.DB, driver string) (r int64, err error) 
 	if strSQL, err = s.BuildRowCountSQL(driver); err != nil {
 		return
 	}
-
-	if err = db.QueryRow(strSQL).Scan(&r); err != nil {
-		err = common.NewSQLError(err, strSQL)
-		log.Println(err)
+	row := db.QueryRow(strSQL)
+	if err = row.Scan(&r); err != nil {
+		var f float64
+		if err = row.Scan(&f); err != nil {
+			err = common.NewSQLError(err, strSQL)
+			log.Println(err)
+		}
+		r = int64(f)
 	}
 	return
 
