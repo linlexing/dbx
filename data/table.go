@@ -315,7 +315,7 @@ func (t *Table) Count(where string, params ...interface{}) (rev int64, err error
 
 		strSQL += " where " + where
 	}
-	rev, err = CountRow(t.DB, t.bind(strSQL), params...)
+	rev, err = AsInt(t.DB, t.bind(strSQL), params...)
 	if err != nil {
 		err = common.NewSQLError(err, strSQL, params...)
 	}
@@ -346,10 +346,7 @@ func (t *Table) checkAndConvertRow(row map[string]interface{}) error {
 			}
 		}
 	}
-	if err := t.checkNotNull(row); err != nil {
-		return err
-	}
-	return nil
+	return t.checkNotNull(row)
 }
 
 //ImportFromTable 从另一个表中导入数据，表中列数量、名称、类型必须一致

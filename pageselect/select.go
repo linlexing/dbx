@@ -5,10 +5,10 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"strconv"
 	"strings"
 
 	"github.com/linlexing/dbx/common"
+	"github.com/linlexing/dbx/data"
 	"github.com/linlexing/dbx/render"
 	"github.com/linlexing/dbx/scan"
 	"github.com/linlexing/dbx/schema"
@@ -328,25 +328,9 @@ func (s *PageSelect) RowCount(db common.DB, driver string) (r int64, err error) 
 	if strSQL, err = s.BuildRowCountSQL(driver); err != nil {
 		return
 	}
-	row := db.QueryRow(strSQL)
-	c := []byte{}
-	if err := row.Scan(&c); err != nil {
-		log.Println(err)
+	r, err = data.AsInt(db, strSQL)
+	if err != nil {
 		err = common.NewSQLError(err, strSQL)
-	}
-	str := string(c)
-	if strings.Contains(str, ".") {
-		var f float64
-		f, err = strconv.ParseFloat(str, 64)
-		if err != nil {
-			err = common.NewSQLError(err, strSQL)
-		}
-		r = int64(f)
-	} else {
-		r, err = strconv.ParseInt(str, 10, 64)
-		if err != nil {
-			err = common.NewSQLError(err, strSQL)
-		}
 	}
 	return
 }
