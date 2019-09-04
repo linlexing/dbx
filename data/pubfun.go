@@ -1,6 +1,9 @@
 package data
 
 import (
+	"log"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/jmoiron/sqlx"
@@ -27,6 +30,31 @@ func Bind(driver, strSQL string) string {
 //In 将一个参数类型是数组的参数对应的?，扩展成多个?，并把参数也扁平化
 func In(query string, args ...interface{}) (string, []interface{}, error) {
 	return sqlx.In(query, args...)
+}
+
+// CountRow 记录总数
+func CountRow(db common.DB, strSQL string, args ...interface{}) (r int64, err error) {
+	c := []byte{}
+	row := db.QueryRow(strSQL, args...)
+	if err := row.Scan(&c); err != nil {
+		log.Println(err)
+		err = common.NewSQLError(err, strSQL)
+	}
+	str := string(c)
+	if strings.Contains(str, ".") {
+		var f float64
+		f, err = strconv.ParseFloat(str, 64)
+		if err != nil {
+			err = common.NewSQLError(err, strSQL)
+		}
+		r = int64(f)
+	} else {
+		r, err = strconv.ParseInt(str, 10, 64)
+		if err != nil {
+			err = common.NewSQLError(err, strSQL)
+		}
+	}
+	return
 }
 
 //RunAtTx 在一个事务中运行，自动处理commit 和rollback

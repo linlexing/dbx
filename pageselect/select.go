@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"strconv"
 	"strings"
 
 	"github.com/linlexing/dbx/common"
@@ -328,16 +329,26 @@ func (s *PageSelect) RowCount(db common.DB, driver string) (r int64, err error) 
 		return
 	}
 	row := db.QueryRow(strSQL)
-	if err = row.Scan(&r); err != nil {
+	c := []byte{}
+	if err := row.Scan(&c); err != nil {
+		log.Println(err)
+		err = common.NewSQLError(err, strSQL)
+	}
+	str := string(c)
+	if strings.Contains(str, ".") {
 		var f float64
-		if err = row.Scan(&f); err != nil {
+		f, err = strconv.ParseFloat(str, 64)
+		if err != nil {
 			err = common.NewSQLError(err, strSQL)
-			log.Println(err)
 		}
 		r = int64(f)
+	} else {
+		r, err = strconv.ParseInt(str, 10, 64)
+		if err != nil {
+			err = common.NewSQLError(err, strSQL)
+		}
 	}
 	return
-
 }
 
 //NewPageSelect 新建一个查询类

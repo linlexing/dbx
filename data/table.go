@@ -315,9 +315,11 @@ func (t *Table) Count(where string, params ...interface{}) (rev int64, err error
 
 		strSQL += " where " + where
 	}
-	if err = t.DB.QueryRow(t.bind(strSQL), params...).Scan(&rev); err != nil {
+	rev, err = CountRow(t.DB, t.bind(strSQL), params...)
+	if err != nil {
 		err = common.NewSQLError(err, strSQL, params...)
 	}
+
 	return
 }
 
