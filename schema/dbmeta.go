@@ -37,6 +37,8 @@ type Meta interface {
 	TableNames(db common.DB) (names []string, err error)
 	DropIndexIfExistsSQL(db common.DB, indexName, tableName string) ([]string, error)
 	CreateIndexIfNotExistsSQL(db common.DB, unique bool, indexName, tableName, express string) ([]string, error)
+	CreateSchemaSQL(db common.DB, dbInfo DataBaseInfo) ([]string, error)
+	DropSchemaSQL(db common.DB, dbInfo DataBaseInfo) ([]string, error)
 }
 
 //Register 注册一个新元数据操作驱动。

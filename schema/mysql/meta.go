@@ -81,3 +81,19 @@ func (m *meta) DropIndexIfExistsSQL(db common.DB, indexName, tableName string) (
 func (m *meta) CreateIndexIfNotExistsSQL(db common.DB, unique bool, indexName, tableName, express string) ([]string, error) {
 	panic(errors.New("not impl"))
 }
+
+// CreateSchemaSQL 建库
+func (m *meta) CreateSchemaSQL(db common.DB, dbInfo schema.DataBaseInfo) ([]string, error) {
+	// createDB := fmt.Sprintf("CREATE DATABASE %s", dbInfo.DBName)
+	// createUser := fmt.Sprintf(`GRANT ALL PRIVILEGES ON %s.* TO %s@"%s" IDENTIFIED BY "%s"`,
+	// 	dbInfo.DBName, dbInfo.UserName, "%", dbInfo.PassWord)
+	// flush := fmt.Sprintf("FLUSH PRIVILEGES")
+	// return []string{createDB, createUser, flush}, nil
+	return []string{}, nil
+}
+
+// DropSchemaSQL 删库
+func (m *meta) DropSchemaSQL(db common.DB, dbInfo schema.DataBaseInfo) ([]string, error) {
+
+	return []string{}, nil
+}

@@ -119,3 +119,15 @@ func (m *meta) CreateIndexIfNotExistsSQL(db common.DB, unique bool, indexName, t
 	}
 	return []string{fmt.Sprintf("CREATE %s IF NOT EXISTS %s ON %s(%s)", idx, indexName, tableName, express)}, nil
 }
+
+func (m *meta) CreateSchemaSQL(db common.DB, dbInfo schema.DataBaseInfo) ([]string, error) {
+	return []string{
+		fmt.Sprintf("CREATE USER %s WITH PASSWORD '%s'", dbInfo.UserName, dbInfo.PassWord),
+		fmt.Sprintf("CREATE SCHEMA %s AUTHORIZATION %s", dbInfo.DBName, dbInfo.UserName)}, nil
+}
+
+func (m *meta) DropSchemaSQL(db common.DB, dbInfo schema.DataBaseInfo) ([]string, error) {
+	return []string{
+		fmt.Sprintf("DROP SCHEMA %s CASCADE", dbInfo.DBName),
+		fmt.Sprintf("DROP USER %s", dbInfo.UserName)}, nil
+}

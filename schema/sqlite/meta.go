@@ -113,3 +113,13 @@ func (m *meta) CreateIndexIfNotExistsSQL(db common.DB, unique bool, indexName, t
 	}
 	return []string{fmt.Sprintf("create %s if not exists %s on %s(%s)", idx, indexName, tableName, express)}, nil
 }
+
+/*
+	open数据库时 若数据库不存在则会自动创建
+*/
+func (m *meta) CreateSchemaSQL(db common.DB, dbInfo schema.DataBaseInfo) ([]string, error) {
+	return []string{}, nil
+}
+func (m *meta) DropSchemaSQL(db common.DB, dbInfo schema.DataBaseInfo) ([]string, error) {
+	return []string{}, nil
+}

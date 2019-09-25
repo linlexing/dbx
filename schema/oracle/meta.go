@@ -113,3 +113,30 @@ func (m *meta) CreateIndexIfNotExistsSQL(db common.DB, unique bool, indexName, t
 		END;`, strings.ToUpper(indexName),
 		fmt.Sprintf("create %s %s on %s(%s)", idx, indexName, tableName, express))}, nil
 }
+
+/*
+	创建用户
+	创建表空间
+	修改用户默认表空间
+	为用户赋权
+*/
+func (m *meta) CreateSchemaSQL(db common.DB, dbInfo schema.DataBaseInfo) ([]string, error) {
+	// createUser := fmt.Sprintf("CREATE USER %s IDENTIFIED BY %s", dbInfo.UserName, dbInfo.PassWord)
+	// createTableSpace := fmt.Sprintf(`
+	// 	CREATE TABLESPACE %s DATAFILE '%s' SIZE %dM
+	// `, dbInfo.DBName, dbInfo.DataFile, dbInfo.DBSize)
+	// alterUser := fmt.Sprintf("ALTER USER %s DEFAULT TABLESPACE %s", dbInfo.UserName, dbInfo.DBName)
+	// grantUser := fmt.Sprintf("GRANT DBA TO %s", dbInfo.UserName)
+	// return []string{createUser, createTableSpace, alterUser, grantUser}, nil
+	return []string{}, nil
+}
+
+/*
+	删除用户 表空间
+*/
+func (m *meta) DropSchemaSQL(db common.DB, dbInfo schema.DataBaseInfo) ([]string, error) {
+	// deleteUser := fmt.Sprintf("DROP USER %s CASCADE", dbInfo.UserName)
+	// deleteTableSpace := fmt.Sprintf("DROP TABLESPACE %s INCLUDING CONTENTS AND DATAFILES", dbInfo.DBName)
+	// return []string{deleteUser, deleteTableSpace}, nil
+	return []string{}, nil
+}
