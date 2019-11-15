@@ -3,6 +3,7 @@ package ddb
 import (
 	"database/sql"
 	"log"
+	"time"
 
 	"github.com/linlexing/dbx/common"
 	"github.com/linlexing/dbx/data"
@@ -22,12 +23,29 @@ type TxDB interface {
 	DriverName() string
 	ConnectString() string
 	Ping() error
+	SetConnMaxLifetime(d time.Duration)
+	SetMaxIdleConns(n int)
+	SetMaxOpenConns(n int)
+	Stats() sql.DBStats
 }
 
 type db struct {
 	db            *sql.DB
 	driverName    string
 	connectString string
+}
+
+func (d *db) SetConnMaxLifetime(t time.Duration) {
+	d.db.SetConnMaxLifetime(t)
+}
+func (d *db) SetMaxIdleConns(n int) {
+	d.db.SetMaxIdleConns(n)
+}
+func (d *db) SetMaxOpenConns(n int) {
+	d.db.SetMaxOpenConns(n)
+}
+func (d *db) Stats() sql.DBStats {
+	return d.db.Stats()
 }
 
 func (d *db) Ping() error {
