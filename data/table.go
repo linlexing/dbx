@@ -646,20 +646,27 @@ func numberOfDigits(f float64) int {
 	return 0
 }
 func (t *Table) buildWhere(row map[string]interface{}) (string, []interface{}) {
+	pkMap := map[string]struct{}{}
+	for _, one := range t.PrimaryKeys {
+		pkMap[one] = struct{}{}
+	}
+
 	strWhere := []string{}
 	newRow := []interface{}{}
 	for k, v := range row {
 		//如果是没有长度的string，即text，以及bytea、datetime不参与where条件
 		//float因为精度问题，超过六位小数不能用来做where
+		//如果是主键，则一定参与条件
 		fld := t.ColumnByName(k)
 		if v == nil {
 			strWhere = append(strWhere, fmt.Sprintf("%s is null", k))
 			continue
 		}
-		if fld.Type == schema.TypeBytea ||
+		_, isPK := pkMap[k]
+		if !isPK && (fld.Type == schema.TypeBytea ||
 			fld.Type == schema.TypeDatetime ||
 			(fld.Type == schema.TypeFloat && numberOfDigits(v.(float64)) > 6) ||
-			(fld.Type == schema.TypeString && fld.MaxLength <= 0) {
+			(fld.Type == schema.TypeString && fld.MaxLength <= 0)) {
 			continue
 		}
 		if v == nil {
