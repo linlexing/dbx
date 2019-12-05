@@ -3,8 +3,8 @@ package common
 import (
 	"fmt"
 	"reflect"
-	"strings"
-	"time"
+
+	"github.com/davecgh/go-spew/spew"
 )
 
 //SQLError 表示一个sql语句执行出错
@@ -36,26 +36,27 @@ func (e SQLError) Error() string {
 	if yes, table := isDuplicatePKErrorPostgres(e.Err); yes {
 		return "DuplicatePKError:" + table
 	}
-	l := 0
-	content := fmt.Sprintf("%#v", e.Params)
-	switch tv := e.Params.(type) {
-	case []interface{}:
-		l = len(tv)
-	case map[string]interface{}:
-		l = len(tv)
-		list := []string{}
-		for k, v := range tv {
-			switch subtv := v.(type) {
-			case time.Time:
-				list = append(list, fmt.Sprintf("%s(time):%s", k, subtv.Format(time.RFC3339)))
-			default:
-				list = append(list, fmt.Sprintf("%s(%T):%#v", k, v, v))
-			}
+	// l := 0
+	// content := fmt.Sprintf("%#v", e.Params)
+	// switch tv := e.Params.(type) {
+	// case []interface{}:
+	// 	l = len(tv)
+	// case map[string]interface{}:
+	// 	l = len(tv)
+	// 	list := []string{}
+	// 	for k, v := range tv {
+	// 		switch subtv := v.(type) {
+	// 		case time.Time:
+	// 			list = append(list, fmt.Sprintf("%s(time):%s", k, subtv.Format(time.RFC3339)))
+	// 		default:
+	// 			list = append(list, fmt.Sprintf("%s(%T):%#v", k, v, v))
+	// 		}
 
-		}
-		content = strings.Join(list, "\n")
-	}
-	return fmt.Sprintf("%s\n%s\nparams len is %d,content is:\n%s", e.Err, e.SQL, l, content)
+	// 	}
+	// 	content = strings.Join(list, "\n")
+	// }
+	// return fmt.Sprintf("%s\n%s\nparams len is %d,content is:\n%s", e.Err, e.SQL, l, content)
+	return fmt.Sprintf("%s\n%s\nparams:\n%s", e.Err, e.SQL, spew.Sdump(e.Params))
 }
 
 //isDuplicatePKErrorPostgres 是否主键重复错误，以后可以优化成用reflect来读取结构值
