@@ -267,7 +267,7 @@ func (d DataType) ParseScan(v interface{}) interface{} {
 		}
 	case TypeDatetime:
 		switch tv := v.(type) {
-		case time.Time:
+		case time.Time, *time.Time:
 			return tv
 		case string:
 			tm, err := strToDate(tv)

@@ -30,7 +30,7 @@ type structField struct {
 //数据库类型 Go类型
 //String string struct slice map bool
 //Bytea  []byte struct slice map
-//Datetime time.Time
+//Datetime time.Time *time.Time
 //Float  float64
 //Int    int64,bool
 //child []struct
@@ -73,7 +73,8 @@ func (s *structField) checkType(root bool) error {
 		}
 		return fmt.Errorf("typea type must be one of []byte、Struct、Slice、Map")
 	case TypeDatetime:
-		if st.ConvertibleTo(reflect.TypeOf(time.Time{})) {
+		if st.ConvertibleTo(reflect.TypeOf(time.Time{})) ||
+			st.ConvertibleTo(reflect.TypeOf(&time.Time{})) {
 			return nil
 		}
 		return fmt.Errorf("datetime type must is time.Time")
@@ -118,6 +119,13 @@ func (s *structField) gob() bool {
 
 //isZero 判断一个值是否是0值
 func (s *structField) isZero(val reflect.Value) bool {
+	if val.IsValid() == false {
+		return true
+	}
+	//先用底层默认的处理一遍，其实已经包含了下面的绝大部分条件
+	if val.IsZero() {
+		return true
+	}
 	switch s.st.Kind() {
 	case reflect.Slice, reflect.Map:
 		if val.IsNil() {
@@ -288,7 +296,17 @@ func (s *structField) set(obj reflect.Value, val interface{}) error {
 			return nil
 		}
 	}
-	s.setv(obj, reflect.ValueOf(val))
+	//date类型,如果字段是*time.Time,需要特殊识别
+	if tv, ok := val.(time.Time); ok && s.define.Type == TypeDatetime && s.st.Kind() == reflect.Ptr {
+		//0值其实是nil
+		if tv.IsZero() {
+			s.setv(obj, reflect.ValueOf(nil))
+		} else {
+			s.setv(obj, reflect.ValueOf(&tv))
+		}
+	} else {
+		s.setv(obj, reflect.ValueOf(val))
+	}
 	return nil
 }
 func (s *structField) setv(obj reflect.Value, val reflect.Value) {
