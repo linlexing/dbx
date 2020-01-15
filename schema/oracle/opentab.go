@@ -46,6 +46,7 @@ func getPk(db common.DB, tableName string) ([]string, error) {
 		log.Println(err)
 		return nil, err
 	}
+	defer rows.Close()
 	var col string
 	for rows.Next() {
 		if err := rows.Scan(&col); err != nil {
@@ -53,6 +54,11 @@ func getPk(db common.DB, tableName string) ([]string, error) {
 		}
 		result = append(result, col)
 	}
+	// //为空的，打印语句
+	// if len(result) == 0 {
+	// 	log.Printf("[%s.%s] primary key is null\n", strings.ToUpper(schemaName), strings.ToUpper(table))
+	// 	log.Println(strSQL)
+	// }
 	return result, rows.Err()
 }
 func getColumns(db common.DB, schemaName, table string) ([]*schema.Column, error) {
