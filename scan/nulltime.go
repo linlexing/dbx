@@ -16,6 +16,13 @@ type NullTime struct {
 // Scan implements the Scanner interface.
 func (nt *NullTime) Scan(value interface{}) error {
 	nt.Time, nt.Valid = value.(time.Time)
+	//UTC时区的，需要转换成当前时区
+	// println(nt.Time.Location().String())
+	if nt.Time.Location().String() == "UTC" {
+		nt.Time = time.Date(nt.Time.Year(), nt.Time.Month(), nt.Time.Day(),
+			nt.Time.Hour(), nt.Time.Minute(), nt.Time.Second(),
+			nt.Time.Nanosecond(), time.Local)
+	}
 	return nil
 }
 
