@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/Sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 	ps "github.com/linlexing/dbx/pageselect"
 	"github.com/linlexing/dbx/scan"
 	"github.com/linlexing/dbx/schema"

@@ -1,8 +1,10 @@
 package condition
 
 import (
-	"dbweb/lib/strfun"
+	"bytes"
+	"encoding/csv"
 	"fmt"
+	"log"
 	"strings"
 
 	"github.com/antlr/antlr4/runtime/Go/antlr"
@@ -23,6 +25,31 @@ const (
 	//NodePlain 条件节点，没有子节点,原始条件定义
 	NodePlain NodeType = "PLAIN"
 )
+
+//encodeCSV 压缩一个字符串数组成csv数据，没有换行
+func encodeCSV(val []string) string {
+	bys := bytes.NewBuffer(nil)
+	csvW := csv.NewWriter(bys)
+	if err := csvW.Write(val); err != nil {
+		log.Panic(err)
+	}
+	csvW.Flush()
+	buf := bys.Bytes()
+	//去掉尾部的回车
+	return string(buf[0 : len(buf)-1])
+}
+
+//decodeCSV 解开一个csv
+func decodeCSV(val string) []string {
+	if len(val) == 0 {
+		return nil
+	}
+	s, err := csv.NewReader(bytes.NewBufferString(val)).Read()
+	if err != nil {
+		log.Panic(err)
+	}
+	return s
+}
 
 //Node 一个条件节点，可以有子节点，也可以是叶子
 type Node struct {
@@ -149,19 +176,19 @@ func (node *Node) string(prev string) string {
 			//OperatorIn 在列表
 		case pageselect.OperatorIn:
 			list := []string{}
-			for _, one := range strfun.DecodeCSV(node.Value) {
+			for _, one := range decodeCSV(node.Value) {
 				list = append(list, signString(one))
 			}
 			return prev +
-				fmt.Sprintf("%s IN (%s)", node.Field, strfun.EncodeCSV(list))
+				fmt.Sprintf("%s IN (%s)", node.Field, encodeCSV(list))
 			//OperatorNotIn 不在列表
 		case pageselect.OperatorNotIn:
 			list := []string{}
-			for _, one := range strfun.DecodeCSV(node.Value) {
+			for _, one := range decodeCSV(node.Value) {
 				list = append(list, signString(one))
 			}
 			return prev +
-				fmt.Sprintf("%s NOT IN (%s)", node.Field, strfun.EncodeCSV(list))
+				fmt.Sprintf("%s NOT IN (%s)", node.Field, encodeCSV(list))
 			//OperatorIsNull 为空
 		case pageselect.OperatorIsNull:
 			return prev +

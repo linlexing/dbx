@@ -7,7 +7,7 @@ import (
 	"log"
 	"strings"
 
-	"github.com/Sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 	"github.com/linlexing/dbx/scan"
 
 	ps "github.com/linlexing/dbx/pageselect"
