@@ -3,7 +3,7 @@ module github.com/linlexing/dbx
 go 1.14
 
 require (
-	github.com/antlr/antlr4 v0.0.0-20200225173536-225249fdaef5
+	github.com/antlr/antlr4 v0.0.0-20200309161749-1284814c2112
 	github.com/davecgh/go-spew v1.1.1
 	github.com/go-sql-driver/mysql v1.4.0
 	github.com/jmoiron/sqlx v1.2.0

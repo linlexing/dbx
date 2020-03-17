@@ -16,14 +16,15 @@ type converFieldName interface {
 	ConvertFieldName(childName string, str string) string
 }
 type structField struct {
-	fieldName  string          //结构属性名称
-	define     *colDef         //字段定义
-	st         reflect.Type    //Go类型
-	child      bool            //是否明细表
-	childName  string          //如是明细表，这里是表名称
-	conv       converFieldName //用于明细表
-	valPath    []int           //属性路径，即每层属性序号
-	parentName string          //如果是子表属性，这里是子表属性名称，用于指标名称转换
+	fieldName       string          //结构属性名称
+	define          *colDef         //字段定义
+	st              reflect.Type    //Go类型
+	child           bool            //是否明细表
+	childName       string          //如是明细表，这里是表名称
+	childFormerName []string        //如是明细表，这里是表曾用名
+	conv            converFieldName //用于明细表
+	valPath         []int           //属性路径，即每层属性序号
+	parentName      string          //如果是子表属性，这里是子表属性名称，用于指标名称转换
 }
 
 //checkType 检查数据库类型和实际类型是否相容
@@ -395,6 +396,7 @@ func fieldsFromStruct(vtype reflect.Type, conv converFieldName, parentName strin
 			if len(tags) == 2 && tags[1] == "CHILD" {
 				sf.child = true
 				sf.childName = tags[0]
+				sf.childFormerName = strings.Fields(formerNameTag)
 			} else {
 				sf.define, err = columnDefine(defineTag, trueTypeTag, formerNameTag)
 				if err != nil {
@@ -408,6 +410,7 @@ func fieldsFromStruct(vtype reflect.Type, conv converFieldName, parentName strin
 		if defineTag == "CHILD" {
 			sf.child = true
 			sf.childName = name
+			sf.childFormerName = strings.Fields(formerNameTag)
 		} else {
 			sf.define, err = columnDefine(name+" "+defineTag, trueTypeTag, formerNameTag)
 			if err != nil {
@@ -423,7 +426,7 @@ func fieldsFromStruct(vtype reflect.Type, conv converFieldName, parentName strin
 	return rev, nil
 }
 
-func struct2Table(tableName string, vtype reflect.Type, conv converFieldName,
+func struct2Table(tableName string, fnames []string, vtype reflect.Type, conv converFieldName,
 	parentName string, parentPath []int, root bool) ([]*Table, error) {
 	list, err := fieldsFromStruct(vtype, conv, parentName, parentPath, root)
 	if err != nil {
@@ -431,12 +434,13 @@ func struct2Table(tableName string, vtype reflect.Type, conv converFieldName,
 	}
 	//剥离出其中的定义
 	result := []*Table{NewTable(tableName)}
+	result[0].FormerName = fnames
 	coldefs := []*colDef{}
 	for _, one := range list {
 
 		//子表递归调用
 		if one.child {
-			tabs, err := struct2Table(one.childName, one.st, conv,
+			tabs, err := struct2Table(one.childName, one.childFormerName, one.st, conv,
 				one.fieldName, parentPath, false)
 			if err != nil {
 				return nil, err
@@ -475,7 +479,7 @@ func TableFromStruct(meta interface{}, tabNames ...string) ([]*Table, error) {
 	if !ok {
 		conv = nil
 	}
-	return struct2Table(tabName, reflect.TypeOf(meta), conv, "", nil, true)
+	return struct2Table(tabName, nil, reflect.TypeOf(meta), conv, "", nil, true)
 }
 func mainStruct2Row(vval reflect.Value, conv converFieldName) (main map[string]interface{},
 	child map[string][]map[string]interface{}, err error) {
