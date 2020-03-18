@@ -54,9 +54,17 @@ func processColumnSQL(tabName string, oldCol, newCol *schema.Column) (rev []stri
 		//去掉最后的notnull
 		//去掉定义中的字段名，因为中间多了个type字样
 		if !oldCol.EqueType(newCol) {
-			rev = append(rev, fmt.Sprintf(
-				"ALTER TABLE %s ALTER COLUMN %s TYPE %s",
-				tabName, newCol.Name, colDBType(newCol)))
+			//如果原来的类型是字符串，现在类型是数值，则需要加using子句
+			if oldCol.Type == schema.TypeString &&
+				(newCol.Type == schema.TypeFloat || newCol.Type == schema.TypeInt) {
+				rev = append(rev, fmt.Sprintf(
+					"ALTER TABLE %s ALTER COLUMN %s TYPE %s using(trim(%[2]s)::%[3]s)",
+					tabName, newCol.Name, colDBType(newCol)))
+			} else {
+				rev = append(rev, fmt.Sprintf(
+					"ALTER TABLE %s ALTER COLUMN %s TYPE %s",
+					tabName, newCol.Name, colDBType(newCol)))
+			}
 		}
 		//再改not null
 		if oldCol.Null && !newCol.Null {
