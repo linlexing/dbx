@@ -93,7 +93,7 @@ func getColumns(db common.DB, schemaName, table string) ([]*schema.Column, error
 						then 'STR'
 						when  data_type ='NUMBER' AND DATA_PRECISION IS NULL AND DATA_SCALE = 0 
 						then 'INT'
-						when data_type in('DATE','TIMESTAMP')
+						when data_type ='DATE' OR data_type LIKE 'TIMESTAMP%'
 						then 'DATE'
 						when data_type in('NUMBER','BINARY_DOUBLE')
 						then 'FLOAT'
