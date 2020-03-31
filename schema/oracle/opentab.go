@@ -85,6 +85,7 @@ func getColumns(db common.DB, schemaName, table string) ([]*schema.Column, error
 		Column string `db:"COLUMNNAME"`
 	}
 	columns := []columnType{}
+	// TIMESTAMP
 	if err := func() error {
 		strSQL := `select column_name as "DBNAME",
 					decode(nullable,'Y',1,0) as "DBNULL",
@@ -92,7 +93,7 @@ func getColumns(db common.DB, schemaName, table string) ([]*schema.Column, error
 						then 'STR'
 						when  data_type ='NUMBER' AND DATA_PRECISION IS NULL AND DATA_SCALE = 0 
 						then 'INT'
-						when data_type ='DATE'
+						when data_type in('DATE','TIMESTAMP')
 						then 'DATE'
 						when data_type in('NUMBER','BINARY_DOUBLE')
 						then 'FLOAT'
