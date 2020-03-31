@@ -373,9 +373,9 @@ func (t *Table) ImportFrom(db common.Queryer, progressFunc func(string, interfac
 	args ...interface{}) (iCount int64, err error) {
 	var rowCount int64
 	strSQL := fmt.Sprintf("select count(*) from (%s) out_count", query)
-	if err = db.QueryRow(strSQL, args...).Scan(&rowCount); err != nil {
+	rowCount, err = AsInt(t.DB, t.bind(strSQL), args...)
+	if err != nil {
 		err = common.NewSQLError(err, strSQL, args...)
-		return
 	}
 	progressFunc(fmt.Sprintf("start import table %s,total %d records", t.FullName(), rowCount), nil)
 
