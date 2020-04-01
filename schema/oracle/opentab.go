@@ -91,7 +91,7 @@ func getColumns(db common.DB, schemaName, table string) ([]*schema.Column, error
 					decode(nullable,'Y',1,0) as "DBNULL",
 					(case when data_type in ('CLOB','VARCHAR', 'VARCHAR2','CHAR','NVARCHAR2')
 						then 'STR'
-						when  data_type ='NUMBER' AND DATA_PRECISION IS NULL AND DATA_SCALE = 0 
+						when  data_type ='NUMBER' AND DATA_SCALE = 0 
 						then 'INT'
 						when data_type ='DATE' OR data_type LIKE 'TIMESTAMP%'
 						then 'DATE'
