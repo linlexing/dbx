@@ -29,10 +29,11 @@ func getPk(db common.DB, tableName string) ([]string, error) {
 	result := []string{}
 	strSQL := fmt.Sprintf(
 		`SELECT upper(a.attname)
-			FROM   pg_index i
-			JOIN   pg_attribute a ON a.attrelid = i.indrelid
+		FROM   pg_index i
+			inner JOIN   pg_attribute a ON a.attrelid = i.indrelid
 				AND a.attnum = ANY(i.indkey)
-			WHERE  i.indrelid = '%s'::regclass
+			inner join pg_class b on i.indrelid=b.oid
+			WHERE  b.relname ilike ?
 			AND    i.indisprimary
 			order by array_position(i.indkey,a.attnum)`, tableName)
 
