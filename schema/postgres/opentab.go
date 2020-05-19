@@ -29,11 +29,10 @@ func getPk(db common.DB, tableName string) ([]string, error) {
 	result := []string{}
 	strSQL := fmt.Sprintf(
 		`SELECT upper(a.attname)
-		FROM   pg_index i
-			inner JOIN   pg_attribute a ON a.attrelid = i.indrelid
+			FROM   pg_index i
+			JOIN   pg_attribute a ON a.attrelid = i.indrelid
 				AND a.attnum = ANY(i.indkey)
-			inner join pg_class b on i.indrelid=b.oid
-			WHERE  b.relname ilike ?
+			WHERE  i.indrelid = '%s'::regclass
 			AND    i.indisprimary
 			order by array_position(i.indkey,a.attnum)`, tableName)
 
@@ -220,9 +219,17 @@ func getColumns(db common.DB, schemaName, table string) ([]*schema.Column, error
 }
 func (m *meta) OpenTable(db common.DB, tableName string) (*schema.Table, error) {
 	t := schema.NewTable(tableName)
-	pks, err := getPk(db, tableName)
+	//获取主键前需要先判断表是否存在，防止出现表不存在抛出异常
+	tabExists, err := m.TableExists(db, tableName)
 	if err != nil {
 		return nil, err
+	}
+	pks := []string{}
+	if tabExists {
+		pks, err = getPk(db, tableName)
+		if err != nil {
+			return nil, err
+		}
 	}
 	cols, err := getColumns(db, t.Schema, t.Name)
 	if err != nil {
