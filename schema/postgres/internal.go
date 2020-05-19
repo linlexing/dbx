@@ -15,7 +15,7 @@ import (
 func createColumnIndexSQL(tableName string, unique bool, colName string) []string {
 	ustr := ""
 	if unique {
-		ustr = "unique "
+		ustr = "UNIQUE "
 	}
 	//这里会有问题，如果表名和字段名比较长就会出错
 	return []string{fmt.Sprintf("CREATE %sINDEX ON %s(%s)", ustr, tableName, colName)}
