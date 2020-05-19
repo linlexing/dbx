@@ -84,8 +84,10 @@ outLoop:
 func addColumnSQL(tabName string, newCol *schema.Column) []string {
 	rev := []string{fmt.Sprintf("alter table %s add %s", tabName, dbDefine(newCol))}
 	//处理索引
-	if newCol.Index {
-		rev = append(rev, createColumnIndexSQL(tabName, newCol.Name)...)
+	if newCol.Index == schema.Index {
+		rev = append(rev, createColumnIndexSQL(tabName, false, newCol.Name)...)
+	} else if newCol.Index == schema.UniqueIndex {
+		rev = append(rev, createColumnIndexSQL(tabName, true, newCol.Name)...)
 	}
 	return rev
 

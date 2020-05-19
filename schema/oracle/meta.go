@@ -69,8 +69,10 @@ func (m *meta) CreateTableSQL(db common.DB, tab *schema.Table) (rev []string, er
 	}
 	//最后处理索引
 	for _, col := range tab.Columns {
-		if col.Index {
-			rev = append(rev, createColumnIndexSQL(tab.FullName(), col.Name)...)
+		if col.Index == schema.Index {
+			rev = append(rev, createColumnIndexSQL(tab.FullName(), false, col.Name)...)
+		} else if col.Index == schema.UniqueIndex {
+			rev = append(rev, createColumnIndexSQL(tab.FullName(), true, col.Name)...)
 		}
 	}
 	return
