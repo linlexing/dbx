@@ -148,8 +148,8 @@ func getColumns(db common.DB, schemaName, table string) ([]*schema.Column, error
 					min(a.column_name) as "COLUMNNAME",
 					max(b.UNIQUENESS) as "UNIQUENESS"
 				from all_ind_columns a inner join all_indexes b on a.index_owner=b.owner and a.index_name =b.index_name
-				where table_owner=:1 and table_name = :2
-				group by index_name having count(*)=1`
+				where b.table_owner=:1 and b.table_name = :2
+				group by a.index_name having count(*)=1`
 		rows, err := db.Query(strSQL, strings.ToUpper(schemaName), strings.ToUpper(table))
 		if err != nil {
 			err = common.NewSQLError(err, strSQL, schemaName, table)
