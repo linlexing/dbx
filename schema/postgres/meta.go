@@ -13,12 +13,14 @@ import (
 )
 
 const driverName = "postgres"
+const driverNamePgx = "pgx"
 
 type meta struct {
 }
 
 func init() {
 	schema.Register(driverName, new(meta))
+	schema.Register(driverNamePgx, new(meta))
 }
 
 //执行create table as select语句
