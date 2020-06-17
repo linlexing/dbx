@@ -7,19 +7,21 @@ import (
 	"log"
 	"strings"
 
-	"github.com/sirupsen/logrus"
 	"github.com/linlexing/dbx/scan"
+	"github.com/sirupsen/logrus"
 
 	ps "github.com/linlexing/dbx/pageselect"
 	"github.com/linlexing/dbx/schema"
 )
 
 const driverName = "postgres"
+const driverNamePgx = "pgx"
 
 type meta struct{}
 
 func init() {
 	ps.Register(driverName, new(meta))
+	ps.Register(driverNamePgx, new(meta))
 }
 func fromDBType(ty string) schema.DataType {
 	switch ty {
