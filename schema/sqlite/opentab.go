@@ -130,8 +130,8 @@ func (m *meta) OpenTable(db common.DB, tableName string) (*schema.Table, error) 
 	if err != nil {
 		return nil, err
 	}
-	//indexColumn 是字段名-->索引名的map
-	indexColumn := map[string]string{}
+	//indexColumn 是字段名-->索引的map
+	indexColumn := map[string]tableIndex{}
 
 	for _, idx := range tabIdxs {
 		idxInfo, err := getIndexInfo(db, idx.Name)
@@ -141,11 +141,18 @@ func (m *meta) OpenTable(db common.DB, tableName string) (*schema.Table, error) 
 		//只找出一个字段的索引,并且不是主键索引
 		if len(idxInfo) == 1 && (len(pks) > 1 ||
 			idxInfo[0].Name != pks[0]) {
-			indexColumn[idxInfo[0].Name] = idx.Name
+			indexColumn[idxInfo[0].Name] = idx
 		}
 	}
 	for _, col := range columns {
-		col.IndexName, col.Index = indexColumn[col.Name]
+		if idx, ok := indexColumn[col.Name]; ok {
+			col.IndexName = idx.Name
+			if idx.Unique == 1 {
+				col.Index = schema.UniqueIndex
+			} else {
+				col.Index = schema.Index
+			}
+		}
 	}
 	t := schema.NewTable(tableName)
 	t.Columns = columns

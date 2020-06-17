@@ -40,8 +40,10 @@ func processColumnSQL(tabName string, oldCol, newCol *schema.Column) (rev []stri
 	if oldCol == nil {
 		rev = append(rev, fmt.Sprintf("ALTER TABLE %s ADD %s", tabName, dbDefine(newCol)))
 		//处理索引
-		if newCol.Index {
-			rev = append(rev, createColumnIndexSQL(tabName, newCol.Name)...)
+		if newCol.Index == schema.Index {
+			rev = append(rev, createColumnIndexSQL(tabName, false, newCol.Name)...)
+		} else if newCol.Index == schema.UniqueIndex {
+			rev = append(rev, createColumnIndexSQL(tabName, true, newCol.Name)...)
 		}
 		return
 	}
@@ -80,12 +82,17 @@ func processColumnSQL(tabName string, oldCol, newCol *schema.Column) (rev []stri
 	}
 	//处理索引,字段更名的操作，oracle、postgres、mysql都是安全的，所以不需处理
 	//ref:http://stackoverflow.com/questions/6732896/does-rename-column-take-care-of-indexes
-	if oldCol.Index && !newCol.Index {
+	if (oldCol.Index == schema.Index || oldCol.Index == schema.UniqueIndex) &&
+		newCol.Index == schema.NoIndex {
 		//删除索引
 		rev = append(rev, dropColumnIndexSQL(tabName, oldCol.IndexName)...)
-	} else if !oldCol.Index && newCol.Index {
+	} else if oldCol.Index == schema.NoIndex && (newCol.Index == schema.Index || newCol.Index == schema.UniqueIndex) {
 		//新增索引
-		rev = append(rev, createColumnIndexSQL(tabName, oldCol.Name)...)
+		if newCol.Index == schema.Index {
+			rev = append(rev, createColumnIndexSQL(tabName, false, newCol.Name)...)
+		} else {
+			rev = append(rev, createColumnIndexSQL(tabName, true, newCol.Name)...)
+		}
 	}
 	return
 }

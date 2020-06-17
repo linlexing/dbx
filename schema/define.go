@@ -51,7 +51,7 @@ func columnDefine(line, trueTypeLine, formerNameTag string) (result *colDef, err
 	}
 	dataType := strings.TrimSpace(lineList[1])
 	notNull := false
-	index := false
+	var index string
 	var maxLength int64
 	if len(lineList) > 2 {
 		switch str := strings.TrimSpace(lineList[2]); str {
@@ -68,8 +68,11 @@ func columnDefine(line, trueTypeLine, formerNameTag string) (result *colDef, err
 	if len(lineList) > 3 {
 		switch str := strings.TrimSpace(lineList[3]); str {
 		case "INDEX":
-			index = true
+			index = Index
+		case "UINDEX":
+			index = UniqueIndex
 		case "":
+			index = NoIndex
 		default:
 			err = fmt.Errorf("%s ,error define %s", line, str)
 		}

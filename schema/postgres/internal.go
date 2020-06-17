@@ -12,9 +12,13 @@ import (
 )
 
 //createColumnIndex 新增单字段索引
-func createColumnIndexSQL(tableName, colName string) []string {
+func createColumnIndexSQL(tableName string, unique bool, colName string) []string {
+	ustr := ""
+	if unique {
+		ustr = "UNIQUE "
+	}
 	//这里会有问题，如果表名和字段名比较长就会出错
-	return []string{fmt.Sprintf("CREATE INDEX ON %s(%s)", tableName, colName)}
+	return []string{fmt.Sprintf("CREATE %sINDEX ON %s(%s)", ustr, tableName, colName)}
 }
 
 func removeColumnsSQL(tabName string, cols []string) []string {

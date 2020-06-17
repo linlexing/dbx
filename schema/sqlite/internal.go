@@ -56,7 +56,7 @@ func tableExists(db common.DB, tabName string) (bool, error) {
 }
 
 //createColumnIndex 新增单字段索引
-func createColumnIndexSQL(tableName, colName string) []string {
+func createColumnIndexSQL(tableName string, unique bool, colName string) []string {
 	ns := strings.Split(tableName, ".")
 	schemaName := ""
 	tname := ""
@@ -66,8 +66,12 @@ func createColumnIndexSQL(tableName, colName string) []string {
 	} else {
 		tname = tableName
 	}
+	ustr := ""
+	if unique {
+		ustr = "unique "
+	}
 	//这里会有问题，如果表名和字段名比较长就会出错
-	return []string{fmt.Sprintf("create index %si%s%s on %s(%s)", schemaName, tname, colName, tableName, colName)}
+	return []string{fmt.Sprintf("create %sindex %si%s%s on %s(%s)", ustr, schemaName, tname, colName, tableName, colName)}
 }
 func dropColumnIndexSQL(tableName, indexName string) []string {
 	return []string{fmt.Sprintf("drop index %s", indexName)}

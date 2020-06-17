@@ -20,6 +20,7 @@ type indexType struct {
 	Owner  string `db:"INDEXOWNER"`
 	Name   string `db:"INDEXNAME"`
 	Column string `db:"COLUMNNAME"`
+	Unique bool   `db:"INDISUNIQUE"`
 }
 
 //获取主键字段
@@ -74,7 +75,7 @@ func getTableColumns(db common.DB, schemaName, tableName string) ([]columnType, 
 					end) as "DBTYPE",
 					(case when character_maximum_length is null then 0 else character_maximum_length end) as "DBMAXLENGTH",
 					(SELECT format_type(a.atttypid, a.atttypmod)
-						FROM pg_attribute a 
+						FROM pg_attribute a
 							JOIN pg_class b ON (a.attrelid = b.oid)
 							JOIN pg_namespace c ON (c.oid = b.relnamespace)
 						WHERE
@@ -113,7 +114,8 @@ func getTableIndexes(db common.DB, schemaName, tableName string) ([]indexType, e
 	strSQL := `select
 					(select nspname from pg_namespace where oid=i.relnamespace) as "INDEXOWNER",
 					i.relname as "INDEXNAME",
-				    upper(min(a.attname)) as "COLUMNNAME"
+					upper(min(a.attname)) as "COLUMNNAME",
+					ix.indisunique as "INDISUNIQUE"
 				from
 				    pg_class t,
 				    pg_class i,
@@ -124,7 +126,7 @@ func getTableIndexes(db common.DB, schemaName, tableName string) ([]indexType, e
 				    t.oid = ix.indrelid
 				    and i.oid = ix.indexrelid
 				    and a.attrelid = t.oid
-				    and t.relnamespace=tn.oid 
+				    and t.relnamespace=tn.oid
 				    and tn.nspname ilike $1
 				    and a.attnum = ANY(ix.indkey)
 				    and t.relkind = 'r'
@@ -133,7 +135,8 @@ func getTableIndexes(db common.DB, schemaName, tableName string) ([]indexType, e
 				group by
 				   t.relname,
 				   i.relnamespace,
-				   i.relname
+				   i.relname,
+				   ix.indisunique
 				having count(*)=1
 				order by
 				    t.relname,
@@ -151,7 +154,8 @@ func getTableIndexes(db common.DB, schemaName, tableName string) ([]indexType, e
 		if err = rows.Scan(
 			&idx.Owner,
 			&idx.Name,
-			&idx.Column); err != nil {
+			&idx.Column,
+			&idx.Unique); err != nil {
 			return nil, err
 		}
 		indexes = append(indexes, idx)
@@ -198,7 +202,11 @@ func getColumns(db common.DB, schemaName, table string) ([]*schema.Column, error
 
 		//组合主键，有时需要单字段索引
 		if s, ok := indexColumnsMap[v.Name]; ok {
-			col.Index = true
+			if s.Unique {
+				col.Index = schema.UniqueIndex
+			} else {
+				col.Index = schema.Index
+			}
 			col.IndexName = s.Name
 			if len(schemaName) > 0 || //如果是其他schema的表，则必定带上schema
 				s.Owner != schemaName { //如果index不和表在同一个schema中，也带上schema
@@ -211,9 +219,17 @@ func getColumns(db common.DB, schemaName, table string) ([]*schema.Column, error
 }
 func (m *meta) OpenTable(db common.DB, tableName string) (*schema.Table, error) {
 	t := schema.NewTable(tableName)
-	pks, err := getPk(db, tableName)
+	//获取主键前需要先判断表是否存在，防止出现表不存在抛出异常
+	tabExists, err := m.TableExists(db, tableName)
 	if err != nil {
 		return nil, err
+	}
+	pks := []string{}
+	if tabExists {
+		pks, err = getPk(db, tableName)
+		if err != nil {
+			return nil, err
+		}
 	}
 	cols, err := getColumns(db, t.Schema, t.Name)
 	if err != nil {
@@ -222,5 +238,14 @@ func (m *meta) OpenTable(db common.DB, tableName string) (*schema.Table, error) 
 
 	t.Columns = cols
 	t.PrimaryKeys = pks
+	//最后去除单主键的主键字段的索引，因为主键自动加索引，不需要体现在字段定义中
+	if len(t.PrimaryKeys) == 1 {
+		for _, one := range t.Columns {
+			if one.Name == t.PrimaryKeys[0] && one.Index != schema.NoIndex {
+				one.Index = schema.NoIndex
+				one.IndexName = ""
+			}
+		}
+	}
 	return t, nil
 }

@@ -111,13 +111,14 @@ func getColumns(db common.DB, schemaName, tableName string) ([]*schema.Column, e
 		TrueType  string `db:"TRUETYPE"`
 	}
 	type indexType struct {
-		Owner  string `db:"INDEXOWNER"`
-		Name   string `db:"INDEXNAME"`
-		Column string `db:"COLUMNNAME"`
+		Owner     string `db:"INDEXOWNER"`
+		Name      string `db:"INDEXNAME"`
+		Column    string `db:"COLUMNNAME"`
+		NonUnique int    `db:"NON_UNIQUE"`
 	}
 	columns := []columnType{}
 	if err := func() error {
-		strSQL := `select 
+		strSQL := `select
 					column_name as DBNAME,
 				    (case when is_nullable='YES' then 1 else 0 end) as DBNULL,
 				    (case when data_type in('varchar','text','char','varbinary') then 'STR'
@@ -129,7 +130,7 @@ func getColumns(db common.DB, schemaName, tableName string) ([]*schema.Column, e
 				    end) as DBTYPE,
 				    (case when data_type in('text') then 0 else ifnull(CHARACTER_MAXIMUM_LENGTH,0) end) as DBMAXLENGTH,
 					column_type as TRUETYPE
-				from information_schema.columns 
+				from information_schema.columns
 				where table_name=? and table_schema= ?
 				order by ORDINAL_POSITION`
 		rows, err := db.Query(strSQL, tableName, schemaName)
@@ -156,10 +157,11 @@ func getColumns(db common.DB, schemaName, tableName string) ([]*schema.Column, e
 	}
 	indexColumns := []indexType{}
 	if err := func() error {
-		strSQL := `SELECT INDEX_SCHEMA AS INDEXOWNER,
+		strSQL := `SELECT max(INDEX_SCHEMA) AS INDEXOWNER,
 					INDEX_NAME as INDEXNAME,
-					COLUMN_NAME AS COLUMNNAME
-				FROM INFORMATION_SCHEMA.STATISTICS 
+					max(COLUMN_NAME) AS COLUMNNAME,
+					max(NON_UNIQUE) as NON_UNIQUE
+				FROM INFORMATION_SCHEMA.STATISTICS
 				WHERE table_schema = ? and table_name=?
 				group by index_name having count(*)=1
 				ORDER BY table_name, index_name, seq_in_index`
@@ -174,7 +176,8 @@ func getColumns(db common.DB, schemaName, tableName string) ([]*schema.Column, e
 			if err = rows.Scan(
 				&row.Owner,
 				&row.Name,
-				&row.Column); err != nil {
+				&row.Column,
+				&row.NonUnique); err != nil {
 				return err
 			}
 		}
@@ -201,7 +204,11 @@ func getColumns(db common.DB, schemaName, tableName string) ([]*schema.Column, e
 
 		//组合主键，有时需要单字段索引
 		if s, ok := indexColumnsMap[v.Name]; ok {
-			col.Index = true
+			if s.NonUnique == 1 {
+				col.Index = schema.Index
+			} else {
+				col.Index = schema.UniqueIndex
+			}
 			col.IndexName = s.Name
 			if len(schemaName) > 0 || //如果是其他schema的表，则必定带上schema
 				s.Owner != schemaName { //如果index不和表在同一个schema中，也带上schema
@@ -230,5 +237,14 @@ func (m *meta) OpenTable(db common.DB, tableName string) (*schema.Table, error) 
 
 	t.Columns = cols
 	t.PrimaryKeys = pks
+	//最后去除单主键的主键字段的索引，因为主键自动加索引，不需要体现在字段定义中
+	if len(t.PrimaryKeys) == 1 {
+		for _, one := range t.Columns {
+			if one.Name == t.PrimaryKeys[0] && one.Index != schema.NoIndex {
+				one.Index = schema.NoIndex
+				one.IndexName = ""
+			}
+		}
+	}
 	return t, nil
 }
