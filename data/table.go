@@ -612,15 +612,11 @@ func (t *Table) Delete(rows []map[string]interface{}) (delCount int64, err error
 	return
 }
 
-//RemoveByKeyValues 根据一个主键值，删除记录，如果没有记录被删除，则返回一个错误
+//RemoveByKeyValues 根据完整或者部分主键值，删除记录，返回删除的行数
 func (t *Table) RemoveByKeyValues(keyValues ...interface{}) (delCount int64, err error) {
-	if len(keyValues) != len(t.PrimaryKeys) {
-		err = errors.New("the key number not equ primary keys")
-		return
-	}
 	whereList := []string{}
-	for _, v := range t.PrimaryKeys {
-		whereList = append(whereList, fmt.Sprintf("%s=?", v))
+	for i := range keyValues {
+		whereList = append(whereList, fmt.Sprintf("%s=?", t.PrimaryKeys[i]))
 	}
 	strSQL := t.bind(fmt.Sprintf("delete from %s where %s", t.FullName(),
 		strings.Join(whereList, " and\n")))
