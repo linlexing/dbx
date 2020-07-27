@@ -27,7 +27,7 @@ func fromDBType(ty string) schema.DataType {
 	switch ty {
 	case "INT8", "INT4", "INT2":
 		return schema.TypeInt
-	case "_VARCHAR", "VARCHAR", "TEXT", "JSON", "JSONB":
+	case "_VARCHAR", "VARCHAR", "TEXT", "JSON", "JSONB", "NAME": //NAME 是information_schema.tables 用到的类型，等同字符串
 		return schema.TypeString
 	case "NUMERIC", "FLOAT8", "FLOAT4":
 		return schema.TypeFloat
