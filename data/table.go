@@ -43,7 +43,7 @@ func NewTable(driver string, db common.DB, st *schema.Table) *Table {
 		notnullColumns: []string{},
 		columnsMap:     map[string]*schema.Column{},
 	}
-	rev.buildColumnIndex()
+	rev.BuildColumnIndex()
 	return rev
 }
 
@@ -62,7 +62,10 @@ func OpenTable(driver string, db common.DB, tabName string) (*Table, error) {
 func (t *Table) bind(strSQL string) string {
 	return Bind(t.Driver, strSQL)
 }
-func (t *Table) buildColumnIndex() {
+
+//BuildColumnIndex 在变动表结构后调用，一般是自动调用，只有在NewTable后，
+//又去手工变动过schema.Table.Columns,才需要去手动调用
+func (t *Table) BuildColumnIndex() {
 	//构造索引
 	t.ColumnNames = []string{}
 	t.ColumnTypes = []*scan.ColumnType{}
@@ -89,7 +92,7 @@ func (t *Table) RefreshSchema() error {
 		return err
 	}
 	t.Table = tab
-	t.buildColumnIndex()
+	t.BuildColumnIndex()
 	return nil
 }
 
