@@ -74,7 +74,7 @@ func (m *meta) SortByDesc(field string, notNull bool) string {
 	return field + " DESC NULLS LAST"
 }
 func (m *meta) LimitSQL(sel, strSQL, where, orderby string, limit int) string {
-	return fmt.Sprintf("select %s from (%s) wholesql %s%s limit %d",
+	return fmt.Sprintf("select %s from (\n%s\n) wholesql %s%s limit %d",
 		sel, strSQL, where, orderby, limit)
 }
 func (m *meta) Sum(col string) string {

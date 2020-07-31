@@ -7,10 +7,10 @@ import (
 	"log"
 	"strings"
 
-	"github.com/sirupsen/logrus"
 	ps "github.com/linlexing/dbx/pageselect"
 	"github.com/linlexing/dbx/scan"
 	"github.com/linlexing/dbx/schema"
+	"github.com/sirupsen/logrus"
 )
 
 const driverName = "oci8"
@@ -72,7 +72,7 @@ func (m *meta) SortByDesc(field string, notNull bool) string {
 }
 func (m *meta) LimitSQL(sel, strSQL, where, orderby string, limit int) string {
 	return fmt.Sprintf(
-		"select * from (select %s from (%s) wholesql %s%s) where rownum<=%d",
+		"select * from (select %s from (\n%s\n) wholesql %s%s) where rownum<=%d",
 		sel, strSQL, where, orderby, limit)
 }
 func (m *meta) Sum(col string) string {

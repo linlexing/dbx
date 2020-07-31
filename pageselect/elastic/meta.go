@@ -8,10 +8,10 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/sirupsen/logrus"
 	ps "github.com/linlexing/dbx/pageselect"
 	"github.com/linlexing/dbx/scan"
 	"github.com/linlexing/dbx/schema"
+	"github.com/sirupsen/logrus"
 )
 
 const driverName = "elastic"
@@ -53,7 +53,7 @@ func (m *meta) SortByDesc(field string, _ bool) string {
 	return field + " DESC"
 }
 func (m *meta) LimitSQL(sel, strSQL, where, orderby string, limit int) string {
-	return fmt.Sprintf("select %s from (%s) wholesql %s%s limit %d",
+	return fmt.Sprintf("select %s from (\n%s\n) wholesql %s%s limit %d",
 		sel, strSQL, where, orderby, limit)
 }
 
