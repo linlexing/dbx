@@ -1,5 +1,7 @@
 package schema
 
+import "strings"
+
 const (
 	//NoIndex 没有索引
 	NoIndex = ""
@@ -25,7 +27,7 @@ type Column struct {
 
 //Eque 判定两个字段定义是否相等
 func (f *Column) Eque(src *Column) bool {
-	if f.Name != src.Name {
+	if strings.ToUpper(f.Name) != strings.ToUpper(src.Name) {
 		return false
 	}
 	if f.FetchDriver == src.FetchDriver &&

@@ -37,16 +37,12 @@ func RunAtTx(db TxDB, callback func(Txer) error) (err error) {
 
 //Openx 打开一个数据库连接，返回一个包装过的DB对象，其能返回DriverName
 func Openx(driverName, cnt string) (TxDB, error) {
-	d, err := sql.Open(driverName, cnt)
-	if err != nil {
-		return nil, err
-	}
 	rev := &db{
-		db:            d,
 		driverName:    driverName,
 		connectString: cnt,
 	}
-	return rev, nil
+	err := rev.connect()
+	return rev, err
 }
 
 //ScanStrings 扫描一个单列的查询，并返回一个字符串数组

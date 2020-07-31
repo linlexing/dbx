@@ -3,6 +3,7 @@ package schema
 import (
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/linlexing/dbx/common"
 )
@@ -58,7 +59,7 @@ func (t *tableSchema) pkIsChanged() bool {
 		}
 	}
 	for i, one := range beforeChangeName {
-		if one != t.oldTable.PrimaryKeys[i] {
+		if strings.ToUpper(one) != strings.ToUpper(t.oldTable.PrimaryKeys[i]) {
 			return true
 		}
 	}
@@ -90,13 +91,13 @@ func (t *tableSchema) extract() ([]string, error) {
 	//逐个处理字段，每处理一个字段，旧表字段就标上标记，最后删除没有标记的字段
 	oldColumnProcesses := map[string]bool{}
 	for _, v := range t.oldTable.Columns {
-		oldColumnProcesses[v.Name] = false
+		oldColumnProcesses[strings.ToUpper(v.Name)] = false
 	}
 	for _, col := range t.newTable.Columns {
 		//用曾用名+现有名称去找旧字段
 		oldCol := t.oldTable.findColumnAnyName(append(col.FormerName, col.Name)...)
 		if oldCol != nil {
-			oldColumnProcesses[oldCol.Name] = true
+			oldColumnProcesses[strings.ToUpper(oldCol.Name)] = true
 		}
 
 		//只有新增（oldCol为nil）或不相等的字段才纳入修改

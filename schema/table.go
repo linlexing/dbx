@@ -101,9 +101,10 @@ func (t *Table) Extract(driver string, db common.DB) ([]string, error) {
 	if len(t.FormerName) > 0 {
 		//如果有曾用名，则需验证曾用名不能和现有名称重复
 		uname := map[string]bool{
-			t.FullName(): true,
+			strings.ToUpper(t.FullName()): true,
 		}
 		for _, v := range t.FormerName {
+			v = strings.ToUpper(v)
 			if _, ok := uname[v]; ok {
 				return nil, fmt.Errorf("FormerName:%s dup", v)
 			}
@@ -136,14 +137,15 @@ func (t *Table) Extract(driver string, db common.DB) ([]string, error) {
 	return sch.extract()
 }
 
+//大小写不敏感
 func (t *Table) findColumnAnyName(names ...string) *Column {
 	//用map作为检索索引
 	idx := map[string]bool{}
 	for _, oneName := range names {
-		idx[oneName] = true
+		idx[strings.ToUpper(oneName)] = true
 	}
 	for _, col := range t.Columns {
-		if _, ok := idx[col.Name]; ok {
+		if _, ok := idx[strings.ToUpper(col.Name)]; ok {
 			return col
 		}
 	}
@@ -153,7 +155,7 @@ func (t *Table) findColumnAnyName(names ...string) *Column {
 //ColumnByName 根据一个名称返回一个字段，如果没有找到，返回nil
 func (t *Table) ColumnByName(name string) *Column {
 	for _, col := range t.Columns {
-		if name == col.Name {
+		if strings.ToUpper(name) == strings.ToUpper(col.Name) {
 			return col
 		}
 	}

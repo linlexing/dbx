@@ -26,6 +26,7 @@ type TxDB interface {
 	SetConnMaxLifetime(d time.Duration)
 	SetMaxIdleConns(n int)
 	SetMaxOpenConns(n int)
+	ResetConnect() error
 	Stats() sql.DBStats
 }
 
@@ -110,4 +111,14 @@ func (d *db) Prepare(query string) (*sql.Stmt, error) {
 }
 func (d *db) Close() error {
 	return d.db.Close()
+}
+func (d *db) ResetConnect() error {
+	if err := d.db.Close(); err != nil {
+		return err
+	}
+	return d.connect()
+}
+func (d *db) connect() (err error) {
+	d.db, err = sql.Open(d.driverName, d.connectString)
+	return
 }
