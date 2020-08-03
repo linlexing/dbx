@@ -14,6 +14,7 @@ type meta struct{}
 
 func init() {
 	data.Register(driverName, new(meta))
+	data.Register("pgx", new(meta))
 }
 func (m *meta) Concat(vals ...string) string {
 	return fmt.Sprintf("CONCAT(%s)", strings.Join(vals, ","))
