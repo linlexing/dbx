@@ -1,6 +1,7 @@
 package pageselect
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/linlexing/dbx/render"
@@ -50,7 +51,8 @@ func buildCondition(order, divide []string) []*ConditionLine {
 	return result
 }
 
-func renderManualPageSQL(driver string, strSQL string, columnList, whereList, orderbyList []string, limit int) (string, error) {
+func renderManualPageSQL(driver string, strSQL string, columnList []string,
+	columnalias map[string]string, whereList, orderbyList []string, limit int) (string, error) {
 
 	var where string
 	var columns string
@@ -59,7 +61,18 @@ func renderManualPageSQL(driver string, strSQL string, columnList, whereList, or
 		where = "(" + strings.Join(whereList, " "+AND+" ") + ")"
 	}
 	if len(columnList) > 0 {
-		columns = strings.Join(columnList, ",")
+		//加入别名支持
+		if len(columnalias) > 0 {
+			list := []string{}
+			for _, c := range columnList {
+				if f, ok := columnalias[c]; ok {
+					list = append(list, fmt.Sprintf("%s as %s", c, f))
+				}
+			}
+			columns = strings.Join(list, ",")
+		} else {
+			columns = strings.Join(columnList, ",")
+		}
 	}
 	if len(orderbyList) > 0 {
 		orderby = strings.Join(orderbyList, ",")
