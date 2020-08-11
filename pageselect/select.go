@@ -146,6 +146,8 @@ func (s *PageSelect) BuildSQL(driver string) (strSQL string, err error) {
 				for _, c := range s.Columns {
 					if f, ok := s.ColumnAlias[c]; ok {
 						list = append(list, fmt.Sprintf("%s as %s", c, f))
+					} else {
+						list = append(list, c)
 					}
 				}
 				sel = strings.Join(list, ",")
