@@ -60,6 +60,9 @@ func (m *meta) SortByAsc(field string, _ bool) string {
 func (m *meta) Sum(col string) string {
 	return fmt.Sprintf("sum(cast(ifnull(%s,0) as decimal(29,6)))", col)
 }
+func (m *meta) Avg(col string) string {
+	return fmt.Sprintf("avg(cast(ifnull(%s,0) as decimal(29,6)))", col)
+}
 func (m *meta) SortByDesc(field string, _ bool) string {
 	return field + " DESC"
 }

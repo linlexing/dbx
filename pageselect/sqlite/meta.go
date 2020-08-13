@@ -62,6 +62,9 @@ func (m *meta) LimitSQL(sel, strSQL, where, orderby string, limit int) string {
 func (m *meta) Sum(col string) string {
 	return fmt.Sprintf("sum(cast(ifnull(%s,0) as decimal(29,6)))", col)
 }
+func (m *meta) Avg(col string) string {
+	return fmt.Sprintf("avg(cast(ifnull(%s,0) as decimal(29,6)))", col)
+}
 
 func (m *meta) GetOperatorExpress(ope ps.Operator, dataType schema.DataType, left, right string) (strSQL string) {
 	//需要考虑到null的情况

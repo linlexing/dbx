@@ -78,7 +78,9 @@ func (m *meta) LimitSQL(sel, strSQL, where, orderby string, limit int) string {
 func (m *meta) Sum(col string) string {
 	return fmt.Sprintf("sum(cast(nvl(%s,0) as decimal(29,6)))", col)
 }
-
+func (m *meta) Avg(col string) string {
+	return fmt.Sprintf("avg(cast(nvl(%s,0) as decimal(29,6)))", col)
+}
 func valueExpress(dataType schema.DataType, value string) string {
 	switch dataType {
 	case schema.TypeFloat, schema.TypeInt:

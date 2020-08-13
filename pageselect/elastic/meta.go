@@ -47,7 +47,10 @@ func (m *meta) SortByAsc(field string, _ bool) string {
 	return field
 }
 func (m *meta) Sum(col string) string {
-	return fmt.Sprintf("sum(%s)", col)
+	return fmt.Sprintf("sum(ifnull(%s,0))", col)
+}
+func (m *meta) Avg(col string) string {
+	return fmt.Sprintf("avg(ifnull(%s,0))", col)
 }
 func (m *meta) SortByDesc(field string, _ bool) string {
 	return field + " DESC"
