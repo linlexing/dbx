@@ -53,7 +53,9 @@ func (m *meta) ColumnTypes(rows *sql.Rows) ([]*scan.ColumnType, error) {
 	for _, one := range cols {
 		rev = append(rev,
 			&scan.ColumnType{
-				Name: strings.ToUpper(one.Name()), //postgres默认是小写，与oracle相反，以oracle为准，全部转换成大写
+				//postgres默认是小写，如果是中英文混排，含有大写字母，则不能转换成大写，
+				//因为select使用时，pg会自动转换成小写
+				Name: one.Name(),
 				Type: fromDBType(one.DatabaseTypeName()),
 			})
 	}
@@ -84,6 +86,8 @@ func (m *meta) Avg(col string) string {
 	return fmt.Sprintf("avg(cast(COALESCE(%s,0) as decimal(29,6)))", col)
 }
 func (m *meta) GetOperatorExpress(ope ps.Operator, dataType schema.DataType, left, right string) (strSQL string) {
+	//需要加上双引号
+	left = "\"" + left + "\""
 	//需要考虑到null的情况
 	switch ope {
 	case ps.OperatorEqu: // "=" 等于
@@ -247,6 +251,10 @@ func valueExpress(dataType schema.DataType, value string) string {
 	case schema.TypeString:
 		return "'" + strings.Replace(value, "'", "''", -1) + "'"
 	case schema.TypeDatetime:
+		//如果是like，则直接返回不转换
+		if strings.HasPrefix(value, "%") || strings.HasSuffix(value, "%") {
+			return value
+		}
 		if len(value) == 10 {
 			return fmt.Sprintf("TO_DATE('%s','YYYY-MM-DD')", value)
 		} else if len(value) == 19 {

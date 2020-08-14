@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/linlexing/dbx/common"
 	"github.com/linlexing/dbx/schema"
@@ -49,7 +50,8 @@ func processColumnSQL(tabName string, oldCol, newCol *schema.Column) (rev []stri
 	}
 	//如果是更名，需要先处理
 	if oldCol.Name != newCol.Name {
-		rev = append(rev, fmt.Sprintf("ALTER TABLE %s RENAME %s to %s", tabName, oldCol.Name, newCol.Name))
+		rev = append(rev, fmt.Sprintf("ALTER TABLE %s RENAME %s to %s", tabName,
+			oldCol.Name, strings.ToLower(newCol.Name)))
 	}
 	if !oldCol.EqueNoIndexAndName(newCol) {
 

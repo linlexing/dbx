@@ -30,7 +30,7 @@ func removeColumnsSQL(tabName string, cols []string) []string {
 }
 
 func tableRenameSQL(oldName string, newName string) []string {
-	return []string{fmt.Sprintf("ALTER TABLE %s RENAME TO %s", oldName, newName)}
+	return []string{fmt.Sprintf("ALTER TABLE %s RENAME TO %s", oldName, strings.ToLower(newName))}
 }
 func dropColumnIndexSQL(tableName, indexName string) []string {
 	return []string{fmt.Sprintf("DROP INDEX %s", indexName)}
@@ -91,7 +91,8 @@ func dbDefine(c *schema.Column) string {
 	if !c.Null {
 		nullStr = "\tNOT NULL"
 	}
-	return fmt.Sprintf("%s\t%s%s", c.Name, colDBType(c), nullStr)
+	//postgresql 中，中英文混合的字段名，默认会转换成小写字母，不加转换会出现找不到列的错误
+	return fmt.Sprintf("%s\t%s%s", strings.ToLower(c.Name), colDBType(c), nullStr)
 }
 
 func dbDefineNull(c *schema.Column) string {
@@ -99,5 +100,6 @@ func dbDefineNull(c *schema.Column) string {
 	if !c.Null {
 		nullStr = "\tNOT NULL"
 	}
-	return fmt.Sprintf("%s\t%s%s", c.Name, colDBType(c), nullStr)
+	//postgresql 中，中英文混合的字段名，默认会转换成小写字母，不加转换会出现找不到列的错误
+	return fmt.Sprintf("%s\t%s%s", strings.ToLower(c.Name), colDBType(c), nullStr)
 }

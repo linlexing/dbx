@@ -121,7 +121,7 @@ func (m *meta) CreateIndexIfNotExistsSQL(db common.DB, unique bool, indexName, t
 	if unique {
 		idx = "UNIQUE INDEX"
 	}
-	return []string{fmt.Sprintf("CREATE %s IF NOT EXISTS %s ON %s(%s)", idx, indexName, tableName, express)}, nil
+	return []string{fmt.Sprintf("CREATE %s IF NOT EXISTS %s ON %s(%s)", idx, strings.ToLower(indexName), tableName, express)}, nil
 }
 
 func (m *meta) CreateSchemaSQL(db common.DB, dbInfo schema.DataBaseInfo) ([]string, error) {
