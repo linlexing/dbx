@@ -69,7 +69,7 @@ fragment LETTER : [a-zA-Z] ;
 DECIMAL_LITERAL: DEC_DIGIT+ ;  //10
 
 ID : ('a'..'z' | 'A'..'Z' | '\u4E00'..'\u9FA5')
- ('a'..'z' | 'A'..'Z' | '\u4E00'..'\u9FA5' | '\uFF08'..'\uFF09' | '0'..'9' | '.')* ;
+ ('a'..'z' | 'A'..'Z' | '\u4E00'..'\u9FA5' | '\uFF08'..'\uFF09' | '0'..'9' | '.' | '_')* ;
 //Chinese | bracket:('\u4E00'..'\u9FA5' | '\uFF08'..'\uFF09')
 
 TEXT_STRING : ('\'' (('\\' '\\') | ('\'' '\'') | ('\\' '\'') | ~('\''))* '\'') ;
