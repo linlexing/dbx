@@ -85,7 +85,7 @@ func (s *PageSelect) BuildSQL(driver string) (strSQL string, err error) {
 
 		if s.ManualPage {
 
-			strSQL, err = renderManualPageSQL(driver, s.SQL, nil, nil, nil, nil, s.Limit)
+			strSQL, err = renderManualPageSQL(driver, s.SQL, nil, false, nil, nil, nil, s.Limit)
 			if err != nil {
 				fmt.Println("driver:", driver)
 				fmt.Println("renderSQL:", s.SQL)
@@ -113,11 +113,14 @@ func (s *PageSelect) BuildSQL(driver string) (strSQL string, err error) {
 		for _, v := range s.Order {
 
 			if strings.HasPrefix(v, OrderDesc) {
-				orderList = append(orderList, Find(driver).SortByDesc(v[1:], s.isNotNullField(v[1:])))
+				c := Find(driver).QuotedIdentifier(v[1:])
+				orderList = append(orderList, Find(driver).SortByDesc(c, s.isNotNullField(c)))
 			} else if strings.HasPrefix(v, OrderAsc) {
-				orderList = append(orderList, Find(driver).SortByAsc(v[1:], s.isNotNullField(v[1:])))
+				c := Find(driver).QuotedIdentifier(v[1:])
+				orderList = append(orderList, Find(driver).SortByAsc(c, s.isNotNullField(c)))
 			} else {
-				orderList = append(orderList, Find(driver).SortByAsc(v, s.isNotNullField(v)))
+				c := Find(driver).QuotedIdentifier(v)
+				orderList = append(orderList, Find(driver).SortByAsc(c, s.isNotNullField(c)))
 			}
 		}
 		if len(s.Divide) > 0 {
@@ -132,7 +135,7 @@ func (s *PageSelect) BuildSQL(driver string) (strSQL string, err error) {
 	}
 
 	if s.ManualPage {
-		if strSQL, err = renderManualPageSQL(driver, s.SQL, s.Columns, s.ColumnAlias, whereList, orderList, s.Limit); err != nil {
+		if strSQL, err = renderManualPageSQL(driver, s.SQL, s.Columns, false, s.ColumnAlias, whereList, orderList, s.Limit); err != nil {
 			return
 		}
 	} else {
@@ -145,14 +148,18 @@ func (s *PageSelect) BuildSQL(driver string) (strSQL string, err error) {
 				list := []string{}
 				for _, c := range s.Columns {
 					if f, ok := s.ColumnAlias[c]; ok {
-						list = append(list, fmt.Sprintf("%s as %s", c, f))
+						list = append(list, fmt.Sprintf("%s as %s", c, Find(driver).QuotedIdentifier(f)))
 					} else {
-						list = append(list, c)
+						list = append(list, Find(driver).QuotedIdentifier(c))
 					}
 				}
 				sel = strings.Join(list, ",")
 			} else {
-				sel = strings.Join(s.Columns, ",")
+				list := []string{}
+				for _, c := range s.Columns {
+					list = append(list, Find(driver).QuotedIdentifier(c))
+				}
+				sel = strings.Join(list, ",")
 			}
 		}
 		if len(whereList) > 0 {
@@ -230,13 +237,18 @@ func (s *PageSelect) BuildTotalSQL(driver string, cols ...string) (strSQL string
 	if len(s.ColumnAlias) > 0 {
 		for _, c := range cols {
 			if f, ok := s.ColumnAlias[c]; ok {
-				totalCoumns = append(totalCoumns, fmt.Sprintf("%s as %s", Find(driver).Sum(c), f))
+				totalCoumns = append(totalCoumns, fmt.Sprintf("%s as %s", Find(driver).Sum(
+					Find(driver).QuotedIdentifier(c)), Find(driver).QuotedIdentifier(f)))
+			} else {
+				totalCoumns = append(totalCoumns, fmt.Sprintf("%s as %s", Find(driver).Sum(
+					Find(driver).QuotedIdentifier(c)), Find(driver).QuotedIdentifier(c)))
 			}
 		}
 	} else {
 		for _, col := range cols {
 			// totalCoumns = append(totalCoumns, fmt.Sprintf("sum(cast(%s(%s,0) as decimal(29,6))) as %[2]s", Find(driver).IsNull(), col))
-			totalCoumns = append(totalCoumns, fmt.Sprintf("%s as %s", Find(driver).Sum(col), col))
+			totalCoumns = append(totalCoumns, fmt.Sprintf("%s as %s", Find(driver).Sum(
+				Find(driver).QuotedIdentifier(col)), Find(driver).QuotedIdentifier(col)))
 		}
 	}
 	if len(totalCoumns) == 0 {
@@ -261,7 +273,7 @@ func (s *PageSelect) BuildTotalSQL(driver string, cols ...string) (strSQL string
 	}
 	if s.ManualPage {
 
-		if strSQL, err = renderManualPageSQL(driver, s.SQL, totalCoumns, nil, whereList, nil, -1); err != nil {
+		if strSQL, err = renderManualPageSQL(driver, s.SQL, totalCoumns, true, nil, whereList, nil, -1); err != nil {
 			return
 		}
 
@@ -269,7 +281,7 @@ func (s *PageSelect) BuildTotalSQL(driver string, cols ...string) (strSQL string
 		if len(whereList) > 0 {
 			where = " where " + strings.Join(whereList, " "+AND+" ")
 		}
-		strSQL = fmt.Sprintf("select %s from (%s) wholesql %s", strings.Join(totalCoumns, ","), s.SQL, where)
+		strSQL = fmt.Sprintf("select %s from (\n%s\n) wholesql %s", strings.Join(totalCoumns, ","), s.SQL, where)
 	}
 	strSQL, err = render.RenderSQL(strSQL, s.SQLRenderArgs)
 	return
@@ -295,14 +307,14 @@ func (s *PageSelect) BuildRowCountSQL(driver string) (strSQL string, err error) 
 		}
 	}
 	if s.ManualPage {
-		if strSQL, err = renderManualPageSQL(driver, s.SQL, []string{"COUNT(*)"}, nil, whereList, nil, -1); err != nil {
+		if strSQL, err = renderManualPageSQL(driver, s.SQL, []string{"COUNT(*)"}, true, nil, whereList, nil, -1); err != nil {
 			return
 		}
 	} else {
 		if len(whereList) > 0 {
 			where = " where " + strings.Join(whereList, " "+AND+" ")
 		}
-		strSQL = fmt.Sprintf("select count(*) from (%s) wholesql %s", s.SQL, where)
+		strSQL = fmt.Sprintf("select count(*) from (\n%s\n) wholesql %s", s.SQL, where)
 	}
 	if s, err := render.RenderSQL(strSQL, s.SQLRenderArgs); err != nil {
 		log.Panic(err)

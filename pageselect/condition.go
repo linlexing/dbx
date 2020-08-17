@@ -39,7 +39,8 @@ func (c *ConditionLine) GetExpress(driver string, dataType schema.DataType) stri
 	rev := ""
 	if len(c.ColumnName) > 0 {
 		rev = fmt.Sprintf("%s%s%s", c.LeftBrackets,
-			Find(driver).GetOperatorExpress(c.Operators, dataType, c.ColumnName, c.Value),
+			Find(driver).GetOperatorExpress(c.Operators, dataType,
+				Find(driver).QuotedIdentifier(c.ColumnName), c.Value),
 			c.RightBrackets)
 	}
 	if len(c.PlainText) > 0 {

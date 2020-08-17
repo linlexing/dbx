@@ -33,6 +33,9 @@ func init() {
 			},
 		})
 }
+func (m *meta) QuotedIdentifier(col string) string {
+	return "`" + col + "`"
+}
 func (m *meta) ColumnTypes(rows *sql.Rows) ([]*scan.ColumnType, error) {
 	cols, err := rows.ColumnTypes()
 	if err != nil {

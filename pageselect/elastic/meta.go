@@ -40,6 +40,9 @@ func fromDBType(ty string) schema.DataType {
 	}
 	return 0
 }
+func (m *meta) QuotedIdentifier(col string) string {
+	return "\"" + col + "\""
+}
 func (m *meta) ColumnTypes(rows *sql.Rows) ([]*scan.ColumnType, error) {
 	return nil, fmt.Errorf("not impl")
 }

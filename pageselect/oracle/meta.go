@@ -70,6 +70,9 @@ func (m *meta) SortByDesc(field string, notNull bool) string {
 	}
 	return field + " DESC NULLS LAST"
 }
+func (m *meta) QuotedIdentifier(col string) string {
+	return "\"" + col + "\""
+}
 func (m *meta) LimitSQL(sel, strSQL, where, orderby string, limit int) string {
 	return fmt.Sprintf(
 		"select * from (select %s from (\n%s\n) wholesql %s%s) where rownum<=%d",

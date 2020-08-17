@@ -51,7 +51,7 @@ func buildCondition(order, divide []string) []*ConditionLine {
 	return result
 }
 
-func renderManualPageSQL(driver string, strSQL string, columnList []string,
+func renderManualPageSQL(driver string, strSQL string, columnList []string, columnListIsExpress bool,
 	columnalias map[string]string, whereList, orderbyList []string, limit int) (string, error) {
 
 	var where string
@@ -66,16 +66,34 @@ func renderManualPageSQL(driver string, strSQL string, columnList []string,
 			list := []string{}
 			for _, c := range columnList {
 				if f, ok := columnalias[c]; ok {
-					list = append(list, fmt.Sprintf("%s as %s", c, f))
+					list = append(list, fmt.Sprintf("%s as %s", c, Find(driver).QuotedIdentifier(f)))
+				} else {
+					if columnListIsExpress {
+						list = append(list, c)
+					} else {
+						list = append(list, Find(driver).QuotedIdentifier(c))
+					}
 				}
 			}
 			columns = strings.Join(list, ",")
 		} else {
-			columns = strings.Join(columnList, ",")
+			list := []string{}
+			for _, c := range columnList {
+				if columnListIsExpress {
+					list = append(list, c)
+				} else {
+					list = append(list, Find(driver).QuotedIdentifier(c))
+				}
+			}
+			columns = strings.Join(list, ",")
 		}
 	}
 	if len(orderbyList) > 0 {
-		orderby = strings.Join(orderbyList, ",")
+		list := []string{}
+		for _, c := range orderbyList {
+			list = append(list, Find(driver).QuotedIdentifier(c))
+		}
+		orderby = strings.Join(list, ",")
 	}
 	return render.RenderSQLCustom(strSQL, "<<", ">>", map[string]interface{}{
 		"Driver":  driver,

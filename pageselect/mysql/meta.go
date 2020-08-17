@@ -20,6 +20,7 @@ type meta struct{}
 func init() {
 	ps.Register(driverName, new(meta))
 }
+
 func fromDBType(ty string) schema.DataType {
 	switch ty {
 	case "TINYINT", "INT", "SMALLINT", "MEDIUMINT", "BIGINT":
@@ -38,6 +39,9 @@ func fromDBType(ty string) schema.DataType {
 		}).Panic("invalid type")
 	}
 	return 0
+}
+func (m *meta) QuotedIdentifier(col string) string {
+	return "`" + col + "`"
 }
 func (m *meta) ColumnTypes(rows *sql.Rows) ([]*scan.ColumnType, error) {
 	cols, err := rows.ColumnTypes()
