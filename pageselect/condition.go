@@ -34,13 +34,16 @@ type SQLCondition struct {
 }
 
 //GetExpress 根据条件返回一个SQL条件
-func (c *ConditionLine) GetExpress(driver string, dataType schema.DataType) string {
+func (c *ConditionLine) GetExpress(driver string, dataType schema.DataType, autoQuoted bool) string {
 	//加上括号
 	rev := ""
 	if len(c.ColumnName) > 0 {
+		colName := c.ColumnName
+		if autoQuoted {
+			colName = Find(driver).QuotedIdentifier(colName)
+		}
 		rev = fmt.Sprintf("%s%s%s", c.LeftBrackets,
-			Find(driver).GetOperatorExpress(c.Operators, dataType,
-				Find(driver).QuotedIdentifier(c.ColumnName), c.Value),
+			Find(driver).GetOperatorExpress(c.Operators, dataType, colName, c.Value),
 			c.RightBrackets)
 	}
 	if len(c.PlainText) > 0 {
@@ -53,7 +56,7 @@ func (c *ConditionLine) GetExpress(driver string, dataType schema.DataType) stri
 }
 
 //BuildWhere 构造where条件，可选传入一个schema.Table来更准确地界定每列的数据类型
-func (c *SQLCondition) BuildWhere(driver string, cols ColumnTypes) string {
+func (c *SQLCondition) BuildWhere(driver string, cols ColumnTypes, autoQuoted bool) string {
 	strLines := []string{}
 
 	if len(c.Lines) > 0 {
@@ -66,7 +69,7 @@ func (c *SQLCondition) BuildWhere(driver string, cols ColumnTypes) string {
 					dataType = field.Type
 				}
 			}
-			exp := v.GetExpress(driver, dataType)
+			exp := v.GetExpress(driver, dataType, autoQuoted)
 			//最后一行不需要加逻辑
 			if i < len(c.Lines)-1 {
 				strLines = append(strLines, exp+" "+v.Logic)

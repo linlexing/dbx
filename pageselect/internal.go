@@ -52,11 +52,10 @@ func buildCondition(order, divide []string) []*ConditionLine {
 }
 
 func renderManualPageSQL(driver string, strSQL string, columnList []string, columnListIsExpress bool,
-	columnalias map[string]string, whereList, orderbyList []string, limit int) (string, error) {
+	columnalias map[string]string, whereList, orderbyList []string, limit int, autoQuoted bool) (string, error) {
 
 	var where string
 	var columns string
-	var orderby string
 	if len(whereList) > 0 {
 		where = "(" + strings.Join(whereList, " "+AND+" ") + ")"
 	}
@@ -66,12 +65,20 @@ func renderManualPageSQL(driver string, strSQL string, columnList []string, colu
 			list := []string{}
 			for _, c := range columnList {
 				if f, ok := columnalias[c]; ok {
-					list = append(list, fmt.Sprintf("%s as %s", c, Find(driver).QuotedIdentifier(f)))
+					colName := f
+					if autoQuoted {
+						colName = Find(driver).QuotedIdentifier(colName)
+					}
+					list = append(list, fmt.Sprintf("%s as %s", c, colName))
 				} else {
 					if columnListIsExpress {
 						list = append(list, c)
 					} else {
-						list = append(list, Find(driver).QuotedIdentifier(c))
+						colName := c
+						if autoQuoted {
+							colName = Find(driver).QuotedIdentifier(colName)
+						}
+						list = append(list, colName)
 					}
 				}
 			}
@@ -82,24 +89,22 @@ func renderManualPageSQL(driver string, strSQL string, columnList []string, colu
 				if columnListIsExpress {
 					list = append(list, c)
 				} else {
-					list = append(list, Find(driver).QuotedIdentifier(c))
+					colName := c
+					if autoQuoted {
+						colName = Find(driver).QuotedIdentifier(colName)
+					}
+					list = append(list, colName)
 				}
 			}
 			columns = strings.Join(list, ",")
 		}
 	}
-	if len(orderbyList) > 0 {
-		list := []string{}
-		for _, c := range orderbyList {
-			list = append(list, Find(driver).QuotedIdentifier(c))
-		}
-		orderby = strings.Join(list, ",")
-	}
+
 	return render.RenderSQLCustom(strSQL, "<<", ">>", map[string]interface{}{
 		"Driver":  driver,
 		"Columns": columns,
 		"Where":   where,
-		"OrderBy": orderby,
+		"OrderBy": strings.Join(orderbyList, ","),
 		"Limit":   limit,
 	}, nil)
 }

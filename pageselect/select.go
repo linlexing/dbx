@@ -42,9 +42,12 @@ func Find(driver string) PageSelecter {
 
 }
 
-//PageSelect 表示一个select 类，可以附加条件和分页参数
+//PageSelect 表示一个select 类，可以附加条件和分页参数,注意，所有用到的列名会被quoted，
+//所以需要保证大小写正确
 type PageSelect struct {
-	SQL string
+	//是否自动把字段名加上引号
+	AutoQuotedColumn bool
+	SQL              string
 	//非空字段
 	NotNullFields []string
 	ManualPage    bool
@@ -67,6 +70,12 @@ func (s *PageSelect) isNotNullField(field string) bool {
 	}
 	return false
 }
+func (s *PageSelect) columnName(driver, name string) string {
+	if s.AutoQuotedColumn {
+		return Find(driver).QuotedIdentifier(name)
+	}
+	return name
+}
 
 //BuildSQL 构造sql语句，和相应的参数值
 func (s *PageSelect) BuildSQL(driver string) (strSQL string, err error) {
@@ -85,7 +94,7 @@ func (s *PageSelect) BuildSQL(driver string) (strSQL string, err error) {
 
 		if s.ManualPage {
 
-			strSQL, err = renderManualPageSQL(driver, s.SQL, nil, false, nil, nil, nil, s.Limit)
+			strSQL, err = renderManualPageSQL(driver, s.SQL, nil, false, nil, nil, nil, s.Limit, s.AutoQuotedColumn)
 			if err != nil {
 				fmt.Println("driver:", driver)
 				fmt.Println("renderSQL:", s.SQL)
@@ -104,23 +113,20 @@ func (s *PageSelect) BuildSQL(driver string) (strSQL string, err error) {
 	//where
 	if len(s.Conditions) > 0 {
 		for _, v := range s.Conditions {
-			if str := v.BuildWhere(driver, s.ColumnTypes); len(str) > 0 {
+			if str := v.BuildWhere(driver, s.ColumnTypes, s.AutoQuotedColumn); len(str) > 0 {
 				whereList = append(whereList, "("+str+")")
 			}
 		}
 	}
 	if len(s.Order) > 0 {
 		for _, v := range s.Order {
-
 			if strings.HasPrefix(v, OrderDesc) {
-				c := Find(driver).QuotedIdentifier(v[1:])
-				orderList = append(orderList, Find(driver).SortByDesc(c, s.isNotNullField(c)))
+				orderList = append(orderList, Find(driver).SortByDesc(s.columnName(driver, v[1:]), s.isNotNullField(v[1:])))
 			} else if strings.HasPrefix(v, OrderAsc) {
-				c := Find(driver).QuotedIdentifier(v[1:])
-				orderList = append(orderList, Find(driver).SortByAsc(c, s.isNotNullField(c)))
+				orderList = append(orderList, Find(driver).SortByAsc(s.columnName(driver, v[1:]), s.isNotNullField(v[1:])))
 			} else {
-				c := Find(driver).QuotedIdentifier(v)
-				orderList = append(orderList, Find(driver).SortByAsc(c, s.isNotNullField(c)))
+
+				orderList = append(orderList, Find(driver).SortByAsc(s.columnName(driver, v), s.isNotNullField(v)))
 			}
 		}
 		if len(s.Divide) > 0 {
@@ -128,14 +134,14 @@ func (s *PageSelect) BuildSQL(driver string) (strSQL string, err error) {
 				Name:  "divide",
 				Lines: buildCondition(s.Order, s.Divide),
 			}
-			if str := divideCondition.BuildWhere(driver, s.ColumnTypes); len(str) > 0 {
+			if str := divideCondition.BuildWhere(driver, s.ColumnTypes, s.AutoQuotedColumn); len(str) > 0 {
 				whereList = append(whereList, "("+str+")")
 			}
 		}
 	}
 
 	if s.ManualPage {
-		if strSQL, err = renderManualPageSQL(driver, s.SQL, s.Columns, false, s.ColumnAlias, whereList, orderList, s.Limit); err != nil {
+		if strSQL, err = renderManualPageSQL(driver, s.SQL, s.Columns, false, s.ColumnAlias, whereList, orderList, s.Limit, s.AutoQuotedColumn); err != nil {
 			return
 		}
 	} else {
@@ -148,16 +154,16 @@ func (s *PageSelect) BuildSQL(driver string) (strSQL string, err error) {
 				list := []string{}
 				for _, c := range s.Columns {
 					if f, ok := s.ColumnAlias[c]; ok {
-						list = append(list, fmt.Sprintf("%s as %s", c, Find(driver).QuotedIdentifier(f)))
+						list = append(list, fmt.Sprintf("%s as %s", c, s.columnName(driver, f)))
 					} else {
-						list = append(list, Find(driver).QuotedIdentifier(c))
+						list = append(list, s.columnName(driver, c))
 					}
 				}
 				sel = strings.Join(list, ",")
 			} else {
 				list := []string{}
 				for _, c := range s.Columns {
-					list = append(list, Find(driver).QuotedIdentifier(c))
+					list = append(list, s.columnName(driver, c))
 				}
 				sel = strings.Join(list, ",")
 			}
@@ -238,17 +244,17 @@ func (s *PageSelect) BuildTotalSQL(driver string, cols ...string) (strSQL string
 		for _, c := range cols {
 			if f, ok := s.ColumnAlias[c]; ok {
 				totalCoumns = append(totalCoumns, fmt.Sprintf("%s as %s", Find(driver).Sum(
-					Find(driver).QuotedIdentifier(c)), Find(driver).QuotedIdentifier(f)))
+					s.columnName(driver, c)), s.columnName(driver, f)))
 			} else {
 				totalCoumns = append(totalCoumns, fmt.Sprintf("%s as %s", Find(driver).Sum(
-					Find(driver).QuotedIdentifier(c)), Find(driver).QuotedIdentifier(c)))
+					s.columnName(driver, c)), s.columnName(driver, c)))
 			}
 		}
 	} else {
 		for _, col := range cols {
 			// totalCoumns = append(totalCoumns, fmt.Sprintf("sum(cast(%s(%s,0) as decimal(29,6))) as %[2]s", Find(driver).IsNull(), col))
 			totalCoumns = append(totalCoumns, fmt.Sprintf("%s as %s", Find(driver).Sum(
-				Find(driver).QuotedIdentifier(col)), Find(driver).QuotedIdentifier(col)))
+				s.columnName(driver, col)), s.columnName(driver, col)))
 		}
 	}
 	if len(totalCoumns) == 0 {
@@ -266,14 +272,14 @@ func (s *PageSelect) BuildTotalSQL(driver string, cols ...string) (strSQL string
 	//where
 	if len(s.Conditions) > 0 {
 		for _, v := range s.Conditions {
-			if str := v.BuildWhere(driver, s.ColumnTypes); len(str) > 0 {
+			if str := v.BuildWhere(driver, s.ColumnTypes, s.AutoQuotedColumn); len(str) > 0 {
 				whereList = append(whereList, "("+str+")")
 			}
 		}
 	}
 	if s.ManualPage {
 
-		if strSQL, err = renderManualPageSQL(driver, s.SQL, totalCoumns, true, nil, whereList, nil, -1); err != nil {
+		if strSQL, err = renderManualPageSQL(driver, s.SQL, totalCoumns, true, nil, whereList, nil, -1, s.AutoQuotedColumn); err != nil {
 			return
 		}
 
@@ -301,13 +307,13 @@ func (s *PageSelect) BuildRowCountSQL(driver string) (strSQL string, err error) 
 	//where
 	if len(s.Conditions) > 0 {
 		for _, v := range s.Conditions {
-			if str := v.BuildWhere(driver, s.ColumnTypes); len(str) > 0 {
+			if str := v.BuildWhere(driver, s.ColumnTypes, s.AutoQuotedColumn); len(str) > 0 {
 				whereList = append(whereList, "("+str+")")
 			}
 		}
 	}
 	if s.ManualPage {
-		if strSQL, err = renderManualPageSQL(driver, s.SQL, []string{"COUNT(*)"}, true, nil, whereList, nil, -1); err != nil {
+		if strSQL, err = renderManualPageSQL(driver, s.SQL, []string{"COUNT(*)"}, true, nil, whereList, nil, -1, s.AutoQuotedColumn); err != nil {
 			return
 		}
 	} else {
