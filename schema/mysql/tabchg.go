@@ -2,6 +2,7 @@ package mysql
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/linlexing/dbx/common"
 	"github.com/linlexing/dbx/schema"
@@ -47,7 +48,7 @@ func processColumnSQL(tabName string, oldCol, newCol *schema.Column) []string {
 		return nil
 	}
 	//如果是更名，需要先处理
-	if oldCol.Name != newCol.Name {
+	if strings.ToUpper(oldCol.Name) != strings.ToUpper(newCol.Name) {
 		rev = append(rev, fmt.Sprintf("alter table %s CHANGE column %s %s", tabName, oldCol.Name, dbDefine(newCol)))
 	}
 	if !oldCol.EqueNoIndexAndName(newCol) {

@@ -49,7 +49,7 @@ func processColumnSQL(tabName string, oldCol, newCol *schema.Column) (rev []stri
 		return
 	}
 	//如果是更名，需要先处理
-	if oldCol.Name != newCol.Name {
+	if strings.ToUpper(oldCol.Name) != strings.ToUpper(newCol.Name) {
 		rev = append(rev, fmt.Sprintf("ALTER TABLE %s RENAME %s to %s", tabName,
 			oldCol.Name, strings.ToLower(newCol.Name)))
 	}
