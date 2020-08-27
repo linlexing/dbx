@@ -56,8 +56,12 @@ func (t *tableSchema) pkIsChanged() bool {
 		if fld := t.oldTable.findColumnAnyName(append([]string{v},
 			t.newTable.ColumnByName(v).FormerName...)...); fld != nil {
 			beforeChangeName = append(beforeChangeName, fld.Name)
+		} else {
+			// 如果找不到，说明不是rename，需要重建主键
+			beforeChangeName = append(beforeChangeName, v)
 		}
 	}
+
 	for i, one := range beforeChangeName {
 		if strings.ToUpper(one) != strings.ToUpper(t.oldTable.PrimaryKeys[i]) {
 			return true
