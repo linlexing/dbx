@@ -91,7 +91,8 @@ func (s *structField) checkType(root bool) error {
 		}
 		return fmt.Errorf("int type must is int64")
 	default:
-		return errors.New("invalid type:" + dt.String())
+		str, _ := dt.String()
+		return errors.New("invalid type:" + str)
 	}
 }
 
@@ -386,11 +387,11 @@ func fieldsFromStruct(vtype reflect.Type, conv converFieldName, parentName strin
 		tags := strings.Fields(defineTag)
 
 		//如果不是任意一种类型名或子表，则说明是完整的定义，即名称开始
-		if !strings.HasPrefix(tags[0], TypeString.String()) &&
-			!strings.HasPrefix(tags[0], TypeBytea.String()) &&
-			!strings.HasPrefix(tags[0], TypeDatetime.String()) &&
-			!strings.HasPrefix(tags[0], TypeFloat.String()) &&
-			!strings.HasPrefix(tags[0], TypeInt.String()) &&
+		if !strings.HasPrefix(tags[0], TypeStringString) &&
+			!strings.HasPrefix(tags[0], TypeByteaString) &&
+			!strings.HasPrefix(tags[0], TypeDateString) &&
+			!strings.HasPrefix(tags[0], TypeFloatString) &&
+			!strings.HasPrefix(tags[0], TypeIntString) &&
 			!strings.HasPrefix(tags[0], "CHILD") {
 			//只有两列，末列是CHILD的，说明是子表
 			if len(tags) == 2 && tags[1] == "CHILD" {

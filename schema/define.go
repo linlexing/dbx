@@ -84,7 +84,10 @@ func columnDefine(line, trueTypeLine, formerNameTag string) (result *colDef, err
 		}
 		dataType = "STR"
 	}
-	result.Type = ParseDataType(dataType)
+	if result.Type, err = ParseDataType(dataType); err != nil {
+		return
+	}
+
 	result.MaxLength = int(maxLength)
 	//主键一定是not null
 	result.Null = !(notNull || result.isPK)

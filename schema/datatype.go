@@ -3,6 +3,7 @@ package schema
 import (
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"strconv"
@@ -38,15 +39,31 @@ const (
 	//TypeFloat 浮点，float 和 decimal都归入此
 	TypeFloat
 )
+const (
+	//TypeStringString 字符串
+	TypeStringString = "STR"
+	//TypeIntString 整型
+	TypeIntString = "INT"
+	//TypeDateString 日期
+	TypeDateString = "DATE"
+	//TypeFloatString 浮点
+	TypeFloatString = "FLOAT"
+	//TypeByteaString 二进制
+	TypeByteaString = "BYTEA"
+)
 
 //MarshalJSON 实现json的自定义的json序列化，主要是为了兼容前个直接保存字符串值的版本
 func (d DataType) MarshalJSON() ([]byte, error) {
-	return json.Marshal(d.String())
+	str, err := d.String()
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(str)
 }
 
 //MarshalYAML 是支持yaml序列化
 func (d DataType) MarshalYAML() (interface{}, error) {
-	return d.String(), nil
+	return d.String()
 }
 
 //UnmarshalYAML 支持yaml反序列化
@@ -55,7 +72,11 @@ func (d *DataType) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	if err := unmarshal(&outstr); err != nil {
 		return err
 	}
-	*d = ParseDataType(outstr)
+	val, err := ParseDataType(outstr)
+	if err != nil {
+		return nil
+	}
+	*d = val
 	return nil
 }
 
@@ -66,62 +87,66 @@ func (d *DataType) UnmarshalJSON(v []byte) error {
 	if err := json.Unmarshal(v, &str); err != nil {
 		return err
 	}
-	*d = ParseDataType(str)
+	val, err := ParseDataType(str)
+	if err != nil {
+		return err
+	}
+	*d = val
 	return nil
 }
 
 //ParseDataType 将一个字符串转换成类型值
-func ParseDataType(d string) DataType {
+func ParseDataType(d string) (DataType, error) {
 	switch d {
-	case "STR":
-		return TypeString
-	case "INT":
-		return TypeInt
-	case "DATE":
-		return TypeDatetime
-	case "FLOAT":
-		return TypeFloat
-	case "BYTEA":
-		return TypeBytea
+	case TypeStringString:
+		return TypeString, nil
+	case TypeIntString:
+		return TypeInt, nil
+	case TypeDateString:
+		return TypeDatetime, nil
+	case TypeFloatString:
+		return TypeFloat, nil
+	case TypeByteaString:
+		return TypeBytea, nil
 	default:
-		panic(fmt.Errorf("invalid type:%#v", d))
+		return TypeString, fmt.Errorf("invalid type:%#v", d)
 	}
 }
 
 //String 返回类型的字符串名称
-func (d DataType) String() string {
+func (d DataType) String() (string, error) {
 	switch d {
 	case TypeString:
-		return "STR"
+		return TypeStringString, nil
 	case TypeInt:
-		return "INT"
+		return TypeIntString, nil
 	case TypeDatetime:
-		return "DATE"
+		return TypeDateString, nil
 	case TypeFloat:
-		return "FLOAT"
+		return TypeFloatString, nil
 	case TypeBytea:
-		return "BYTEA"
+		return TypeByteaString, nil
 	default:
-		panic(newErrInvalidDataType(d))
+		return "", newErrInvalidDataType(d)
 	}
 
 }
 
 //ChineseString 返回类型的汉字名称
-func (d DataType) ChineseString() string {
+func (d DataType) ChineseString() (string, error) {
 	switch d {
 	case TypeString:
-		return "字符串"
+		return "字符串", nil
 	case TypeInt:
-		return "整型"
+		return "整型", nil
 	case TypeDatetime:
-		return "日期"
+		return "日期", nil
 	case TypeFloat:
-		return "浮点"
+		return "浮点", nil
 	case TypeBytea:
-		return "二进制"
+		return "二进制", nil
 	default:
-		panic(newErrInvalidDataType(d))
+		return "", newErrInvalidDataType(d)
 	}
 }
 
@@ -151,232 +176,208 @@ func strToDate(s string) (tm time.Time, err error) {
 }
 
 //ParseString 将一个字符串转换成标准值
-func (d DataType) ParseString(v string) interface{} {
+func (d DataType) ParseString(v string) (interface{}, error) {
 	if len(v) == 0 {
-		return nil
+		return nil, nil
 	}
 	switch d {
 	case TypeString:
-		return v
+		return v, nil
 	case TypeInt:
 		i, err := strconv.ParseInt(v, 10, 64)
 		if err != nil {
-			panic(err)
+			return nil, err
 		}
-		return i
+		return i, nil
 
 	case TypeDatetime:
 		tm, err := strToDate(v)
 		if err != nil {
-			panic(fmt.Sprintf("[%s] not time value", v))
+			return nil, fmt.Errorf("[%s] not time value", v)
 		}
-		return tm
+		return tm, nil
 	case TypeBytea:
 		str, err := base64.StdEncoding.DecodeString(v)
 		if err != nil {
-			panic("can't convert to byte array,not is base64 string," + v)
+			return nil, errors.New("can't convert to byte array,not is base64 string," + v)
 		}
-		return str
+		return str, nil
 	case TypeFloat:
 		f, err := strconv.ParseFloat(v, 64)
 		if err != nil {
-			panic(err)
+			return nil, err
 		}
-		return f
+		return f, nil
 
 	default:
-		panic(newErrInvalidDataType(d))
+		return nil, newErrInvalidDataType(d)
 	}
 }
 
 //ToString 转换成字符串形式,值必须要满足要求
-func (d DataType) ToString(v interface{}) (result string) {
-
+func (d DataType) ToString(v interface{}) (result string, err error) {
 	//nil代表null，不需要转换，否则会出错
 	if v == nil {
-		return ""
+		result = ""
+		return
 	}
 	switch d {
 	case TypeString:
 		switch tv := v.(type) {
 		case []byte:
-			return string(tv)
+			result = string(tv)
 		case string:
-			return tv
+			result = tv
 		default:
-			panic(fmt.Sprintf("v:%#v can't to string", v))
+			err = fmt.Errorf("v:%#v can't to string", v)
 		}
 	case TypeDatetime:
 		switch tv := v.(type) {
 		case time.Time:
-			return tv.Format("2006-01-02 15:04:05")
+			result = tv.Format("2006-01-02 15:04:05")
 		case *time.Time:
-			return tv.Format("2006-01-02 15:04:05")
+			result = tv.Format("2006-01-02 15:04:05")
 		default:
-			panic(fmt.Sprintf("v:%#v can't to string", v))
+			err = fmt.Errorf("v:%#v can't to string", v)
 		}
 	case TypeInt:
 		switch tv := v.(type) {
 		case int, int16, int32, int64, int8,
 			uint, uint16, uint32, uint64, uint8:
-			return fmt.Sprintf("%d", tv)
+			result = fmt.Sprintf("%d", tv)
 		default:
-			panic(fmt.Sprintf("v:%#v can't to string", v))
+			err = fmt.Errorf("v:%#v can't to string", v)
 		}
 	case TypeBytea:
 		switch tv := v.(type) {
 		case []byte:
-			return base64.StdEncoding.EncodeToString(tv)
+			result = base64.StdEncoding.EncodeToString(tv)
 		default:
-			panic(fmt.Sprintf("v:%#v can't to string", v))
+			err = fmt.Errorf("v:%#v can't to string", v)
 		}
 	case TypeFloat:
 		switch tv := v.(type) {
 		case float32:
-			return strconv.FormatFloat(float64(tv), 'f', -1, 64)
+			result = strconv.FormatFloat(float64(tv), 'f', -1, 64)
 		case float64:
-			return strconv.FormatFloat(tv, 'f', -1, 64)
+			result = strconv.FormatFloat(tv, 'f', -1, 64)
 		default:
-			panic(fmt.Sprintf("v:%#v can't to string", v))
+			err = fmt.Errorf("v:%#v can't to string", v)
 		}
 	default:
-		panic(newErrInvalidDataType(d))
+		err = newErrInvalidDataType(d)
 	}
-
+	return
 }
 
 //ParseScan 转换数据库驱动扫描出的值，特别是time类型的，很可能是string形式
-func (d DataType) ParseScan(v interface{}) interface{} {
+func (d DataType) ParseScan(v interface{}) (result interface{}, err error) {
 	//nil代表null，不需要转换，否则会出错
 	if v == nil {
-		return nil
+		return nil, nil
 	}
 	//空字符串当null处理
 	if v == "" {
-		return nil
+		return nil, nil
 	}
 	switch d {
 	case TypeString:
 		switch tv := v.(type) {
 		case []byte:
-			return string(tv)
+			result = string(tv)
 		case string:
-			return tv
+			result = tv
 		default:
-			panic(fmt.Sprintf("v:%#v can't to string", tv))
+			err = fmt.Errorf("v:%#v can't to string", tv)
 		}
 	case TypeDatetime:
 		switch tv := v.(type) {
 		case time.Time, *time.Time:
-			return tv
+			result = tv
 		case string:
-			tm, err := strToDate(tv)
-			if err != nil {
-				panic(fmt.Sprintf("%s not is time value", tv))
-			}
-			return tm
+			result, err = strToDate(tv)
 		case []byte:
-			tm, err := strToDate(string(tv))
-			if err != nil {
-				panic(fmt.Sprintf("%s not is time value", tv))
-			}
-			return tm
+			result, err = strToDate(string(tv))
 		default:
-			panic(fmt.Errorf("error type,%T", v))
+			err = fmt.Errorf("error type,%T", v)
 		}
 	case TypeInt:
 		switch tv := v.(type) {
 		case int8:
-			return int64(tv)
+			result = int64(tv)
 		case int16:
-			return int64(tv)
+			result = int64(tv)
 		case int32:
-			return int64(tv)
+			result = int64(tv)
 		case int:
-			return int64(tv)
+			result = int64(tv)
 		case int64:
-			return tv
+			result = tv
 		case uint8:
-			return int64(tv)
+			result = int64(tv)
 		case uint16:
-			return int64(tv)
+			result = int64(tv)
 		case uint32:
-			return int64(tv)
+			result = int64(tv)
 		case uint:
-			return int64(tv)
+			result = int64(tv)
 		case uint64:
-			return tv
+			result = tv
 		case string:
-			i, err := strconv.ParseInt(tv, 10, 64)
-			if err != nil {
-				panic(fmt.Sprintf("%s not is int", tv))
-			}
-			return i
+			result, err = strconv.ParseInt(tv, 10, 64)
 
 		case []byte:
-			i, err := strconv.ParseInt(string(tv), 10, 64)
-			if err != nil {
-				panic(fmt.Sprintf("%s not is int", tv))
-			}
-			return i
+			result, err = strconv.ParseInt(string(tv), 10, 64)
 		default:
-			panic(fmt.Sprintf("v:%#v not is int,T:%T", tv, tv))
+			err = fmt.Errorf("v:%#v not is int,T:%T", tv, tv)
 		}
 	case TypeBytea:
 		switch tv := v.(type) {
 		case string:
-			return []byte(tv)
+			result = []byte(tv)
 		case []byte:
-			return tv
+			result = tv
 		default:
-			panic(fmt.Sprintf("v:%#v,T:%T not is bytea", v, v))
+			err = fmt.Errorf("v:%#v,T:%T not is bytea", v, v)
 		}
 	case TypeFloat:
 		switch tv := v.(type) {
 		case float32:
-			return float64(tv)
+			result = float64(tv)
 		case float64:
-			return tv
+			result = tv
 		case int64:
-			return float64(tv)
+			result = float64(tv)
 		case int32:
-			return float64(tv)
+			result = float64(tv)
 		case int16:
-			return float64(tv)
+			result = float64(tv)
 		case int:
-			return float64(tv)
+			result = float64(tv)
 		case int8:
-			return float64(tv)
+			result = float64(tv)
 		case uint64:
-			return float64(tv)
+			result = float64(tv)
 		case uint32:
-			return float64(tv)
+			result = float64(tv)
 		case uint16:
-			return float64(tv)
+			result = float64(tv)
 		case uint:
-			return float64(tv)
+			result = float64(tv)
 		case uint8:
-			return float64(tv)
+			result = float64(tv)
 		case string:
-			f, err := strconv.ParseFloat(tv, 64)
-			if err != nil {
-				panic(fmt.Sprintf("v:%#v,T:%T not is float", tv, tv))
-			}
-			return f
+			result, err = strconv.ParseFloat(tv, 64)
 
 		case []byte:
-			f, err := strconv.ParseFloat(string(tv), 64)
-			if err != nil {
-				panic(fmt.Sprintf("v:%#v,T:%T not is float", tv, tv))
-			}
-			return f
+			result, err = strconv.ParseFloat(string(tv), 64)
 		default:
-			panic(fmt.Sprintf("v:%#v,T:%T not is float", tv, tv))
-
+			err = fmt.Errorf("v:%#v,T:%T not is float", tv, tv)
 		}
 	default:
-		panic(newErrInvalidDataType(d))
+		err = newErrInvalidDataType(d)
 	}
+	return
 
 }
 

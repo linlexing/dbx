@@ -193,9 +193,13 @@ func getColumns(db common.DB, schemaName, tableName string) ([]*schema.Column, e
 
 	revColumns := []*schema.Column{}
 	for _, v := range columns {
+		vtype, err := schema.ParseDataType(v.Type)
+		if err != nil {
+			return nil, err
+		}
 		col := &schema.Column{
 			Name:        v.Name,
-			Type:        schema.ParseDataType(v.Type),
+			Type:        vtype,
 			MaxLength:   v.MaxLength,
 			Null:        v.Null > 0,
 			TrueType:    v.TrueType,

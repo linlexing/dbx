@@ -36,7 +36,8 @@ func TypeScan(s common.Scaner, cols []*ColumnType) ([]interface{}, error) {
 		case schema.TypeBytea:
 			newV = &[]byte{}
 		default:
-			return nil, errors.New("invalid type " + v.Type.String())
+			str, _ := v.Type.String()
+			return nil, errors.New("invalid type " + str)
 		}
 		outList = append(outList, newV)
 	}
@@ -73,7 +74,8 @@ func TypeScan(s common.Scaner, cols []*ColumnType) ([]interface{}, error) {
 				outV = *tv
 			}
 		default:
-			return nil, errors.New("invalid type " + v.Type.String())
+			str, _ := v.Type.String()
+			return nil, errors.New("invalid type " + str)
 		}
 		rev = append(rev, outV)
 	}
