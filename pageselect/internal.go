@@ -1,7 +1,6 @@
 package pageselect
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/linlexing/dbx/render"
@@ -51,8 +50,9 @@ func buildCondition(order, divide []string) []*ConditionLine {
 	return result
 }
 
-func renderManualPageSQL(driver string, strSQL string, columnList []string, columnListIsExpress bool,
-	columnalias map[string]string, whereList, orderbyList []string, limit int, autoQuoted bool) (string, error) {
+func renderManualPageSQL(driver string, strSQL string, columnList []string,
+	columnListIsExpress bool, whereList, orderbyList []string, limit int,
+	autoQuoted bool) (string, error) {
 
 	var where string
 	var columns string
@@ -60,44 +60,20 @@ func renderManualPageSQL(driver string, strSQL string, columnList []string, colu
 		where = "(" + strings.Join(whereList, " "+AND+" ") + ")"
 	}
 	if len(columnList) > 0 {
-		//加入别名支持
-		if len(columnalias) > 0 {
-			list := []string{}
-			for _, c := range columnList {
-				if f, ok := columnalias[c]; ok {
-					colName := f
-					if autoQuoted {
-						colName = Find(driver).QuotedIdentifier(colName)
-					}
-					list = append(list, fmt.Sprintf("%s as %s", c, colName))
-				} else {
-					if columnListIsExpress {
-						list = append(list, c)
-					} else {
-						colName := c
-						if autoQuoted {
-							colName = Find(driver).QuotedIdentifier(colName)
-						}
-						list = append(list, colName)
-					}
+
+		list := []string{}
+		for _, c := range columnList {
+			if columnListIsExpress {
+				list = append(list, c)
+			} else {
+				colName := c
+				if autoQuoted {
+					colName = Find(driver).QuotedIdentifier(colName)
 				}
+				list = append(list, colName)
 			}
-			columns = strings.Join(list, ",")
-		} else {
-			list := []string{}
-			for _, c := range columnList {
-				if columnListIsExpress {
-					list = append(list, c)
-				} else {
-					colName := c
-					if autoQuoted {
-						colName = Find(driver).QuotedIdentifier(colName)
-					}
-					list = append(list, colName)
-				}
-			}
-			columns = strings.Join(list, ",")
 		}
+		columns = strings.Join(list, ",")
 	}
 
 	return render.RenderSQLCustom(strSQL, "<<", ">>", map[string]interface{}{
