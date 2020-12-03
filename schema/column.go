@@ -30,7 +30,9 @@ func (f *Column) Eque(src *Column) bool {
 	if strings.ToUpper(f.Name) != strings.ToUpper(src.Name) {
 		return false
 	}
-	if f.FetchDriver == src.FetchDriver &&
+	// FetchDriver为空，则说明是内存定义，不是从数据库取回，truetype是手工赋予，可以适用更新数据库
+	if (len(f.FetchDriver) == 0 || len(src.FetchDriver) == 0 ||
+		strings.ToLower(f.FetchDriver) == strings.ToLower(src.FetchDriver)) &&
 		len(f.TrueType) > 0 && len(src.TrueType) > 0 {
 		return f.TrueType == src.TrueType &&
 			f.Index == src.Index
@@ -61,7 +63,8 @@ func (f *Column) EqueNoIndexAndName(src *Column) bool {
 	return f.Null == src.Null
 }
 func (f *Column) EqueType(src *Column) bool {
-	if f.FetchDriver == src.FetchDriver &&
+	if (len(f.FetchDriver) == 0 || len(src.FetchDriver) == 0 ||
+		f.FetchDriver == src.FetchDriver) &&
 		len(f.TrueType) > 0 && len(src.TrueType) > 0 {
 		return f.TrueType == src.TrueType
 	}

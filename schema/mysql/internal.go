@@ -88,7 +88,8 @@ func dbDefine(c *schema.Column) string {
 	if !c.Null {
 		nullStr = " NOT NULL"
 	}
-	if c.FetchDriver == driverName && len(c.TrueType) > 0 {
+	if (len(c.FetchDriver) == 0 ||
+		strings.ToLower(c.FetchDriver) == strings.ToLower(driverName)) && len(c.TrueType) > 0 {
 		typeStr = c.TrueType
 	}
 	if len(typeStr) == 0 {
