@@ -755,10 +755,11 @@ func (t *Table) Update(oldData, newData map[string]interface{}) (upCount int64, 
 		err = errors.New("data is empty")
 		return
 	}
-	if len(oldData) != len(newData) {
-		err = errors.New("the old and new record,field number not same")
-		return
-	}
+	// 为允许部分更新，以下代码注释
+	// if len(oldData) != len(newData) {
+	// 	err = errors.New("the old and new record,field number not same")
+	// 	return
+	// }
 	if err = t.checkAndConvertRow(oldData); err != nil {
 		return
 	}
