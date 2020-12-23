@@ -571,8 +571,15 @@ func (t *Table) Insert(rows []map[string]interface{}) (err error) {
 
 	}
 	cols := []string{}
+	colMaps := map[string]struct{}{}
 	for k := range rows[0] {
-		cols = append(cols, k)
+		colMaps[k] = struct{}{}
+	}
+	//按照现有字段顺序进行排序
+	for _, one := range t.Columns {
+		if _, ok := colMaps[one.Name]; ok {
+			cols = append(cols, one.Name)
+		}
 	}
 	strSQL := fmt.Sprintf("insert into %s(%s)values(%s)",
 		t.FullName(), strings.Join(cols, ","),
