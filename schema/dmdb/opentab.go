@@ -90,7 +90,7 @@ func getColumns(db common.DB, schemaName, table string) ([]*schema.Column, error
 	if err := func() error {
 		strSQL := `select column_name as "DBNAME",
 					decode(nullable,'Y',1,0) as "DBNULL",
-					(case when data_type in ('CLOB','VARCHAR', 'VARCHAR2','CHAR','NVARCHAR2')
+					(case when data_type in ('CLOB','VARCHAR','TEXT','VARCHAR2','CHAR','NVARCHAR2')
 						then 'STR'
 						when  (data_type ='NUMBER' AND DATA_SCALE = 0) or data_type='INTEGER'
 						then 'INT'
