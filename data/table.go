@@ -270,8 +270,8 @@ func (t *Table) KeyExists(pks ...interface{}) (result bool, err error) {
 func (t *Table) KeyValues(row map[string]interface{}) []interface{} {
 	rev := []interface{}{}
 	nameMap := map[string]string{}
-	for _, v := range row {
-		nameMap[strings.ToLower(v)] = v
+	for k := range row {
+		nameMap[strings.ToLower(k)] = k
 	}
 	for _, v := range t.PrimaryKeys {
 		rev = append(rev, row[nameMap[strings.ToLower(v)]])
