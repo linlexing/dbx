@@ -266,11 +266,15 @@ func (t *Table) KeyExists(pks ...interface{}) (result bool, err error) {
 
 }
 
-//KeyValues 返回一个记录的主键值
+//KeyValues 返回一个记录的主键值,row中的字段名会忽略大小写和主键进行比较
 func (t *Table) KeyValues(row map[string]interface{}) []interface{} {
 	rev := []interface{}{}
+	nameMap := map[string]string{}
+	for _, v := range row {
+		nameMap[strings.ToLower(v)] = v
+	}
 	for _, v := range t.PrimaryKeys {
-		rev = append(rev, row[v])
+		rev = append(rev, row[nameMap[strings.ToLower(v)]])
 	}
 	return rev
 }
