@@ -22,6 +22,12 @@ type SqlVisitor interface {
 	// Visit a parse tree produced by SqlParser#alias.
 	VisitAlias(ctx *AliasContext) interface{}
 
+	// Visit a parse tree produced by SqlParser#join.
+	VisitJoin(ctx *JoinContext) interface{}
+
+	// Visit a parse tree produced by SqlParser#union.
+	VisitUnion(ctx *UnionContext) interface{}
+
 	// Visit a parse tree produced by SqlParser#decimalLiteral.
 	VisitDecimalLiteral(ctx *DecimalLiteralContext) interface{}
 

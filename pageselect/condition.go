@@ -21,6 +21,7 @@ type ConditionLine struct {
 
 	Operators     Operator
 	Value         string
+	Value2        string //用于 between
 	RightBrackets string
 	Logic         string
 	PlainText     string //与上面的条件成and关系
@@ -43,7 +44,7 @@ func (c *ConditionLine) GetExpress(driver string, dataType schema.DataType, auto
 			colName = Find(driver).QuotedIdentifier(colName)
 		}
 		rev = fmt.Sprintf("%s%s%s", c.LeftBrackets,
-			Find(driver).GetOperatorExpress(c.Operators, dataType, colName, c.Value),
+			Find(driver).GetOperatorExpress(c.Operators, dataType, colName, c.Value, c.Value2),
 			c.RightBrackets)
 	}
 	if len(c.PlainText) > 0 {

@@ -51,6 +51,18 @@ func (s *BaseSqlListener) EnterAlias(ctx *AliasContext) {}
 // ExitAlias is called when production alias is exited.
 func (s *BaseSqlListener) ExitAlias(ctx *AliasContext) {}
 
+// EnterJoin is called when production join is entered.
+func (s *BaseSqlListener) EnterJoin(ctx *JoinContext) {}
+
+// ExitJoin is called when production join is exited.
+func (s *BaseSqlListener) ExitJoin(ctx *JoinContext) {}
+
+// EnterUnion is called when production union is entered.
+func (s *BaseSqlListener) EnterUnion(ctx *UnionContext) {}
+
+// ExitUnion is called when production union is exited.
+func (s *BaseSqlListener) ExitUnion(ctx *UnionContext) {}
+
 // EnterDecimalLiteral is called when production decimalLiteral is entered.
 func (s *BaseSqlListener) EnterDecimalLiteral(ctx *DecimalLiteralContext) {}
 

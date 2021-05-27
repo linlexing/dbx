@@ -1,7 +1,9 @@
 package pageselect
 
-import "errors"
-import "encoding/json"
+import (
+	"encoding/json"
+	"errors"
+)
 
 //Operator 表示条件中的运算符
 type Operator int
@@ -55,12 +57,77 @@ const (
 	OperatorLengthLessThan
 	//OperatorLengthLessThanOrEqu 长度<=
 	OperatorLengthLessThanOrEqu
+	//OperatorBetween between
+	OperatorBetween
+	//OperatorNotBetween not between
+	OperatorNotBetween
 )
 
 var (
 	//ErrInvalidOperator 表明一个不存在的运算符
-	ErrInvalidOperator = errors.New("invalid operate")
+	ErrInvalidOperator  = errors.New("invalid operate")
+	opMap, opReverseMap = makeOpMap()
 )
+
+func makeOpMap() (map[Operator]Operator, map[Operator]Operator) {
+	rev := map[Operator]Operator{
+		OperatorEqu: OperatorNotEqu,
+		//OperatorGreaterThan >
+		OperatorGreaterThan:
+		//OperatorLessThanOrEqu <=
+		OperatorLessThanOrEqu,
+		//OperatorGreaterThanOrEqu >=
+		OperatorGreaterThanOrEqu:
+		//OperatorLessThan <
+		OperatorLessThan,
+		//OperatorLike 包含
+		OperatorLike:
+		//OperatorNotLike 不包含
+		OperatorNotLike,
+		//OperatorPrefix 前缀
+		OperatorPrefix:
+		//OperatorNotPrefix 非前缀
+		OperatorNotPrefix,
+		//OperatorSuffix 后缀
+		OperatorSuffix:
+		//OperatorNotSuffix 非后缀
+		OperatorNotSuffix,
+		//OperatorIn 在列表
+		OperatorIn:
+		//OperatorNotIn 不在列表
+		OperatorNotIn,
+		//OperatorRegexp 正则
+		OperatorRegexp:
+		//OperatorNotRegexp 非正则
+		OperatorNotRegexp,
+		//OperatorIsNull 为空
+		OperatorIsNull:
+		//OperatorIsNotNull is not null
+		OperatorIsNotNull,
+		//OperatorLengthEqu 长度等于
+		OperatorLengthEqu:
+		//OperatorLengthNotEqu 长度不等于
+		OperatorLengthNotEqu,
+		//OperatorLengthGreaterThan 长度大于
+		OperatorLengthGreaterThan:
+		//OperatorLengthLessThanOrEqu 长度<=
+		OperatorLengthLessThanOrEqu,
+		//OperatorLengthGreaterThanOrEqu 长度 >=
+		OperatorLengthGreaterThanOrEqu:
+		//OperatorLengthLessThan 长度 <
+		OperatorLengthLessThan,
+		//OperatorBetween between
+		OperatorBetween:
+		//OperatorNotBetween not between
+		OperatorNotBetween,
+	}
+	revReverse := map[Operator]Operator{}
+	for k, v := range rev {
+		revReverse[v] = k
+	}
+	return rev, revReverse
+
+}
 
 //MarshalJSON 实现json的自定义的json序列化，主要是为了兼容前个直接保存字符串值的版本
 func (o Operator) MarshalJSON() ([]byte, error) {
@@ -98,6 +165,25 @@ func (o *Operator) UnmarshalJSON(v []byte) error {
 	}
 	*o = opt
 	return err
+}
+
+//Reverse 反转运算符
+func (o Operator) Reverse() Operator {
+	if v, ok := opMap[o]; ok {
+		return v
+	}
+	if v, ok := opReverseMap[o]; ok {
+		return v
+	}
+	panic("invalid op " + o.String())
+}
+
+//RemoveReverse 消除反转，如果是反向，返回正向，并返回true，否则不变，并返回false
+func (o Operator) RemoveReverse() (Operator, bool) {
+	if v, ok := opReverseMap[o]; ok {
+		return v, true
+	}
+	return o, false
 }
 
 //ParseOperatorFromString 将一个字符串转换成Operator值
@@ -151,6 +237,10 @@ func ParseOperatorFromString(str string) (Operator, error) {
 		return OperatorLengthLessThan, nil
 	case "_<=":
 		return OperatorLengthLessThanOrEqu, nil
+	case "[,]":
+		return OperatorBetween, nil
+	case "![,]":
+		return OperatorNotBetween, nil
 	default:
 		return 0, ErrInvalidOperator
 	}
@@ -208,6 +298,10 @@ func (o Operator) String() string {
 		return "_<"
 	case OperatorLengthLessThanOrEqu:
 		return "_<="
+	case OperatorBetween:
+		return "[,]"
+	case OperatorNotBetween:
+		return "![,]"
 	default:
 		panic(ErrInvalidOperator)
 	}
@@ -264,6 +358,10 @@ func (o Operator) ChineseString() string {
 		return "长度小于"
 	case OperatorLengthLessThanOrEqu:
 		return "长度小于等于"
+	case OperatorBetween:
+		return "区间"
+	case OperatorNotBetween:
+		return "非区间"
 	default:
 		panic(ErrInvalidOperator)
 	}

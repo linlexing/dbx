@@ -14,7 +14,7 @@ type PageSelecter interface {
 	ColumnTypes(rows *sql.Rows) ([]*scan.ColumnType, error)
 	//标识符加引号，mysql是`
 	QuotedIdentifier(col string) string
-	GetOperatorExpress(ope Operator, dataType schema.DataType, left, right string) string
+	GetOperatorExpress(ope Operator, dataType schema.DataType, column, value, value2 string) string
 	SortByAsc(string, bool) string
 	SortByDesc(string, bool) string
 	LimitSQL(sel, strSQL, where, orderby string, limit int) string

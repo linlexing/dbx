@@ -84,7 +84,7 @@ func valueExpress(dataType schema.DataType, value string) string {
 	}
 }
 
-func (m *meta) GetOperatorExpress(ope ps.Operator, dataType schema.DataType, left, right string) (strSQL string) {
+func (m *meta) GetOperatorExpress(ope ps.Operator, dataType schema.DataType, left, right, value2 string) (strSQL string) {
 	//需要考虑到null的情况
 	switch ope {
 	case ps.OperatorEqu: // "=" 等于
@@ -244,7 +244,10 @@ func (m *meta) GetOperatorExpress(ope ps.Operator, dataType schema.DataType, lef
 	case ps.OperatorLengthLessThanOrEqu: //"_<=" 长度小于
 
 		strSQL = fmt.Sprintf("%s RLIKE '.{0,%s}", left, right)
-
+	case ps.OperatorBetween:
+		strSQL = fmt.Sprintf("%s between %s and %s", left, right, value2)
+	case ps.OperatorNotBetween:
+		strSQL = fmt.Sprintf("%s not between %s and %s", left, right, value2)
 	default:
 		log.Panic(fmt.Errorf("the opt:%s not impl", ope))
 	}

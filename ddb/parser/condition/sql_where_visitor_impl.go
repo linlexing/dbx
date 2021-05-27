@@ -3,11 +3,62 @@ package condition
 import (
 	"bytes"
 	"encoding/csv"
+	"regexp"
 	"strings"
 
 	"github.com/antlr/antlr4/runtime/Go/antlr"
 	"github.com/linlexing/dbx/ddb/parser"
 	"github.com/linlexing/dbx/pageselect"
+)
+
+var (
+	// 找出所有不在单引号字符串内的注释内容
+	// (?:[^']|'[^']')*?(/\*[^*]\*(?:[^/*][^*]\*)*/)
+	//
+	// Non-capturing group (?:[^']|'[^']')*?
+	// *? matches the previous token between zero and unlimited times, as few times as possible, expanding as needed (lazy)
+	// 1st Alternative [^']
+	// Match a single character not present in the list below [^']
+	// ' matches the character ' literally (case sensitive)
+	// 2nd Alternative '[^']'
+	// ' matches the character ' literally (case sensitive)
+	// Match a single character not present in the list below [^']
+	// * matches the previous token between zero and unlimited times, as many times as possible, giving back as needed (greedy)
+	// ' matches the character ' literally (case sensitive)
+	// ' matches the character ' literally (case sensitive)
+	// 1st Capturing Group (/\*[^*]\*(?:[^/*][^*]\*)*/)
+	// / matches the character / literally (case sensitive)
+	// \* matches the character * literally (case sensitive)
+	// Match a single character not present in the list below [^*]
+	// * matches the previous token between zero and unlimited times, as many times as possible, giving back as needed (greedy)
+	// * matches the character * literally (case sensitive)
+	// \* matches the character * literally (case sensitive)
+	// + matches the previous token between one and unlimited times, as many times as possible, giving back as needed (greedy)
+	// Non-capturing group (?:[^/*][^*]\*)*
+	// * matches the previous token between zero and unlimited times, as many times as possible, giving back as needed (greedy)
+	// Match a single character not present in the list below [^/*]
+	// Match a single character not present in the list below [^*]
+	// \* matches the character * literally (case sensitive)
+	// / matches the character / literally (case sensitive)
+	regComment = regexp.MustCompile(`(?:[^']|'[^']*')*?(/\*[^*]*\*+(?:[^/*][^*]*\*+)*/)`)
+	regExists  = regexp.MustCompile(`^from\s+(.*)\s+on\s+(.*?)\s+where\s+(.*)$`)
+	regInTable = regexp.MustCompile(`^(.*)\s+in\s+(.*)\((.*)\)\s+where\s+(.*)$`)
+	regCount   = regexp.MustCompile(`^COUNT\(from\s+(.*)\s+on\s+(.*?)\s+where\s+(.*)\)\s+(.*)\s+(\d+)$`)
+)
+
+const (
+	commentPlainText = "/*PLAINTEXT*/"
+	// commentNotPlainText = "/*NOT PLAINTEXT*/"
+	//示例: from ABC on I.abc=O.abc and I.where=O.aaa where a=1 and b=c exist(select 1 from aab where 1=2)
+	commentExists    = "/*EXISTS("
+	commentNotExists = "/*NOT EXISTS("
+	//示例: field in ABC(acd) where a=1 and b=c exist(select 1 from aab where 1=2)
+	commentIn    = "/*IN("
+	commentNotIn = "/*NOT IN("
+	//示例:/*COUNT(from ABC on abc=O.abc and where=O.aaa where a=1 and b=c exist(select 1 from aab where 1=2)) > 0*/
+	commentCount = "/*COUNT("
+	//特殊的，临时被替换的动态node
+	commentDynamicNode = "/*DYNAMIC-NODE*/"
 )
 
 //SqlWhereVisitorImpl 完成条件串的转换，只支持简单的 字段名 运算符 值 条件
@@ -89,16 +140,16 @@ func (s *SqlWhereVisitorImpl) VisitLogicExpression(ctx *parser.LogicExpressionCo
 						default:
 							panic("invalid length opereate " + operate.GetText())
 						}
-						return NewConditionNode(tv.FunctionArg().GetText(), ope, decodeSignStringIf(expr2.GetText()))
+						return NewConditionNode(tv.FunctionArg().GetText(), ope, decodeSignStringIf(expr2.GetText()), "")
 					}
 				}
-				return NewPlainNode(getText(ctx))
+				panic("invalid function " + tv.FunctionName().GetText())
 
 			}
 		}
-		if !isColumn(expr1) {
-			return NewPlainNode(getText(ctx))
-		}
+		// if !isColumn(expr1) {
+		// 	return NewPlainNode(getText(ctx))
+		// }
 		var ope pageselect.Operator
 		switch operate.GetText() {
 		case "=":
@@ -120,15 +171,19 @@ func (s *SqlWhereVisitorImpl) VisitLogicExpression(ctx *parser.LogicExpressionCo
 		default:
 			panic("invalid opereate " + operate.GetText())
 		}
-		return NewConditionNode(expr1.GetText(), ope, decodeSignStringIf(expr2.GetText()))
+		return NewConditionNode(expr1.GetText(), ope, decodeSignStringIf(expr2.GetText()), "")
 
 	}
 	//BETWEEN
-	if expr1, between, expr2, expr3 :=
-		ctx.Expr(0), ctx.BETWEEN(), ctx.Expr(1), ctx.Expr(2); expr1 != nil &&
+	if not, expr1, between, expr2, expr3 :=
+		ctx.NOT(), ctx.Expr(0), ctx.BETWEEN(), ctx.Expr(1), ctx.Expr(2); expr1 != nil &&
 		between != nil && expr2 != nil && expr3 != nil {
-
-		return NewPlainNode(getText(ctx))
+		if not != nil {
+			return NewConditionNode(expr1.GetText(), pageselect.OperatorNotBetween,
+				decodeSignStringIf(expr2.GetText()), decodeSignStringIf(expr3.GetText()))
+		}
+		return NewConditionNode(expr1.GetText(), pageselect.OperatorBetween,
+			decodeSignStringIf(expr2.GetText()), decodeSignStringIf(expr3.GetText()))
 	}
 	//IN/NOT IN
 	if not, in, expr := ctx.NOT(), ctx.IN(), ctx.AllExpr(); in != nil && len(expr) > 2 {
@@ -151,9 +206,9 @@ func (s *SqlWhereVisitorImpl) VisitLogicExpression(ctx *parser.LogicExpressionCo
 		if err := r.WriteAll([][]string{strs}); err != nil {
 			panic(err)
 		}
-		return NewConditionNode(expr[0].GetText(), ope, bys.String())
-
+		return NewConditionNode(expr[0].GetText(), ope, bys.String(), "")
 	}
+
 	//LIKE/NOT LIKE
 	if not, like, field, val :=
 		ctx.NOT(), ctx.LIKE(), ctx.Expr(0), ctx.Expr(1); like != nil &&
@@ -201,7 +256,7 @@ func (s *SqlWhereVisitorImpl) VisitLogicExpression(ctx *parser.LogicExpressionCo
 				valStr = str
 			}
 		}
-		return NewConditionNode(field.GetText(), ope, valStr)
+		return NewConditionNode(field.GetText(), ope, valStr, "")
 	}
 	//IS NULL/IS NOT NULL
 	if is, not, null, field :=
@@ -210,14 +265,18 @@ func (s *SqlWhereVisitorImpl) VisitLogicExpression(ctx *parser.LogicExpressionCo
 			return NewPlainNode(getText(ctx))
 		}
 		if not != nil {
-			return NewConditionNode(field.GetText(), pageselect.OperatorIsNotNull, "")
+			return NewConditionNode(field.GetText(), pageselect.OperatorIsNotNull, "", "")
 		}
-		return NewConditionNode(field.GetText(), pageselect.OperatorIsNull, "")
+		return NewConditionNode(field.GetText(), pageselect.OperatorIsNull, "", "")
 
 	}
-	//'(' logicExpression ')'
-	if left, right, logicExpr := ctx.GetLeftBracket(), ctx.GetRightBracket(), ctx.LogicExpression(0); left != nil &&
-		right != nil && logicExpr != nil {
+	//动态node '(' logicExpression ')'
+	if comment, left, right, logicExpr := ctx.COMMENT(), ctx.GetLeftBracket(), ctx.GetRightBracket(),
+		ctx.LogicExpression(0); left != nil && right != nil && logicExpr != nil {
+		if comment != nil && comment.GetText() == commentDynamicNode {
+			id := strings.Split(logicExpr.GetText(), "=")[1]
+			return s.vars[id].(*Node)
+		}
 		return logicExpr.Accept(s)
 	}
 	return NewPlainNode(getText(ctx))

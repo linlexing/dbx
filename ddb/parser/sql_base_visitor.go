@@ -28,6 +28,14 @@ func (v *BaseSqlVisitor) VisitAlias(ctx *AliasContext) interface{} {
 	return v.VisitChildren(ctx)
 }
 
+func (v *BaseSqlVisitor) VisitJoin(ctx *JoinContext) interface{} {
+	return v.VisitChildren(ctx)
+}
+
+func (v *BaseSqlVisitor) VisitUnion(ctx *UnionContext) interface{} {
+	return v.VisitChildren(ctx)
+}
+
 func (v *BaseSqlVisitor) VisitDecimalLiteral(ctx *DecimalLiteralContext) interface{} {
 	return v.VisitChildren(ctx)
 }

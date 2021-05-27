@@ -23,6 +23,12 @@ type SqlListener interface {
 	// EnterAlias is called when entering the alias production.
 	EnterAlias(c *AliasContext)
 
+	// EnterJoin is called when entering the join production.
+	EnterJoin(c *JoinContext)
+
+	// EnterUnion is called when entering the union production.
+	EnterUnion(c *UnionContext)
+
 	// EnterDecimalLiteral is called when entering the decimalLiteral production.
 	EnterDecimalLiteral(c *DecimalLiteralContext)
 
@@ -106,6 +112,12 @@ type SqlListener interface {
 
 	// ExitAlias is called when exiting the alias production.
 	ExitAlias(c *AliasContext)
+
+	// ExitJoin is called when exiting the join production.
+	ExitJoin(c *JoinContext)
+
+	// ExitUnion is called when exiting the union production.
+	ExitUnion(c *UnionContext)
 
 	// ExitDecimalLiteral is called when exiting the decimalLiteral production.
 	ExitDecimalLiteral(c *DecimalLiteralContext)

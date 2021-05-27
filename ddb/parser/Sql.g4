@@ -35,6 +35,13 @@ OFFSET : O F F S E T ;
 LIKE : L I K E ;
 EXISTS : E X I S T S ;
 CAST : C A S T ;
+INNER : I N N E R ;
+LEFT : L E F T ;
+RIGHT : R I G H T ;
+JOIN : J O I N ;
+ON : O N ;
+UNION : U N I O N ;
+ALL : A L L ;
 
 fragment A : [aA] ;
 fragment B : [bB] ;
@@ -84,6 +91,10 @@ typeName : ID ;
 functionName : ID ;
 alias : ID | TEXT_ALIAS ;
 
+join : (INNER | LEFT | RIGHT) JOIN ;
+
+union : UNION ALL? ;
+
 decimalLiteral : DECIMAL_LITERAL ;
 textLiteral : TEXT_STRING ;
 bind_variables : BIND_VARIABLE ;
@@ -91,12 +102,13 @@ bind_variables : BIND_VARIABLE ;
 selectStatement :
  SELECT
  selectElements
- FROM tableSources
+ FROM tableSources (join tableSources ON logicExpression)?
  (whereClause)?
  (groupByClause)?
  (havingClause)?
  (orderByClause)?
  (limitClause)?
+ | selectStatement union selectStatement
  ;
 
 selectElements : (star='*' | selectElement)(',' selectElement)* ;
@@ -150,10 +162,11 @@ logicExpression
  : expr comparisonOperator expr
  | expr NOT? BETWEEN expr AND expr
  | expr NOT? IN '(' expr (',' expr)* ')'
+ | expr NOT? IN '(' selectStatement ')'
  | expr NOT? LIKE expr
  | expr IS NOT? NULL
  | EXISTS leftBracket='(' selectStatement rightBracket=')'
- | leftBracket='(' logicExpression rightBracket=')'
+ | COMMENT? leftBracket='(' logicExpression rightBracket=')'
  | NOT logicExpression
  | logicExpression logicalOperator=AND logicExpression
  | logicExpression logicalOperator=OR logicExpression
@@ -187,4 +200,8 @@ limitClause : LIMIT
 //MySQL, PostgreSQL
 //Oracle supports rownum
 
+COMMENT : '/*' .*? '*/' ;
+
 WS : [ \t\r\n]+ -> skip ; // skip spaces, tabs, newlines
+
+//antlr4 -Dlanguage=Go -visitor Sql.g4

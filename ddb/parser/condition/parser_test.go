@@ -4,9 +4,6 @@ import (
 	"testing"
 
 	"github.com/davecgh/go-spew/spew"
-
-	"github.com/antlr/antlr4/runtime/Go/antlr"
-	"github.com/linlexing/dbx/ddb/parser"
 )
 
 // type TreeShapeListener struct {
@@ -22,25 +19,56 @@ import (
 // }
 func TestMain(t *testing.T) {
 	t.Log("start")
-	stream := antlr.NewInputStream(`where 
-	a=1 and 
-	b=1 and
-	c=1 or
-	d=1 and
-	e=1 and
-	f=1`)
-	lexer := parser.NewSqlLexer(stream)
-	cs := antlr.NewCommonTokenStream(lexer, 0)
-	p := parser.NewSqlParser(cs)
-
-	// p.AddErrorListener(antlr.NewDiagnosticErrorListener(true))
-	p.BuildParseTrees = true
-	tree := p.WhereClause()
-	visitor := new(SqlWhereVisitorImpl)
-	node := visitor.Visit(tree)
+	// node := ParserNode(`a=1 and /*PLAINTEXT*/
+	// ((id=123) and
+	// aaa=dd or
+	// ccc=aa or
+	// (
+	// 	b=1 and
+	// 	c=1 or
+	// 	c in (select a.a from a
+	// 		left join  b on a.a=b.a
+	// 	)
+	// )) and
+	// /*COUNT(from ABC on abc=O.abc and where=O.aaa where a=1 and b=c exist(select 1 from aab where 1=2)) > 0*/
+	// (COUNT(select 1 from ABC where abc=O.abc and where=O.aaa and a=1 and b=c and exist(select 1 from aab where 1=2)) > 0) AND
+	// /*NOT IN(field in ABC(acd) where a=1 and b=c and exist(select 1 from aab where 1=2))*/
+	// (field not in ABC(acd) where a=1 and b=c and exist(select 1 from aab where 1=2)) AND
+	// /*PLAINTEXT*/
+	// (not(EXISTS(select 1 from b
+	// 	left join  b on a.a=b.a))) and
+	// d=1 and
+	// e=1 and
+	// f=1`)
+	node := ParserNode(`(
+        a = '1' AND
+        /*PLAINTEXT*/
+        ((id=123) and
+        aaa=dd or
+        ccc=aa or
+        (
+			b=1 and
+			c=1 or
+			c in (select a.a from a	left join  b on a.a=b.a
+			)
+        )) AND
+        /*NOT EXISTS(from ABC on abc=wholesql.abc and where=wholesql.aaa where a=1 and b=c exist(select 1 from aab where 1=2))*/
+        (NOT EXISTS(select 1 from ABC where abc=wholesql.abc and where=wholesql.aaa and a=1 and b=c exist(select 1 from aab where 1=2))) AND
+        /*COUNT(from ABC on abc=wholesql.abc and where=wholesql.aaa where a=1 and b=c exist(select 1 from aab where 1=2)) > 0*/
+        ((select count(*) from ABC where abc=wholesql.abc and
+where=wholesql.aaa) > 0) AND
+        /*NOT IN(field in ABC(acd) where a=1 and b=c and exist(select 1 from aab where 1=2)*/
+        (field not in (select 1 from ABC where where a=1 and b=c and exist(select 1 from aab where 1=2))) AND
+        /*PLAINTEXT*/
+        (not(EXISTS(select 1 from b left join  b on a.a=b.a))) AND
+        d = '1' AND
+        e = '1' AND
+        f = '1'
+)`)
 	spew.Dump(node)
+	spew.Dump(node.ConditionLines("wholesql", nil))
 	println("========================")
-	println(node.(*Node).WhereString())
+	println(node.WhereString("wholesql", nil, true))
 	// t.Log(tree.ToStringTree(nil, p))
 	// antlr.ParseTreeWalkerDefault.Walk(NewTreeShapeListener(), tree)
 }
