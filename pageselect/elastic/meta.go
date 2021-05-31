@@ -245,9 +245,9 @@ func (m *meta) GetOperatorExpress(ope ps.Operator, dataType schema.DataType, lef
 
 		strSQL = fmt.Sprintf("%s RLIKE '.{0,%s}", left, right)
 	case ps.OperatorBetween:
-		strSQL = fmt.Sprintf("%s between %s and %s", left, right, value2)
+		strSQL = fmt.Sprintf("%s between %s and %s", left, valueExpress(dataType, right), valueExpress(dataType, value2))
 	case ps.OperatorNotBetween:
-		strSQL = fmt.Sprintf("%s not between %s and %s", left, right, value2)
+		strSQL = fmt.Sprintf("%s not between %s and %s", left, valueExpress(dataType, right), valueExpress(dataType, value2))
 	default:
 		log.Panic(fmt.Errorf("the opt:%s not impl", ope))
 	}

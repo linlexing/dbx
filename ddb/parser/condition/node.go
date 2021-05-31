@@ -10,6 +10,7 @@ import (
 	"github.com/antlr/antlr4/runtime/Go/antlr"
 	"github.com/linlexing/dbx/ddb/parser"
 	"github.com/linlexing/dbx/pageselect"
+	"github.com/linlexing/dbx/schema"
 )
 
 //NodeType 节点的类型
@@ -185,7 +186,7 @@ func (node *Node) reduction() {
 func signString(str string) string {
 	return "'" + strings.ReplaceAll(str, "'", "''") + "'"
 }
-func (node *Node) string(prev, outerTableName string, views map[string]string, buildComment bool) string {
+func (node *Node) string(prev string, fields map[string]schema.DataType, outerTableName string, views map[string]string, buildComment bool) string {
 	switch node.NodeType {
 	case NodePlain:
 		comment := ""
@@ -299,13 +300,13 @@ func (node *Node) string(prev, outerTableName string, views map[string]string, b
 	case NodeAnd:
 		list := []string{}
 		for _, one := range node.Children {
-			list = append(list, one.string("\t"+prev, outerTableName, views, buildComment))
+			list = append(list, one.string("\t"+prev, fields, outerTableName, views, buildComment))
 		}
 		return prev + "(\n" + strings.Join(list, " AND\n") + "\n" + prev + ")"
 	case NodeOr:
 		list := []string{}
 		for _, one := range node.Children {
-			list = append(list, one.string("\t"+prev, outerTableName, views, buildComment))
+			list = append(list, one.string("\t"+prev, fields, outerTableName, views, buildComment))
 		}
 		// list[0] = strings.Repeat("\t", level+1) + "(" + strings.TrimSpace(list[0])
 		// list[len(list)-1] = list[len(list)-1] + ")"
@@ -320,11 +321,25 @@ func (node *Node) string(prev, outerTableName string, views map[string]string, b
 		case pageselect.OperatorEqu, pageselect.OperatorGreaterThan,
 			pageselect.OperatorGreaterThanOrEqu, pageselect.OperatorLessThan,
 			pageselect.OperatorLessThanOrEqu, pageselect.OperatorRegexp, pageselect.OperatorNotRegexp:
+			var v string
+			if fields[node.Field] == schema.TypeInt ||
+				fields[node.Field] == schema.TypeFloat {
+				v = node.Value
+			} else {
+				v = signString(node.Value)
+			}
 			return prev +
-				fmt.Sprintf("%s %s %s", node.Field, node.Operate.String(), signString(node.Value))
+				fmt.Sprintf("%s %s %s", node.Field, node.Operate.String(), v)
 		case pageselect.OperatorNotEqu:
+			var v string
+			if fields[node.Field] == schema.TypeInt ||
+				fields[node.Field] == schema.TypeFloat {
+				v = node.Value
+			} else {
+				v = signString(node.Value)
+			}
 			return prev +
-				fmt.Sprintf("%s <> %s", node.Field, signString(node.Value))
+				fmt.Sprintf("%s <> %s", node.Field, v)
 		//OperatorLike 包含
 		case pageselect.OperatorLike:
 			return prev +
@@ -353,7 +368,14 @@ func (node *Node) string(prev, outerTableName string, views map[string]string, b
 		case pageselect.OperatorIn:
 			list := []string{}
 			for _, one := range decodeCSV(node.Value) {
-				list = append(list, signString(one))
+				var v string
+				if fields[node.Field] == schema.TypeInt ||
+					fields[node.Field] == schema.TypeFloat {
+					v = one
+				} else {
+					v = signString(one)
+				}
+				list = append(list, v)
 			}
 			return prev +
 				fmt.Sprintf("%s IN (%s)", node.Field, encodeCSV(list))
@@ -361,7 +383,14 @@ func (node *Node) string(prev, outerTableName string, views map[string]string, b
 		case pageselect.OperatorNotIn:
 			list := []string{}
 			for _, one := range decodeCSV(node.Value) {
-				list = append(list, signString(one))
+				var v string
+				if fields[node.Field] == schema.TypeInt ||
+					fields[node.Field] == schema.TypeFloat {
+					v = one
+				} else {
+					v = signString(one)
+				}
+				list = append(list, v)
 			}
 			return prev +
 				fmt.Sprintf("%s NOT IN (%s)", node.Field, encodeCSV(list))
@@ -400,11 +429,25 @@ func (node *Node) string(prev, outerTableName string, views map[string]string, b
 			return prev +
 				fmt.Sprintf("LENGTH(%s) <= %s", node.Field, node.Value)
 		case pageselect.OperatorBetween:
+			var v, v2 string
+			if fields[node.Field] == schema.TypeInt ||
+				fields[node.Field] == schema.TypeFloat {
+				v, v2 = node.Value, node.Value2
+			} else {
+				v, v2 = signString(node.Value), signString(node.Value2)
+			}
 			return prev +
-				fmt.Sprintf("%s between %s and %s", node.Field, node.Value, node.Value2)
+				fmt.Sprintf("%s between %s and %s", node.Field, v, v2)
 		case pageselect.OperatorNotBetween:
+			var v, v2 string
+			if fields[node.Field] == schema.TypeInt ||
+				fields[node.Field] == schema.TypeFloat {
+				v, v2 = node.Value, node.Value2
+			} else {
+				v, v2 = signString(node.Value), signString(node.Value2)
+			}
 			return prev +
-				fmt.Sprintf("%s not between %s and %s", node.Field, node.Value, node.Value2)
+				fmt.Sprintf("%s not between %s and %s", node.Field, v, v2)
 		default:
 			panic("not impl " + node.Operate.String())
 		}
@@ -415,8 +458,8 @@ func (node *Node) string(prev, outerTableName string, views map[string]string, b
 }
 
 //WhereString 返回规范化的where条件,传入视图列表，用于关联表查询的语句
-func (node *Node) WhereString(outerTableName string, views map[string]string, buildComment bool) string {
-	return node.string("", outerTableName, views, buildComment)
+func (node *Node) WhereString(fields map[string]schema.DataType, outerTableName string, views map[string]string, buildComment bool) string {
+	return node.string("", fields, outerTableName, views, buildComment)
 }
 
 //ReferToColumns 条件中涉及到的列
@@ -632,12 +675,12 @@ func processComment(define string) (rev string, vars map[string]interface{}) {
 }
 
 //ConditionLines 遍历树，返回条件数组
-func (node *Node) ConditionLines(outerTableName string, views map[string]string) []*pageselect.ConditionLine {
+func (node *Node) ConditionLines(fields map[string]schema.DataType, outerTableName string, views map[string]string) []*pageselect.ConditionLine {
 	rev := []*pageselect.ConditionLine{}
 	switch node.NodeType {
 	case NodeAnd:
 		for _, one := range node.Children {
-			subConts := one.ConditionLines(outerTableName, views)
+			subConts := one.ConditionLines(fields, outerTableName, views)
 			//如果已经有条件，且子条件是多行，则需要加上括号和and
 			if len(rev) > 0 && len(subConts) > 1 {
 				subConts[0].LeftBrackets += "("
@@ -650,7 +693,7 @@ func (node *Node) ConditionLines(outerTableName string, views map[string]string)
 		}
 	case NodeOr:
 		for _, one := range node.Children {
-			subConts := one.ConditionLines(outerTableName, views)
+			subConts := one.ConditionLines(fields, outerTableName, views)
 			//如果已经有条件，且子条件是多行，则需要加上括号和and
 			if len(rev) > 0 && len(subConts) > 1 {
 				subConts[0].LeftBrackets += "("
@@ -689,7 +732,7 @@ func (node *Node) ConditionLines(outerTableName string, views map[string]string)
 	// 关联
 	case NodeCount, NodeExists, NodeInTable:
 		rev = append(rev, &pageselect.ConditionLine{
-			PlainText: node.WhereString(outerTableName, views, false),
+			PlainText: node.WhereString(fields, outerTableName, views, false),
 		})
 
 	}

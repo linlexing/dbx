@@ -49,9 +49,9 @@ func (c *ConditionLine) GetExpress(driver string, dataType schema.DataType, auto
 	}
 	if len(c.PlainText) > 0 {
 		if len(rev) > 0 {
-			rev += " " + AND + " "
+			rev += " " + c.LeftBrackets + AND + c.RightBrackets + " "
 		}
-		rev += "(" + c.PlainText + ")"
+		rev += "(" + c.LeftBrackets + c.PlainText + c.RightBrackets + ")"
 	}
 	return rev
 }
