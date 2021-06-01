@@ -347,7 +347,7 @@ func (node *Node) string(prev string, fields map[string]schema.DataType, outerTa
 		//OperatorNotLike 不包含
 		case pageselect.OperatorNotLike:
 			return prev +
-				fmt.Sprintf("%s NOT LIKE %s", node.Field, signString(node.Value))
+				fmt.Sprintf("%s NOT LIKE %s", node.Field, signString("%"+node.Value+"%"))
 			//OperatorPrefix 前缀
 		case pageselect.OperatorPrefix:
 			return prev +
