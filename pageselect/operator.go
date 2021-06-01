@@ -180,6 +180,24 @@ func (o Operator) Reverse() Operator {
 
 //RemoveReverse 消除反转，如果是反向，返回正向，并返回true，否则不变，并返回false
 func (o Operator) RemoveReverse() (Operator, bool) {
+	// 常见的运算符不要归正
+	switch o {
+	case
+		OperatorEqu,
+		OperatorNotEqu,
+		OperatorGreaterThan,
+		OperatorGreaterThanOrEqu,
+		OperatorLessThan,
+		OperatorLessThanOrEqu,
+		OperatorLengthEqu,
+		OperatorLengthGreaterThan,
+		OperatorLengthGreaterThanOrEqu,
+		OperatorLengthLessThan,
+		OperatorLengthLessThanOrEqu,
+		OperatorLengthNotEqu:
+		return o, false
+
+	}
 	if v, ok := opReverseMap[o]; ok {
 		return v, true
 	}
