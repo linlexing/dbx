@@ -329,7 +329,7 @@ func (node *Node) string(prev string, fields map[string]schema.DataType, outerTa
 				v = signString(node.Value)
 			}
 			return prev +
-				fmt.Sprintf("%s %s %s", node.Field, node.Operate.String(), v)
+				fmt.Sprintf("%s %s %s", node.Field, op.String(), v)
 		case pageselect.OperatorNotEqu:
 			var v string
 			if fields[node.Field] == schema.TypeInt ||
