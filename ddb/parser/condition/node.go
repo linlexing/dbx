@@ -16,6 +16,9 @@ import (
 //NodeType 节点的类型
 type NodeType string
 
+//GetUserConditionViewDefineFunc 获取视图定义的函数
+type GetUserConditionViewDefineFunc func(string) (string, error)
+
 const (
 	//NodeAnd And节点，所有下属子节点之间用And连接
 	NodeAnd NodeType = "AND"
@@ -186,7 +189,8 @@ func (node *Node) reduction() {
 func signString(str string) string {
 	return "'" + strings.ReplaceAll(str, "'", "''") + "'"
 }
-func (node *Node) string(prev string, fields map[string]schema.DataType, outerTableName string, views map[string]string, buildComment bool) string {
+func (node *Node) string(prev string, fields map[string]schema.DataType,
+	outerTableName string, getview GetUserConditionViewDefineFunc, buildComment bool) string {
 	switch node.NodeType {
 	case NodePlain:
 		comment := ""
@@ -199,12 +203,14 @@ func (node *Node) string(prev string, fields map[string]schema.DataType, outerTa
 		return comment + prev + "(" + node.PlainText + ")"
 	case NodeCount:
 		from := node.From
-		if len(views) > 0 {
-			if viewDef, ok := views[from]; ok {
+		if getview != nil {
+			if viewDef, err := getview(from); err == nil {
 				from = fmt.Sprintf("(%s) cnt_inner", viewDef)
 				if len(node.PlainText) > 0 {
 					from = fmt.Sprintf("(select * from (%s) cnt_inner0 where %s) cnt_inner", viewDef, node.PlainText)
 				}
+			} else {
+				log.Println("getview error", err)
 			}
 		}
 		iwhere := []string{}
@@ -247,16 +253,17 @@ func (node *Node) string(prev string, fields map[string]schema.DataType, outerTa
 		}
 	case NodeExists:
 		from := node.From
-		if viewDef, ok := views[from]; ok {
-			from = fmt.Sprintf("(%s) exists_inner", viewDef)
-			if len(node.PlainText) > 0 {
-				from = fmt.Sprintf("(select * from (%s) exists_inner0 where %s) exists_inner", viewDef, node.PlainText)
-			}
-		} else {
-			if len(node.PlainText) > 0 {
-				from = fmt.Sprintf("(select * from %s exists_inner0 where %s) exists_inner", from, node.PlainText)
+		if getview != nil {
+			if viewDef, err := getview(from); err == nil {
+				from = fmt.Sprintf("(%s) exists_inner", viewDef)
+			} else {
+				log.Println("getview error", err)
 			}
 		}
+		if len(node.PlainText) > 0 {
+			from = fmt.Sprintf("(select * from %s exists_inner0 where %s) exists_inner", from, node.PlainText)
+		}
+
 		iwhere := []string{}
 		for _, one := range node.Link {
 			iwhere = append(iwhere, fmt.Sprintf("%s=%s.%s", one.InnerColumn, outerTableName, one.OuterColumn))
@@ -275,14 +282,17 @@ func (node *Node) string(prev string, fields map[string]schema.DataType, outerTa
 		return comment + prev + "(" + cPrev + "(" + innerText + "))"
 	case NodeInTable:
 		from := node.From
-		if viewDef, ok := views[from]; ok {
-			from = fmt.Sprintf("(%s) in_inner", viewDef)
+		if getview != nil {
+			if viewDef, err := getview(from); err == nil {
+				from = fmt.Sprintf("(%s) in_inner", viewDef)
+			} else {
+				log.Println("getview error", err)
+			}
 		}
 		iwhere := ""
 		if len(node.PlainText) > 0 {
 			iwhere = fmt.Sprintf("where %s", node.PlainText)
 		}
-
 		innerText := fmt.Sprintf("(select 1 from %s where %s)", from, iwhere)
 		cPrev := commentIn
 		cop := "in"
@@ -300,13 +310,13 @@ func (node *Node) string(prev string, fields map[string]schema.DataType, outerTa
 	case NodeAnd:
 		list := []string{}
 		for _, one := range node.Children {
-			list = append(list, one.string("\t"+prev, fields, outerTableName, views, buildComment))
+			list = append(list, one.string("\t"+prev, fields, outerTableName, getview, buildComment))
 		}
 		return prev + "(\n" + strings.Join(list, " AND\n") + "\n" + prev + ")"
 	case NodeOr:
 		list := []string{}
 		for _, one := range node.Children {
-			list = append(list, one.string("\t"+prev, fields, outerTableName, views, buildComment))
+			list = append(list, one.string("\t"+prev, fields, outerTableName, getview, buildComment))
 		}
 		// list[0] = strings.Repeat("\t", level+1) + "(" + strings.TrimSpace(list[0])
 		// list[len(list)-1] = list[len(list)-1] + ")"
@@ -458,8 +468,9 @@ func (node *Node) string(prev string, fields map[string]schema.DataType, outerTa
 }
 
 //WhereString 返回规范化的where条件,传入视图列表，用于关联表查询的语句
-func (node *Node) WhereString(fields map[string]schema.DataType, outerTableName string, views map[string]string, buildComment bool) string {
-	return node.string("", fields, outerTableName, views, buildComment)
+func (node *Node) WhereString(fields map[string]schema.DataType, outerTableName string,
+	getview GetUserConditionViewDefineFunc, buildComment bool) string {
+	return node.string("", fields, outerTableName, getview, buildComment)
 }
 
 //ReferToColumns 条件中涉及到的列
@@ -546,14 +557,13 @@ func processCount(comment string) *Node {
 		for _, one := range strings.Split(on, "and") {
 			one = strings.TrimSpace(one)
 			arrs := strings.Split(one, "=")
-			if len(arrs) != 2 {
-				panic("invalid link:" + one)
+			if len(arrs) == 2 {
+				//去除.号前面的表名
+				link = append(link, NodeLinkColumn{
+					InnerColumn: arrs[0],
+					OuterColumn: strings.Split(arrs[1], ".")[1],
+				})
 			}
-			//去除.号前面的表名
-			link = append(link, NodeLinkColumn{
-				InnerColumn: arrs[0],
-				OuterColumn: strings.Split(arrs[1], ".")[1],
-			})
 		}
 		op, err := pageselect.ParseOperatorFromString(opStr)
 		if err != nil {
@@ -588,14 +598,13 @@ func processExists(comment string) *Node {
 		for _, one := range strings.Split(on, "and") {
 			one = strings.TrimSpace(one)
 			arrs := strings.Split(one, "=")
-			if len(arrs) != 2 {
-				panic("invalid link:" + one)
+			if len(arrs) == 2 {
+				//去除.号前面的表名
+				link = append(link, NodeLinkColumn{
+					InnerColumn: arrs[0],
+					OuterColumn: strings.Split(arrs[1], ".")[1],
+				})
 			}
-			//去除.号前面的表名
-			link = append(link, NodeLinkColumn{
-				InnerColumn: arrs[0],
-				OuterColumn: strings.Split(arrs[1], ".")[1],
-			})
 		}
 		node := NewExistsNode(from, link, where, reverse)
 		return node
@@ -675,12 +684,12 @@ func processComment(define string) (rev string, vars map[string]interface{}) {
 }
 
 //ConditionLines 遍历树，返回条件数组
-func (node *Node) ConditionLines(fields map[string]schema.DataType, outerTableName string, views map[string]string) []*pageselect.ConditionLine {
+func (node *Node) ConditionLines(fields map[string]schema.DataType, outerTableName string, getview GetUserConditionViewDefineFunc) []*pageselect.ConditionLine {
 	rev := []*pageselect.ConditionLine{}
 	switch node.NodeType {
 	case NodeAnd:
 		for _, one := range node.Children {
-			subConts := one.ConditionLines(fields, outerTableName, views)
+			subConts := one.ConditionLines(fields, outerTableName, getview)
 			//如果已经有条件，且子条件是多行，则需要加上括号和and
 			if len(rev) > 0 && len(subConts) > 1 {
 				subConts[0].LeftBrackets += "("
@@ -693,7 +702,7 @@ func (node *Node) ConditionLines(fields map[string]schema.DataType, outerTableNa
 		}
 	case NodeOr:
 		for _, one := range node.Children {
-			subConts := one.ConditionLines(fields, outerTableName, views)
+			subConts := one.ConditionLines(fields, outerTableName, getview)
 			//如果已经有条件，且子条件是多行，则需要加上括号和and
 			if len(rev) > 0 && len(subConts) > 1 {
 				subConts[0].LeftBrackets += "("
@@ -732,7 +741,7 @@ func (node *Node) ConditionLines(fields map[string]schema.DataType, outerTableNa
 	// 关联
 	case NodeCount, NodeExists, NodeInTable:
 		rev = append(rev, &pageselect.ConditionLine{
-			PlainText: node.WhereString(fields, outerTableName, views, false),
+			PlainText: node.WhereString(fields, outerTableName, getview, false),
 		})
 
 	}
