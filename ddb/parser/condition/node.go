@@ -205,9 +205,9 @@ func (node *Node) string(prev string, fields map[string]schema.DataType,
 		from := node.From
 		if getview != nil {
 			if viewDef, err := getview(from); err == nil {
-				from = fmt.Sprintf("(%s) cnt_inner", viewDef)
+				from = fmt.Sprintf("(%s) cnt_inner0", viewDef)
 				if len(node.PlainText) > 0 {
-					from = fmt.Sprintf("(select * from (%s) cnt_inner0 where %s) cnt_inner", viewDef, node.PlainText)
+					from = fmt.Sprintf("(select * from %s where %s) cnt_inner", from, node.PlainText)
 				}
 			} else {
 				log.Println("getview error", err)
@@ -215,10 +215,15 @@ func (node *Node) string(prev string, fields map[string]schema.DataType,
 		}
 		iwhere := []string{}
 		for _, one := range node.Link {
-			iwhere = append(iwhere, fmt.Sprintf("%s=%s.%s", one.InnerColumn, outerTableName, one.OuterColumn))
+			if len(one.InnerColumn) > 0 && len(one.OuterColumn) > 0 {
+				iwhere = append(iwhere, fmt.Sprintf("%s=%s.%s", one.InnerColumn, outerTableName, one.OuterColumn))
+			}
 		}
-		countText := fmt.Sprintf("(select count(*) from %s where %s)", from,
-			strings.Join(iwhere, " and\n"))
+		strWhere := ""
+		if len(iwhere) > 0 {
+			strWhere = " where " + strings.Join(iwhere, " and\n")
+		}
+		countText := fmt.Sprintf("(select count(*) from %s%s)", from, strWhere)
 		valStr := node.Value
 		op := node.Operate
 		if node.Reverse {
@@ -255,21 +260,26 @@ func (node *Node) string(prev string, fields map[string]schema.DataType,
 		from := node.From
 		if getview != nil {
 			if viewDef, err := getview(from); err == nil {
-				from = fmt.Sprintf("(%s) exists_inner", viewDef)
+				from = fmt.Sprintf("(%s) exists_inner0", viewDef)
 			} else {
 				log.Println("getview error", err)
 			}
 		}
 		if len(node.PlainText) > 0 {
-			from = fmt.Sprintf("(select * from %s exists_inner0 where %s) exists_inner", from, node.PlainText)
+			from = fmt.Sprintf("(select * from %s where %s) exists_inner", from, node.PlainText)
 		}
 
 		iwhere := []string{}
 		for _, one := range node.Link {
-			iwhere = append(iwhere, fmt.Sprintf("%s=%s.%s", one.InnerColumn, outerTableName, one.OuterColumn))
+			if len(one.InnerColumn) > 0 && len(one.OuterColumn) > 0 {
+				iwhere = append(iwhere, fmt.Sprintf("%s=%s.%s", one.InnerColumn, outerTableName, one.OuterColumn))
+			}
 		}
-		innerText := fmt.Sprintf("(select 1 from %s where %s)", from,
-			strings.Join(iwhere, " and\n"))
+		strWhere := ""
+		if len(iwhere) > 0 {
+			strWhere = " where " + strings.Join(iwhere, " and\n")
+		}
+		innerText := fmt.Sprintf("(select 1 from %s%s)", from, strWhere)
 		cPrev := "EXISTS"
 		if node.Reverse {
 			cPrev = "NOT EXISTS"
@@ -291,9 +301,9 @@ func (node *Node) string(prev string, fields map[string]schema.DataType,
 		}
 		iwhere := ""
 		if len(node.PlainText) > 0 {
-			iwhere = fmt.Sprintf("where %s", node.PlainText)
+			iwhere = fmt.Sprintf(" where %s", node.PlainText)
 		}
-		innerText := fmt.Sprintf("(select 1 from %s where %s)", from, iwhere)
+		innerText := fmt.Sprintf("(select 1 from %s%s)", from, iwhere)
 		cPrev := commentIn
 		cop := "in"
 		if node.Reverse {
