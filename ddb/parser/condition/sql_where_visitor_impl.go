@@ -43,7 +43,7 @@ var (
 	regComment = regexp.MustCompile(`(?:[^']|'[^']*')*?(/\*[^*]*\*+(?:[^/*][^*]*\*+)*/)`)
 	regExists  = regexp.MustCompile(`^from\s+(.*)\s+on\s+(.*?)\s+where\s+(.*)$`)
 	regInTable = regexp.MustCompile(`^(.*)\s+in\s+(.*)\((.*)\)\s+where\s+(.*)$`)
-	regCount   = regexp.MustCompile(`^COUNT\(from\s+(.*)\s+on\s+(.*?)\s+where\s+(.*)\)\s+(.*)\s+(\d+)$`)
+	regCount   = regexp.MustCompile(`^COUNT\(from\s+(.*)\s+on\s+(.*?)\s+where\s+(.*)\)\s+(.*)\s+(.*)$`)
 )
 
 const (
