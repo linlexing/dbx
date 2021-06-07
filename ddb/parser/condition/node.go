@@ -337,6 +337,12 @@ func (node *Node) string(prev string, fields map[string]schema.DataType,
 		if node.Reverse {
 			op = op.Reverse()
 		}
+		//等于，不等于空值的，转换为is null 和 is not null
+		if op == pageselect.OperatorEqu && len(node.Value) == 0 {
+			op = pageselect.OperatorIsNull
+		} else if op == pageselect.OperatorNotEqu && len(node.Value) == 0 {
+			op = pageselect.OperatorIsNotNull
+		}
 		switch op {
 		case pageselect.OperatorEqu, pageselect.OperatorGreaterThan,
 			pageselect.OperatorGreaterThanOrEqu, pageselect.OperatorLessThan,
@@ -344,7 +350,12 @@ func (node *Node) string(prev string, fields map[string]schema.DataType,
 			var v string
 			if fields[node.Field] == schema.TypeInt ||
 				fields[node.Field] == schema.TypeFloat {
-				v = node.Value
+				//数值型的，空值自动转换成0
+				if len(node.Value) == 0 {
+					v = "0"
+				} else {
+					v = node.Value
+				}
 			} else {
 				v = signString(node.Value)
 			}
@@ -425,34 +436,75 @@ func (node *Node) string(prev string, fields map[string]schema.DataType,
 
 			//OperatorLengthEqu 长度等于
 		case pageselect.OperatorLengthEqu:
+			//空转换成0
+			v := node.Value
+			if len(v) == 0 {
+				v = "0"
+			}
 			return prev +
-				fmt.Sprintf("LENGTH(%s) = %s", node.Field, node.Value)
+				fmt.Sprintf("LENGTH(%s) = %s", node.Field, v)
 
 			//OperatorLengthNotEqu 长度不等于
 		case pageselect.OperatorLengthNotEqu:
+			//空转换成0
+			v := node.Value
+			if len(v) == 0 {
+				v = "0"
+			}
+
 			return prev +
-				fmt.Sprintf("LENGTH(%s) <> %s", node.Field, node.Value)
+				fmt.Sprintf("LENGTH(%s) <> %s", node.Field, v)
 			//OperatorLengthGreaterThan 长度大于
 		case pageselect.OperatorLengthGreaterThan:
+			//空转换成0
+			v := node.Value
+			if len(v) == 0 {
+				v = "0"
+			}
+
 			return prev +
-				fmt.Sprintf("LENGTH(%s) > %s", node.Field, node.Value)
+				fmt.Sprintf("LENGTH(%s) > %s", node.Field, v)
 			//OperatorLengthGreaterThanOrEqu 长度 >=
 		case pageselect.OperatorLengthGreaterThanOrEqu:
+			//空转换成0
+			v := node.Value
+			if len(v) == 0 {
+				v = "0"
+			}
+
 			return prev +
-				fmt.Sprintf("LENGTH(%s) >= %s", node.Field, node.Value)
+				fmt.Sprintf("LENGTH(%s) >= %s", node.Field, v)
 			//OperatorLengthLessThan 长度 <
 		case pageselect.OperatorLengthLessThan:
+			//空转换成0
+			v := node.Value
+			if len(v) == 0 {
+				v = "0"
+			}
+
 			return prev +
-				fmt.Sprintf("LENGTH(%s) < %s", node.Field, node.Value)
+				fmt.Sprintf("LENGTH(%s) < %s", node.Field, v)
 			//OperatorLengthLessThanOrEqu 长度<=
 		case pageselect.OperatorLengthLessThanOrEqu:
+			//空转换成0
+			v := node.Value
+			if len(v) == 0 {
+				v = "0"
+			}
+
 			return prev +
-				fmt.Sprintf("LENGTH(%s) <= %s", node.Field, node.Value)
+				fmt.Sprintf("LENGTH(%s) <= %s", node.Field, v)
 		case pageselect.OperatorBetween:
 			var v, v2 string
 			if fields[node.Field] == schema.TypeInt ||
 				fields[node.Field] == schema.TypeFloat {
 				v, v2 = node.Value, node.Value2
+				if len(v) == 0 {
+					v = "0"
+				}
+				if len(v2) == 0 {
+					v2 = "0"
+				}
 			} else {
 				v, v2 = signString(node.Value), signString(node.Value2)
 			}
@@ -462,6 +514,12 @@ func (node *Node) string(prev string, fields map[string]schema.DataType,
 			var v, v2 string
 			if fields[node.Field] == schema.TypeInt ||
 				fields[node.Field] == schema.TypeFloat {
+				if len(v) == 0 {
+					v = "0"
+				}
+				if len(v2) == 0 {
+					v2 = "0"
+				}
 				v, v2 = node.Value, node.Value2
 			} else {
 				v, v2 = signString(node.Value), signString(node.Value2)
