@@ -116,14 +116,12 @@ func NewPlainNode(text string) *Node {
 
 //NewInTableNode 分配一个InTable条件节点
 func NewInTableNode(column, from, inColumn, where string, reverse bool) *Node {
-	op := pageselect.OperatorIn
-	if reverse {
-		op = pageselect.OperatorNotIn
-	}
+
 	return &Node{
 		NodeType:  NodeInTable,
 		Field:     column,
-		Operate:   op,
+		Reverse:   reverse,
+		Operate:   pageselect.OperatorIn,
 		From:      from,
 		PlainText: where,
 		InColumn:  inColumn,
@@ -303,7 +301,7 @@ func (node *Node) string(prev string, fields map[string]schema.DataType,
 		if len(node.PlainText) > 0 {
 			iwhere = fmt.Sprintf(" where %s", node.PlainText)
 		}
-		innerText := fmt.Sprintf("(select 1 from %s%s)", from, iwhere)
+		innerText := fmt.Sprintf("(select %s from %s%s)", node.InColumn, from, iwhere)
 		cPrev := commentIn
 		cop := "in"
 		if node.Reverse {
@@ -312,7 +310,7 @@ func (node *Node) string(prev string, fields map[string]schema.DataType,
 		}
 		comment := ""
 		if buildComment {
-			comment = prev + cPrev + fmt.Sprintf("%s in %s(%s) where %s",
+			comment = prev + cPrev + fmt.Sprintf("%s in %s(%s) where %s)",
 				node.Field, node.From, node.InColumn, node.PlainText) + "*/\n"
 		}
 
@@ -687,7 +685,7 @@ func processIn(comment string) *Node {
 		txt = comment[9 : len(comment)-3]
 		reverse = true
 	} else {
-		txt = comment[6 : len(comment)-3]
+		txt = comment[5 : len(comment)-3]
 	}
 
 	if ps := regInTable.FindStringSubmatchIndex(txt); len(ps) == 10 {
