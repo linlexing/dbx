@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -186,6 +187,16 @@ func (d DataType) ParseString(v string) (interface{}, error) {
 	case TypeInt:
 		i, err := strconv.ParseInt(v, 10, 64)
 		if err != nil {
+			//补充识别 11.0000的格式，自动去掉后缀0
+			arr := strings.Split(v, ".")
+			if len(arr) == 2 {
+				if len(arr[1]) == 0 || arr[1] == strings.Repeat("0", len(arr[1])) {
+					i1, er := strconv.ParseInt(arr[0], 10, 64)
+					if er == nil {
+						return i1, nil
+					}
+				}
+			}
 			return nil, err
 		}
 		return i, nil
