@@ -71,5 +71,10 @@ func isDuplicatePKErrorPostgres(err error) (yes bool, table string) {
 			return true, v.FieldByName("Table").String()
 		}
 	}
+	if vt := v.Type(); vt.PkgPath() == "github.com/jackc/pgconn" && vt.Name() == "PgError" {
+		if v.FieldByName("Code").String() == "23505" {
+			return true, v.FieldByName("TableName").String()
+		}
+	}
 	return false, ""
 }
