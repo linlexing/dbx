@@ -34,7 +34,7 @@ func NewSQLError(err error, sql string, params ...interface{}) SQLError {
 }
 func (e SQLError) Error() string {
 	if yes, table := isDuplicatePKErrorPostgres(e.Err); yes {
-		return "DuplicatePKError:" + table
+		return "DuplicatePKError:" + table + ":" + fmt.Sprintf("%s\n%s\nparams:\n%s", e.Err, e.SQL, spew.Sdump(e.Params))
 	}
 	// l := 0
 	// content := fmt.Sprintf("%#v", e.Params)
