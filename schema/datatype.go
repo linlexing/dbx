@@ -153,13 +153,10 @@ func (d DataType) ChineseString() (string, error) {
 
 //字符串转换成时间，按照各种可能的格式
 func strToDate(s string) (tm time.Time, err error) {
-	if len(s) == 8 {
-		return time.ParseInLocation("20060102", s, time.Local)
+	tm, err = time.ParseInLocation("2006-1-2", s, time.Local)
+	if err == nil {
+		return
 	}
-	if len(s) == 10 {
-		return time.ParseInLocation("2006-1-2", s, time.Local)
-	}
-
 	tm, err = time.ParseInLocation("2006-1-2 15:4:5", s, time.Local)
 	if err == nil {
 		return
@@ -176,7 +173,10 @@ func strToDate(s string) (tm time.Time, err error) {
 	if err == nil {
 		return
 	}
-
+	tm, err = time.ParseInLocation("20060102", s, time.Local)
+	if err == nil {
+		return
+	}
 	tm, err = time.ParseInLocation("2006-1-2 15:4:5.999999999 -0700 MST", s, time.Local)
 	if err == nil {
 		return
