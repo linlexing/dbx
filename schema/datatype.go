@@ -161,25 +161,31 @@ func strToDate(s string) (tm time.Time, err error) {
 	}
 
 	tm, err = time.ParseInLocation("2006-1-2 15:4:5", s, time.Local)
-	if err != nil {
-		tm, err = time.ParseInLocation("2006-1-2T15:4:5", s, time.Local)
+	if err == nil {
+		return
 	}
-	if err != nil {
-		tm, err = time.ParseInLocation("2006/1/2", s, time.Local)
+	tm, err = time.ParseInLocation("2006-1-2T15:4:5", s, time.Local)
+	if err == nil {
+		return
 	}
-	if err != nil {
-		tm, err = time.ParseInLocation("2006/1/2 15:4:5", s, time.Local)
+	tm, err = time.ParseInLocation("2006/1/2", s, time.Local)
+	if err == nil {
+		return
+	}
+	tm, err = time.ParseInLocation("2006/1/2 15:4:5", s, time.Local)
+	if err == nil {
+		return
 	}
 
-	if err != nil {
-		tm, err = time.ParseInLocation("2006-1-2 15:4:5.999999999 -0700 MST", s, time.Local)
+	tm, err = time.ParseInLocation("2006-1-2 15:4:5.999999999 -0700 MST", s, time.Local)
+	if err == nil {
+		return
 	}
-	if err != nil {
-		tm, err = time.ParseInLocation(time.RFC3339, s, time.Local)
+	tm, err = time.ParseInLocation(time.RFC3339, s, time.Local)
+	if err == nil {
+		return
 	}
-	if err != nil {
-		tm, err = time.ParseInLocation(time.RFC3339Nano, s, time.Local)
-	}
+	tm, err = time.ParseInLocation(time.RFC3339Nano, s, time.Local)
 	return
 }
 
