@@ -183,6 +183,10 @@ func (o Operator) RemoveReverse() (Operator, bool) {
 	// 常见的运算符不要归正
 	switch o {
 	case
+		OperatorIsNull,
+		OperatorIsNotNull,
+		OperatorLike,
+		OperatorNotLike,
 		OperatorEqu,
 		OperatorNotEqu,
 		OperatorGreaterThan,
