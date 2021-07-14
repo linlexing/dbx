@@ -33,7 +33,7 @@ func In(query string, args ...interface{}) (string, []interface{}, error) {
 }
 
 //AsInt 返回整形
-func AsInt(db common.DB, strSQL string, args ...interface{}) (r int64, err error) {
+func AsInt(db common.Queryer, strSQL string, args ...interface{}) (r int64, err error) {
 	c := []byte{}
 	row := db.QueryRow(strSQL, args...)
 	if err := row.Scan(&c); err != nil {
