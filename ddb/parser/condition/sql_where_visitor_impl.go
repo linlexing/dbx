@@ -186,7 +186,7 @@ func (s *SqlWhereVisitorImpl) VisitLogicExpression(ctx *parser.LogicExpressionCo
 			decodeSignStringIf(expr2.GetText()), decodeSignStringIf(expr3.GetText()))
 	}
 	//IN/NOT IN
-	if not, in, expr := ctx.NOT(), ctx.IN(), ctx.AllExpr(); in != nil && len(expr) > 2 {
+	if not, in, expr := ctx.NOT(), ctx.IN(), ctx.AllExpr(); in != nil && len(expr) > 1 {
 		if !isColumn(expr[0]) {
 			return NewPlainNode(getText(ctx))
 		}
