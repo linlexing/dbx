@@ -78,6 +78,27 @@ func (t *Table) check() error {
 	return nil
 }
 
+//Create 创建一个新表，如果表已经存在，则失败
+func (t *Table) Create(driver string, db common.DB) error {
+	if err := t.check(); err != nil {
+		return err
+	}
+
+	sch, err := t.extract(driver, db)
+	if err != nil {
+		return err
+	}
+	if sch.oldTable != nil {
+		return fmt.Errorf("the table %s exists,can't recreate", t.Name)
+	}
+	list, err := sch.extract()
+	if err != nil {
+		return err
+	}
+	return common.BatchRunAndPrint(db, list)
+
+}
+
 //Update 更新一个表结构到数据库中
 func (t *Table) Update(driver string, db common.DB) error {
 	list, err := t.Extract(driver, db)
@@ -86,12 +107,7 @@ func (t *Table) Update(driver string, db common.DB) error {
 	}
 	return common.BatchRunAndPrint(db, list)
 }
-
-//Extract 提取更新一个表的结构所需要的SQL语句清单
-func (t *Table) Extract(driver string, db common.DB) ([]string, error) {
-	if err := t.check(); err != nil {
-		return nil, err
-	}
+func (t *Table) extract(driver string, db common.DB) (*tableSchema, error) {
 	mt := Find(driver)
 	sch := &tableSchema{
 		newTable: t,
@@ -133,6 +149,19 @@ func (t *Table) Extract(driver string, db common.DB) ([]string, error) {
 				return nil, err
 			}
 		}
+	}
+	return sch, nil
+}
+
+//Extract 提取更新一个表的结构所需要的SQL语句清单
+func (t *Table) Extract(driver string, db common.DB) ([]string, error) {
+	if err := t.check(); err != nil {
+		return nil, err
+	}
+
+	sch, err := t.extract(driver, db)
+	if err != nil {
+		return nil, err
 	}
 	return sch.extract()
 }
