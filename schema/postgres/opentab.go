@@ -74,14 +74,30 @@ func getTableColumns(db common.DB, schemaName, tableName string) ([]columnType, 
 						else data_type
 					end) as "DBTYPE",
 					(case when character_maximum_length is null then 0 else character_maximum_length end) as "DBMAXLENGTH",
-					(SELECT format_type(a.atttypid, a.atttypmod)
-						FROM pg_attribute a
-							JOIN pg_class b ON (a.attrelid = b.oid)
-							JOIN pg_namespace c ON (c.oid = b.relnamespace)
-						WHERE
-							b.relname = outa.table_name AND
-							c.nspname = outa.table_schema AND
-							a.attname = outa.column_name) as "TRUETYPE"
+					(SELECT CASE WHEN a.atttypid = ANY ('{int,int8,int2}'::regtype[])
+						AND EXISTS (
+							SELECT FROM pg_attrdef ad
+							WHERE  ad.adrelid = a.attrelid
+							AND    ad.adnum   = a.attnum
+							AND    pg_get_expr(ad.adbin, ad.adrelid)
+								= 'nextval('''
+								|| (pg_get_serial_sequence (a.attrelid::regclass::text, a.attname))::regclass
+								|| '''::regclass)'
+							) THEN
+								CASE a.atttypid
+									WHEN 'int'::regtype  THEN 'serial'
+									WHEN 'int8'::regtype THEN 'bigserial'
+									WHEN 'int2'::regtype THEN 'smallserial'
+					   			END
+				  		ELSE format_type(a.atttypid, a.atttypmod)
+						end
+					FROM pg_attribute a
+						JOIN pg_class b ON (a.attrelid = b.oid)
+						JOIN pg_namespace c ON (c.oid = b.relnamespace)
+					WHERE
+						b.relname = outa.table_name AND
+						c.nspname = outa.table_schema AND
+						a.attname = outa.column_name) as "TRUETYPE"
 				from information_schema.columns outa
 				where table_schema ilike $1 and table_name ilike $2`
 
