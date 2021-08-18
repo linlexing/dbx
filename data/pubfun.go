@@ -41,7 +41,7 @@ func AsInt(db common.Queryer, strSQL string, args ...interface{}) (r int64, err 
 		err = common.NewSQLError(err, strSQL)
 	}
 	str := string(c)
-	if strings.Contains(str, ".") {
+	if strings.Contains(str, "e") || strings.Contains(str, ".") {
 		var f float64
 		f, err = strconv.ParseFloat(str, 64)
 		if err != nil {
