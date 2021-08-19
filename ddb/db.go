@@ -1,6 +1,7 @@
 package ddb
 
 import (
+	"context"
 	"database/sql"
 	"log"
 	"time"
@@ -36,6 +37,9 @@ type db struct {
 	connectString string
 }
 
+func (d *db) Conn(ctx context.Context) (*sql.Conn, error) {
+	return d.db.Conn(ctx)
+}
 func (d *db) SetConnMaxLifetime(t time.Duration) {
 	d.db.SetConnMaxLifetime(t)
 }

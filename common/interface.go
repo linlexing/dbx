@@ -1,6 +1,9 @@
 package common
 
-import "database/sql"
+import (
+	"context"
+	"database/sql"
+)
 
 //Execer 是大多数元数据操作函数用到的参数
 type Execer interface {
@@ -35,6 +38,7 @@ type TxDB interface {
 	DB
 	Begin() (*sql.Tx, error)
 	Close() error
+	Conn(ctx context.Context) (*sql.Conn, error)
 }
 
 //Txer 是事务
