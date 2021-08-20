@@ -107,7 +107,7 @@ func getColumns(db common.DB, schemaName, table string) ([]*schema.Column, error
 						case
 						when data_precision is not null and nvl(data_scale,0)>0 then '('||data_precision||','||data_scale||')'
 						when data_precision is not null and nvl(data_scale,0)=0 then '('||data_precision||')'
-						when data_precision is null and data_scale is not null then '(*,'||data_scale||')'
+						when data_precision is null and nvl(data_scale,0)>0 then '(*,'||data_scale||')'
 						when char_length>0 then '('||char_length|| case char_used
 						                                                         when 'B' then ' Byte'
 						                                                         when 'C' then ' Char'
