@@ -11,12 +11,12 @@ type Table struct {
 	*data.Table
 }
 
-//DB返回当前的DB
+//DB 返回当前的DB
 func (t *Table) DB() DB {
 	return t.db
 }
 
-//设置当前表的DB
+//SetDB 设置当前表的DB
 func (t *Table) SetDB(db DB) {
 	t.db = db
 	t.Table.DB = db

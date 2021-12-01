@@ -3,6 +3,7 @@ package ddb
 import (
 	"context"
 	"database/sql"
+	"database/sql/driver"
 	"log"
 	"time"
 
@@ -21,6 +22,7 @@ type DB interface {
 type TxDB interface {
 	common.TxDB
 	Beginx() (Txer, error)
+	Driver() driver.Driver
 	DriverName() string
 	ConnectString() string
 	Ping() error
@@ -37,6 +39,9 @@ type db struct {
 	connectString string
 }
 
+func (d *db) Driver() driver.Driver {
+	return d.db.Driver()
+}
 func (d *db) Conn(ctx context.Context) (*sql.Conn, error) {
 	return d.db.Conn(ctx)
 }
