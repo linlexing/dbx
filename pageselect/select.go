@@ -45,6 +45,7 @@ func Find(driver string) PageSelecter {
 //PageSelect 表示一个select 类，可以附加条件和分页参数,注意，所有用到的列名会被quoted，
 //所以需要保证大小写正确
 type PageSelect struct {
+	DriverName string
 	//是否自动把字段名加上引号
 	AutoQuotedColumn bool
 	SQL              string
@@ -69,15 +70,15 @@ func (s *PageSelect) isNotNullField(field string) bool {
 	}
 	return false
 }
-func (s *PageSelect) columnName(driver, name string) string {
+func (s *PageSelect) columnName(name string) string {
 	if s.AutoQuotedColumn {
-		return Find(driver).QuotedIdentifier(name)
+		return Find(s.DriverName).QuotedIdentifier(name)
 	}
 	return name
 }
 
 //BuildSQL 构造sql语句，和相应的参数值
-func (s *PageSelect) BuildSQL(driver string) (strSQL string, err error) {
+func (s *PageSelect) BuildSQL() (strSQL string, err error) {
 
 	if len(s.SQL) == 0 {
 		return "", errors.New("sql is empty")
@@ -93,9 +94,9 @@ func (s *PageSelect) BuildSQL(driver string) (strSQL string, err error) {
 
 		if s.ManualPage {
 
-			strSQL, err = renderManualPageSQL(driver, s.SQL, nil, false, nil, nil, s.Limit, s.AutoQuotedColumn)
+			strSQL, err = renderManualPageSQL(s.DriverName, s.SQL, nil, false, nil, nil, s.Limit, s.AutoQuotedColumn)
 			if err != nil {
-				fmt.Println("driver:", driver)
+				fmt.Println("driver:", s.DriverName)
 				fmt.Println("renderSQL:", s.SQL)
 				fmt.Println("Limit:", s.Limit)
 
@@ -112,7 +113,7 @@ func (s *PageSelect) BuildSQL(driver string) (strSQL string, err error) {
 	//where
 	if len(s.Conditions) > 0 {
 		for _, v := range s.Conditions {
-			if str := v.BuildWhere(driver, s.ColumnTypes, s.AutoQuotedColumn); len(str) > 0 {
+			if str := v.BuildWhere(s.DriverName, s.ColumnTypes, s.AutoQuotedColumn); len(str) > 0 {
 				whereList = append(whereList, "("+str+")")
 			}
 		}
@@ -120,12 +121,12 @@ func (s *PageSelect) BuildSQL(driver string) (strSQL string, err error) {
 	if len(s.Order) > 0 {
 		for _, v := range s.Order {
 			if strings.HasPrefix(v, OrderDesc) {
-				orderList = append(orderList, Find(driver).SortByDesc(s.columnName(driver, v[1:]), s.isNotNullField(v[1:])))
+				orderList = append(orderList, Find(s.DriverName).SortByDesc(s.columnName(v[1:]), s.isNotNullField(v[1:])))
 			} else if strings.HasPrefix(v, OrderAsc) {
-				orderList = append(orderList, Find(driver).SortByAsc(s.columnName(driver, v[1:]), s.isNotNullField(v[1:])))
+				orderList = append(orderList, Find(s.DriverName).SortByAsc(s.columnName(v[1:]), s.isNotNullField(v[1:])))
 			} else {
 
-				orderList = append(orderList, Find(driver).SortByAsc(s.columnName(driver, v), s.isNotNullField(v)))
+				orderList = append(orderList, Find(s.DriverName).SortByAsc(s.columnName(v), s.isNotNullField(v)))
 			}
 		}
 		if len(s.Divide) > 0 {
@@ -133,14 +134,14 @@ func (s *PageSelect) BuildSQL(driver string) (strSQL string, err error) {
 				Name:  "divide",
 				Lines: buildCondition(s.Order, s.Divide),
 			}
-			if str := divideCondition.BuildWhere(driver, s.ColumnTypes, s.AutoQuotedColumn); len(str) > 0 {
+			if str := divideCondition.BuildWhere(s.DriverName, s.ColumnTypes, s.AutoQuotedColumn); len(str) > 0 {
 				whereList = append(whereList, "("+str+")")
 			}
 		}
 	}
 
 	if s.ManualPage {
-		if strSQL, err = renderManualPageSQL(driver, s.SQL, s.Columns, false, whereList, orderList, s.Limit, s.AutoQuotedColumn); err != nil {
+		if strSQL, err = renderManualPageSQL(s.DriverName, s.SQL, s.Columns, false, whereList, orderList, s.Limit, s.AutoQuotedColumn); err != nil {
 			return
 		}
 	} else {
@@ -151,7 +152,7 @@ func (s *PageSelect) BuildSQL(driver string) (strSQL string, err error) {
 		if len(s.Columns) > 0 {
 			list := []string{}
 			for _, c := range s.Columns {
-				list = append(list, s.columnName(driver, c))
+				list = append(list, s.columnName(c))
 			}
 			sel = strings.Join(list, ",")
 		}
@@ -162,7 +163,7 @@ func (s *PageSelect) BuildSQL(driver string) (strSQL string, err error) {
 			orderby = " order by " + strings.Join(orderList, ",")
 		}
 		if s.Limit >= 0 {
-			strSQL = Find(driver).LimitSQL(sel, s.SQL, where, orderby, s.Limit)
+			strSQL = Find(s.DriverName).LimitSQL(sel, s.SQL, where, orderby, s.Limit)
 		} else {
 			//防止末尾是注释，必须换行
 			strSQL = strings.TrimSpace(fmt.Sprintf("select %s from (\n%s\n) wholesql %s%s", sel, s.SQL, where, orderby))
@@ -175,9 +176,9 @@ func (s *PageSelect) BuildSQL(driver string) (strSQL string, err error) {
 }
 
 //QueryRows 根据设置返回一页数据
-func (s *PageSelect) QueryRows(driver string, db common.DB) (result []map[string]interface{}, cols []*scan.ColumnType, err error) {
+func (s *PageSelect) QueryRows(db common.DB) (result []map[string]interface{}, cols []*scan.ColumnType, err error) {
 	var strSQL string
-	strSQL, err = s.BuildSQL(driver)
+	strSQL, err = s.BuildSQL()
 	if err != nil {
 		return
 	}
@@ -187,7 +188,7 @@ func (s *PageSelect) QueryRows(driver string, db common.DB) (result []map[string
 		log.Println(err)
 		return
 	}
-	if cols, err = Find(driver).ColumnTypes(rows); err != nil {
+	if cols, err = Find(s.DriverName).ColumnTypes(rows); err != nil {
 		return
 	}
 	//go1.8 可以直接返回各列类型，但是oci8驱动支持有问题，number区分不了整型和浮点
@@ -225,13 +226,13 @@ func (s *PageSelect) renderSQL() (string, error) {
 }
 
 // BuildTotalSQL 如果没有数值字段或者没有记录，则返回空sql
-func (s *PageSelect) BuildTotalSQL(driver string, cols ...string) (strSQL string, err error) {
+func (s *PageSelect) BuildTotalSQL(cols ...string) (strSQL string, err error) {
 	totalCoumns := []string{}
 
 	for _, col := range cols {
 		// totalCoumns = append(totalCoumns, fmt.Sprintf("sum(cast(%s(%s,0) as decimal(29,6))) as %[2]s", Find(driver).IsNull(), col))
-		totalCoumns = append(totalCoumns, fmt.Sprintf("%s as %s", Find(driver).Sum(
-			s.columnName(driver, col)), s.columnName(driver, col)))
+		totalCoumns = append(totalCoumns, fmt.Sprintf("%s as %s", Find(s.DriverName).Sum(
+			s.columnName(col)), s.columnName(col)))
 	}
 
 	if len(totalCoumns) == 0 {
@@ -249,13 +250,13 @@ func (s *PageSelect) BuildTotalSQL(driver string, cols ...string) (strSQL string
 	//where
 	if len(s.Conditions) > 0 {
 		for _, v := range s.Conditions {
-			if str := v.BuildWhere(driver, s.ColumnTypes, s.AutoQuotedColumn); len(str) > 0 {
+			if str := v.BuildWhere(s.DriverName, s.ColumnTypes, s.AutoQuotedColumn); len(str) > 0 {
 				whereList = append(whereList, "("+str+")")
 			}
 		}
 	}
 	if s.ManualPage {
-		if strSQL, err = renderManualPageSQL(driver, s.SQL, totalCoumns, true, whereList, nil, -1, s.AutoQuotedColumn); err != nil {
+		if strSQL, err = renderManualPageSQL(s.DriverName, s.SQL, totalCoumns, true, whereList, nil, -1, s.AutoQuotedColumn); err != nil {
 			return
 		}
 
@@ -271,7 +272,7 @@ func (s *PageSelect) BuildTotalSQL(driver string, cols ...string) (strSQL string
 }
 
 //BuildRowCountSQL 构造Count的语句
-func (s *PageSelect) BuildRowCountSQL(driver string) (strSQL string, err error) {
+func (s *PageSelect) BuildRowCountSQL() (strSQL string, err error) {
 
 	if len(s.SQL) == 0 {
 		return "", errors.New("sql is empty")
@@ -283,13 +284,13 @@ func (s *PageSelect) BuildRowCountSQL(driver string) (strSQL string, err error) 
 	//where
 	if len(s.Conditions) > 0 {
 		for _, v := range s.Conditions {
-			if str := v.BuildWhere(driver, s.ColumnTypes, s.AutoQuotedColumn); len(str) > 0 {
+			if str := v.BuildWhere(s.DriverName, s.ColumnTypes, s.AutoQuotedColumn); len(str) > 0 {
 				whereList = append(whereList, "("+str+")")
 			}
 		}
 	}
 	if s.ManualPage {
-		if strSQL, err = renderManualPageSQL(driver, s.SQL, []string{"COUNT(*)"}, true, whereList, nil, -1, s.AutoQuotedColumn); err != nil {
+		if strSQL, err = renderManualPageSQL(s.DriverName, s.SQL, []string{"COUNT(*)"}, true, whereList, nil, -1, s.AutoQuotedColumn); err != nil {
 			return
 		}
 	} else {
@@ -308,9 +309,9 @@ func (s *PageSelect) BuildRowCountSQL(driver string) (strSQL string, err error) 
 }
 
 //Total 汇总数值字段
-func (s *PageSelect) Total(db common.DB, driver string, cols ...string) (result map[string]interface{}, err error) {
+func (s *PageSelect) Total(db common.DB, cols ...string) (result map[string]interface{}, err error) {
 	var strSQL string
-	if strSQL, err = s.BuildTotalSQL(driver, cols...); err != nil {
+	if strSQL, err = s.BuildTotalSQL(cols...); err != nil {
 		return
 	}
 	if len(strSQL) == 0 {
@@ -341,7 +342,7 @@ func (s *PageSelect) Total(db common.DB, driver string, cols ...string) (result 
 func (s *PageSelect) RowCount(db common.DB, driver string) (r int64, err error) {
 	r = -1
 	var strSQL string
-	if strSQL, err = s.BuildRowCountSQL(driver); err != nil {
+	if strSQL, err = s.BuildRowCountSQL(); err != nil {
 		return
 	}
 	r, err = data.AsInt(db, strSQL)
@@ -352,9 +353,10 @@ func (s *PageSelect) RowCount(db common.DB, driver string) (r int64, err error) 
 }
 
 //NewPageSelect 新建一个查询类
-func NewPageSelect(strSQL string, colTypes ColumnTypes, manualPage bool) *PageSelect {
+func NewPageSelect(driverName, strSQL string, colTypes ColumnTypes, manualPage bool) *PageSelect {
 
 	return &PageSelect{
+		DriverName:  driverName,
 		SQL:         strSQL,
 		ColumnTypes: colTypes,
 		ManualPage:  manualPage,

@@ -116,7 +116,7 @@ func sqliteType(typeName string) (schema.DataType, int) {
 	}
 	if strings.Contains(typeName, "CHAR") ||
 		strings.Contains(typeName, "CLOB") ||
-		strings.Contains(typeName, "TEXT") {
+		strings.Contains(typeName, "TEXT") || len(typeName) == 0 {
 		length := "-1"
 		if ts := strings.Split(typeName, "("); len(ts) > 1 {
 			length = ts[1]
@@ -128,8 +128,7 @@ func sqliteType(typeName string) (schema.DataType, int) {
 		}
 		return schema.TypeString, int(i)
 	}
-	if strings.Contains(typeName, "BLOB") || strings.Contains(typeName, "BYTEA") ||
-		len(typeName) == 0 {
+	if strings.Contains(typeName, "BLOB") || strings.Contains(typeName, "BYTEA") {
 		return schema.TypeBytea, 0
 	}
 	if strings.Contains(typeName, "DATE") || strings.Contains(typeName, "TIME") {
