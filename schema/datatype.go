@@ -173,6 +173,10 @@ func strToDate(s string) (tm time.Time, err error) {
 	if err == nil {
 		return
 	}
+	tm, err = time.ParseInLocation("2006-1-2 15:4:5-07:00", s, time.Local)
+	if err == nil {
+		return
+	}
 	tm, err = time.ParseInLocation("20060102", s, time.Local)
 	if err == nil {
 		return
