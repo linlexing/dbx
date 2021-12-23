@@ -137,7 +137,8 @@ func getTableIndexes(db common.DB, schemaName, tableName string) ([]indexType, e
 				    pg_class i,
 				    pg_index ix,
 				    pg_attribute a,
-				    pg_namespace tn
+				    pg_namespace tn,
+					pg_am am
 				where
 				    t.oid = ix.indrelid
 				    and i.oid = ix.indexrelid
@@ -148,6 +149,8 @@ func getTableIndexes(db common.DB, schemaName, tableName string) ([]indexType, e
 				    and t.relkind = 'r'
 					and t.relname ilike $2
 					and not ix.indisprimary
+					and i.relam=am.oid
+					and am.amname='btree'
 				group by
 				   t.relname,
 				   i.relnamespace,
