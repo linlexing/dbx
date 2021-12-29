@@ -42,6 +42,7 @@ func (m *meta) ChangeTableSQL(db common.DB, change *schema.TableSchemaChange) (r
 	tab := schema.NewTable(tmpTableName)
 	cols := []*schema.Column{}
 	selFields := []string{} //select 的列名
+	intoFields := []string{}
 outLoop:
 	for _, one := range change.OriginFields {
 		//如果是删除，忽略这列
@@ -59,14 +60,18 @@ outLoop:
 				break
 			}
 		}
+		intoFields = append(intoFields, col.Name)
 		cols = append(cols, col)
+	}
+	//加上新增的列
+	for _, insField := range change.ChangeFields {
+		if insField.OldField == nil {
+			cols = append(cols, insField.NewField)
+		}
 	}
 	tab.Columns = cols
 	tab.PrimaryKeys = change.PK
-	intoFields := []string{}
-	for _, one := range tab.Columns {
-		intoFields = append(intoFields, one.Name)
-	}
+
 	list, err := m.CreateTableSQL(db, tab)
 	if err != nil {
 		return
@@ -74,7 +79,7 @@ outLoop:
 	rev = append(rev, list...)
 	//再复制数据
 	rev = append(rev, fmt.Sprintf("insert into %s(%s)select %s from %s",
-		change.NewName, strings.Join(intoFields, ","),
+		tmpTableName, strings.Join(intoFields, ","),
 		strings.Join(selFields, ","), tabName),
 		//然后drop 旧表
 		"drop table "+tabName)
