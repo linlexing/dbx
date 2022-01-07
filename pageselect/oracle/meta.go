@@ -75,7 +75,7 @@ func (m *meta) QuotedIdentifier(col string) string {
 }
 func (m *meta) LimitSQL(sel, strSQL, where, orderby string, limit int) string {
 	return fmt.Sprintf(
-		"select * from (select %s from (\n%s\n) wholesql %s%s) where rownum<=%d",
+		"select * from (select %s from (\n%s\n) wholesql %s%s) outer_wsql where rownum<=%d",
 		sel, strSQL, where, orderby, limit)
 }
 func (m *meta) Sum(col string) string {
