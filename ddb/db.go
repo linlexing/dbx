@@ -27,6 +27,7 @@ type TxDB interface {
 	ConnectString() string
 	Ping() error
 	SetConnMaxLifetime(d time.Duration)
+	SetConnMaxIdleTime(d time.Duration)
 	SetMaxIdleConns(n int)
 	SetMaxOpenConns(n int)
 	ResetConnect() error
@@ -47,6 +48,9 @@ func (d *db) Conn(ctx context.Context) (*sql.Conn, error) {
 }
 func (d *db) SetConnMaxLifetime(t time.Duration) {
 	d.db.SetConnMaxLifetime(t)
+}
+func (d *db) SetConnMaxIdleTime(t time.Duration) {
+	d.db.SetConnMaxIdleTime(t)
 }
 func (d *db) SetMaxIdleConns(n int) {
 	d.db.SetMaxIdleConns(n)
