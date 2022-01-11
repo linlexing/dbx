@@ -26,6 +26,7 @@ type Update struct {
 	AdditionWhere    string
 	BeforeSQL        string
 	SQLRenderArgs    interface{}
+	SQLRenderFunc    template.FuncMap
 }
 
 //Exec 执行一个更新操作，并返回影响的行数
@@ -92,17 +93,20 @@ func (u *Update) Exec(db common.DB) (icount int64, err error) {
 		strings.Join(where, " and "),
 	)
 
-	strSQL, err = render.RenderSQL(strSQL, u.SQLRenderArgs)
+	strSQL, err = render.RenderSQL(strSQL, u.SQLRenderArgs, u.SQLRenderFunc)
 	if err != nil {
 		return
 	}
 	if len(u.BeforeSQL) > 0 {
 		var strBefore string
-		strBefore, err = render.RenderSQL(u.BeforeSQL, u.SQLRenderArgs, template.FuncMap{
-			"DataSQL": func() string {
-				return u.DataSQL
-			},
-		})
+		funcmap := template.FuncMap{}
+		for k, v := range u.SQLRenderFunc {
+			funcmap[k] = v
+		}
+		funcmap["DataSQL"] = func() string {
+			return u.DataSQL
+		}
+		strBefore, err = render.RenderSQL(u.BeforeSQL, u.SQLRenderArgs, funcmap)
 		if err != nil {
 			return
 		}
