@@ -77,12 +77,14 @@ outLoop:
 		return
 	}
 	rev = append(rev, list...)
-	//再复制数据
-	rev = append(rev, fmt.Sprintf("insert into %s(%s)select %s from %s",
-		tmpTableName, strings.Join(intoFields, ","),
-		strings.Join(selFields, ","), tabName),
-		//然后drop 旧表
-		"drop table "+tabName)
+	//如果有intoFields，则再复制数据
+	if len(intoFields) > 0 {
+		rev = append(rev, fmt.Sprintf("insert into %s(%s)select %s from %s",
+			tmpTableName, strings.Join(intoFields, ","),
+			strings.Join(selFields, ","), tabName))
+	}
+	//然后drop 旧表
+	rev = append(rev, "drop table "+tabName)
 	rev = append(rev, tableRenameSQL(tmpTableName, tabName)...)
 	return
 }

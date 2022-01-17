@@ -65,13 +65,13 @@ func (t *Table) check() error {
 		if len(c.Name) == 0 {
 			return fmt.Errorf("column %d name is empty", i)
 		}
-		if _, ok := cm[c.Name]; ok {
+		if _, ok := cm[strings.ToUpper(c.Name)]; ok {
 			return fmt.Errorf("column %d name is dup", i)
 		}
-		cm[c.Name] = true
+		cm[strings.ToUpper(c.Name)] = true
 	}
 	for _, c := range t.PrimaryKeys {
-		if _, ok := cm[c]; !ok {
+		if _, ok := cm[strings.ToUpper(c)]; !ok {
 			return fmt.Errorf("primary key %s not found", c)
 		}
 	}
