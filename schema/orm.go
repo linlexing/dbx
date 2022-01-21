@@ -58,6 +58,10 @@ func (s *structField) checkType(root bool) error {
 			reflect.Slice,
 			reflect.Map:
 			return nil
+		case reflect.Ptr:
+			if st.Elem().Kind() == reflect.Struct {
+				return nil
+			}
 		}
 		return fmt.Errorf("string type must be one of string、Struct、Slice、Map")
 	case TypeBytea:
@@ -71,6 +75,10 @@ func (s *structField) checkType(root bool) error {
 			reflect.Slice,
 			reflect.Map:
 			return nil
+		case reflect.Ptr:
+			if st.Elem().Kind() == reflect.Struct {
+				return nil
+			}
 		}
 		return fmt.Errorf("typea type must be one of []byte、Struct、Slice、Map")
 	case TypeDatetime:
