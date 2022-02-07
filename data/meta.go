@@ -1,6 +1,10 @@
 package data
 
-import "github.com/linlexing/dbx/common"
+import (
+	"strings"
+
+	"github.com/linlexing/dbx/common"
+)
 
 //Accesser 不同数据库驱动需要实现的数据访问类
 type Accesser interface {
@@ -21,6 +25,10 @@ func Register(driver string, da Accesser) {
 
 //Find 根据一个驱动找到正确的Ps
 func Find(driver string) Accesser {
+	//sqlite3可能会有不同的变种
+	if strings.HasPrefix(driver, "sqlite3") {
+		driver = "sqlite3"
+	}
 	if v, ok := metas[driver]; !ok {
 		panic(driver + " not registe dataaccess")
 	} else {

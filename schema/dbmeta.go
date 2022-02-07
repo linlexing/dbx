@@ -2,6 +2,7 @@ package schema
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/linlexing/dbx/common"
 )
@@ -48,6 +49,10 @@ func Register(driverName string, meta Meta) {
 
 //Find 根据实际的数据库连接返回一个元数据操纵类，缓存
 func Find(drivername string) Meta {
+	//sqlite3可能会有不同的变种
+	if strings.HasPrefix(drivername, "sqlite3") {
+		drivername = "sqlite3"
+	}
 	if one, ok := metas[drivername]; ok {
 		return one
 	}

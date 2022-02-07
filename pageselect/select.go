@@ -34,6 +34,10 @@ func Register(driver string, ps PageSelecter) {
 
 //Find 根据一个驱动找到正确的Ps
 func Find(driver string) PageSelecter {
+	//sqlite3可能会有不同的变种
+	if strings.HasPrefix(driver, "sqlite3") {
+		driver = "sqlite3"
+	}
 	if v, ok := opeExpre[driver]; !ok {
 		panic(driver + " not registe pageselectrr")
 	} else {
