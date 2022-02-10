@@ -105,9 +105,12 @@ func (s *structField) checkType(root bool) error {
 }
 
 //json 指示该字段是否用json转换
+//注意指针的struct，也要转json
 func (s *structField) json() bool {
+
 	return !s.child && s.define.Type == TypeString &&
 		(s.st.Kind() == reflect.Struct ||
+			(s.st.Kind() == reflect.Ptr && s.st.Elem().Kind() == reflect.Struct) ||
 			s.st.Kind() == reflect.Slice ||
 			s.st.Kind() == reflect.Map)
 }
@@ -154,6 +157,10 @@ func (s *structField) isZero(val reflect.Value) bool {
 			return val.Bool() == false
 		case reflect.Struct:
 			return reflect.DeepEqual(reflect.Zero(s.st), val.Interface())
+		case reflect.Ptr:
+			//如果是nil，就到不了这一步，在底层自带的IsZero就判断了，
+			//而定义为指针的，有内容就不算zero，所以这里固定不会是zero
+			return false
 		}
 		panic("invalid type")
 	case TypeBytea:
