@@ -231,8 +231,10 @@ func (m *meta) GetOperatorExpress(ope ps.Operator, dataType schema.DataType, col
 
 func valueExpress(dataType schema.DataType, value string) string {
 	switch dataType {
-	case schema.TypeFloat, schema.TypeInt, schema.TypeDatetime:
+	case schema.TypeFloat, schema.TypeInt:
 		return value
+	case schema.TypeDatetime:
+		return "'" + value + "'"
 	case schema.TypeString:
 		return "'" + strings.Replace(value, "'", "''", -1) + "'"
 
