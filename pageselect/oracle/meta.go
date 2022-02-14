@@ -95,6 +95,8 @@ func valueExpress(dataType schema.DataType, value string) string {
 			return fmt.Sprintf("TO_DATE('%s','yyyy-mm-dd')", value)
 		} else if len(value) == 19 {
 			return fmt.Sprintf("TO_DATE('%s','yyyy-mm-dd hh24:mi:ss')", value)
+		} else if len(value) > 19 {
+			return fmt.Sprintf("TO_DATE('%s','yyyy-mm-dd hh24:mi:ss')", value[:19])
 		} else {
 			panic(fmt.Errorf("invalid datetime:%s", value))
 		}

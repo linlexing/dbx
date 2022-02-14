@@ -261,7 +261,9 @@ func valueExpress(dataType schema.DataType, value string) string {
 		if len(value) == 10 {
 			return fmt.Sprintf("TO_DATE('%s','YYYY-MM-DD')", value)
 		} else if len(value) == 19 {
-			return fmt.Sprintf("TO_DATE('%s','YYYY-MM-DD HH24:MI:SS')", value)
+			return fmt.Sprintf("to_timestamp('%s','YYYY-MM-DD HH24:MI:SS')", value)
+		} else if len(value) > 19 {
+			return fmt.Sprintf("to_timestamp('%s','YYYY-MM-DD HH24:MI:SS.US')", value)
 		} else {
 			panic(fmt.Errorf("invalid datetime:%s", value))
 		}
