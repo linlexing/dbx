@@ -22,19 +22,54 @@ type indexType struct {
 	Column string `db:"COLUMNNAME"`
 	Unique bool   `db:"INDISUNIQUE"`
 }
+type idOrder struct {
+	ID   int
+	Name string
+}
+
+//获取主键字段编号的列表
+func getPKIDS(db common.DB, tableName string) ([]int, error) {
+	strSQL := fmt.Sprintf(
+		`SELECT unnest(i.indkey) as pkid
+		FROM   pg_index i
+		WHERE  i.indrelid = '%s'::regclass
+		AND    i.indisprimary`, tableName)
+	result := []int{}
+	rows, err := db.Query(strSQL)
+	if err != nil {
+		err = common.NewSQLError(err, strSQL)
+		log.Println(err)
+		return nil, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var oneCol int
+		if err = rows.Scan(&oneCol); err != nil {
+			return nil, err
+		}
+		result = append(result, oneCol)
+	}
+
+	return result, rows.Err()
+}
 
 //获取主键字段
 //tablename需要加单引号才能被sql语句识别
 func getPk(db common.DB, tableName string) ([]string, error) {
-	result := []string{}
+	//为适应华为高斯，改成两步获取
+	ids, err := getPKIDS(db, tableName)
+	if err != nil {
+		return nil, err
+	}
+
+	names := []*idOrder{}
 	strSQL := fmt.Sprintf(
-		`SELECT upper(a.attname)
+		`SELECT upper(a.attname),a.attnum
 			FROM   pg_index i
 			JOIN   pg_attribute a ON a.attrelid = i.indrelid
 				AND a.attnum = ANY(i.indkey)
 			WHERE  i.indrelid = '%s'::regclass
-			AND    i.indisprimary
-			order by array_position(i.indkey,a.attnum)`, tableName)
+			AND    i.indisprimary`, tableName)
 
 	rows, err := db.Query(strSQL)
 	if err != nil {
@@ -44,14 +79,27 @@ func getPk(db common.DB, tableName string) ([]string, error) {
 	}
 	defer rows.Close()
 	for rows.Next() {
-		var oneColName string
-		if err = rows.Scan(&oneColName); err != nil {
+		var id int
+		var name string
+		if err = rows.Scan(&name, &id); err != nil {
 			return nil, err
 		}
-		result = append(result, oneColName)
+		names = append(names, &idOrder{id, name})
 	}
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+	result := []string{}
+	//按照顺序组合字段
+	for _, one := range ids {
+		for _, col := range names {
+			if one == col.ID {
+				result = append(result, col.Name)
+			}
+		}
+	}
+	return result, nil
 
-	return result, rows.Err()
 }
 
 //columnType中DBNULL被定义为int类型
@@ -76,7 +124,7 @@ func getTableColumns(db common.DB, schemaName, tableName string) ([]columnType, 
 					(case when character_maximum_length is null then 0 else character_maximum_length end) as "DBMAXLENGTH",
 					(SELECT CASE WHEN a.atttypid = ANY ('{int,int8,int2}'::regtype[])
 						AND EXISTS (
-							SELECT FROM pg_attrdef ad
+							SELECT 1 FROM pg_attrdef ad
 							WHERE  ad.adrelid = a.attrelid
 							AND    ad.adnum   = a.attnum
 							AND    pg_get_expr(ad.adbin, ad.adrelid)
