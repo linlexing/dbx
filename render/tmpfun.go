@@ -38,6 +38,9 @@ var tempFunc = template.FuncMap{
 		}
 		return false
 	},
+	"subtract": func(y, x int) int {
+		return y - x
+	},
 }
 
 //AddFunc 增加模板函数，如果前面有同名的函数，将被覆盖
