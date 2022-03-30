@@ -575,15 +575,24 @@ func mainRow2Struct(row map[string]interface{},
 	for _, v := range types {
 		if v.child {
 			if clist, ok := child[v.childName]; ok {
-				v.set(vval, clist)
+				if err := v.set(vval, clist); err != nil {
+					return err
+				}
 			} else {
-				v.set(vval, nil)
+				if err := v.set(vval, nil); err != nil {
+					return err
+				}
 			}
 		} else {
 			if tv, ok := row[v.define.Name]; ok {
-				v.set(vval, tv)
+				if err := v.set(vval, tv); err != nil {
+					return err
+				}
 			} else {
-				v.set(vval, nil) //没找到的属性要设置成nil，防止有旧值
+				//没找到的属性要设置成nil，防止有旧值
+				if err := v.set(vval, nil); err != nil {
+					return err
+				}
 			}
 		}
 	}
@@ -602,9 +611,14 @@ func childRow2Struct(row map[string]interface{}, vval reflect.Value,
 	}
 	for _, v := range types {
 		if tv, ok := row[v.define.Name]; ok {
-			v.set(vval, tv)
+			if err := v.set(vval, tv); err != nil {
+				return err
+			}
 		} else {
-			v.set(vval, nil) //没找到的属性要设置成nil，防止有旧值
+			//没找到的属性要设置成nil，防止有旧值
+			if err := v.set(vval, nil); err != nil {
+				return err
+			}
 		}
 	}
 	return nil
