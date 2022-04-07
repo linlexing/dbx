@@ -2,13 +2,10 @@ package ddb
 
 import (
 	"database/sql"
-	"encoding/binary"
 	"fmt"
-	"math/rand"
-	"time"
 
 	"github.com/linlexing/dbx/common"
-	"github.com/linlexing/dbx/schema"
+	"github.com/linlexing/dbx/suid"
 )
 
 //RunAtTx 在一个事务中运行，自动处理commit 和rollback
@@ -125,24 +122,9 @@ func GetTempTableName(db DB, prev string) (string, error) {
 	if len(prev) == 0 {
 		return "", fmt.Errorf("prev can't empty")
 	}
-	//确定名称
-	tableName := ""
-	rand.Seed(time.Now().UnixNano())
-	bys := make([]byte, 4)
-	icount := 0
-	for {
-		binary.BigEndian.PutUint32(bys, rand.Uint32())
-		tableName = fmt.Sprintf("%s%X", prev, bys)
-		if exists, err := schema.Find(db.DriverName()).
-			TableExists(db, tableName); err != nil {
-			return "", err
-		} else if !exists {
-			break
-		}
-		icount++
-		if icount > 100 {
-			return "", fmt.Errorf("find table name too much")
-		}
+	id, err := suid.Next()
+	if err != nil {
+		return "", err
 	}
-	return tableName, nil
+	return prev + id, nil
 }
