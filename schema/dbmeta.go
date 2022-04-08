@@ -32,6 +32,7 @@ type TableSchemaChange struct {
 type Meta interface {
 	CreateTableAsSQL(db common.DB, tableName, strSQL string, pks []string) ([]string, error)
 	TableExists(db common.DB, tableName string) (bool, error)
+	TableEmpty(db common.DB, tableName string) (bool, error)
 	CreateTableSQL(db common.DB, table *Table) ([]string, error)
 	OpenTable(db common.DB, tableName string) (*Table, error)
 	ChangeTableSQL(db common.DB, change *TableSchemaChange) ([]string, error)

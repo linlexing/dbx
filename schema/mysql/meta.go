@@ -27,6 +27,14 @@ func (m *meta) CreateTableAsSQL(db common.DB, tableName, strSQL string, pks []st
 		fmt.Sprintf("ALTER TABLE %s ADD PRIMARY KEY(%s)", tableName, strings.Join(pks, ",")),
 	}, nil
 }
+func (m *meta) TableEmpty(db common.DB, tableName string) (bool, error) {
+	var a int
+	if err := db.QueryRow(fmt.Sprintf("SELECT EXISTS (SELECT 1 FROM %s)",
+		tableName)).Scan(&a); err != nil {
+		return true, err
+	}
+	return a == 0, nil
+}
 func (m *meta) TableNames(db common.DB) (names []string, err error) {
 	strSQL := "SELECT table_name FROM information_schema.tables WHERE table_schema = schema()"
 	names = []string{}

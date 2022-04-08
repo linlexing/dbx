@@ -26,7 +26,9 @@ func (m *meta) CreateTableAsSQL(db common.DB, tableName, strSQL string, pks []st
 func (m *meta) ChangeTableSQL(db common.DB, change *schema.TableSchemaChange) ([]string, error) {
 	panic("not impl")
 }
-
+func (m *meta) TableEmpty(db common.DB, tableName string) (bool, error) {
+	panic("not impl")
+}
 func (m *meta) TableNames(db common.DB) (names []string, err error) {
 	strSQL := "show tables"
 	names = []string{}

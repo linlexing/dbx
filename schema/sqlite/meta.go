@@ -1,6 +1,7 @@
 package sqlite
 
 import (
+	"database/sql"
 	"fmt"
 	"log"
 	"sort"
@@ -52,7 +53,17 @@ func (m *meta) CreateTableAsSQL(db common.DB, tableName, strSQL string, pks []st
 	rev = []string{s, fmt.Sprintf("insert into %s %s", tableName, strSQL)}
 	return
 }
-
+func (m *meta) TableEmpty(db common.DB, tableName string) (bool, error) {
+	var a int
+	if err := db.QueryRow(fmt.Sprintf("select 1 where exists (select * from %s)",
+		tableName)).Scan(&a); err != nil {
+		if err == sql.ErrNoRows {
+			return true, nil
+		}
+		return false, err
+	}
+	return false, nil
+}
 func (m *meta) TableNames(db common.DB) (names []string, err error) {
 	strSQL := "SELECT name FROM sqlite_master WHERE type='table'"
 	names = []string{}

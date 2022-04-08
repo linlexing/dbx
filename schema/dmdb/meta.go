@@ -1,6 +1,7 @@
 package dmdb
 
 import (
+	"database/sql"
 	"fmt"
 	"log"
 	"sort"
@@ -22,7 +23,17 @@ func (m *meta) CreateTableAsSQL(db common.DB, tableName, strSQL string, pks []st
 		fmt.Sprintf("ALTER TABLE %s ADD PRIMARY KEY(%s)", tableName, strings.Join(pks, ",")),
 	}, nil
 }
-
+func (m *meta) TableEmpty(db common.DB, tableName string) (bool, error) {
+	var a int
+	if err := db.QueryRow(fmt.Sprintf(`SELECT 1 FROM DUAL WHERE EXISTS (SELECT 'X' FROM %s)`,
+		tableName)).Scan(&a); err != nil {
+		if err == sql.ErrNoRows {
+			return true, nil
+		}
+		return false, err
+	}
+	return false, nil
+}
 func (m *meta) TableNames(db common.DB) (names []string, err error) {
 	strSQL := "SELECT table_name FROM user_tables"
 	names = []string{}
