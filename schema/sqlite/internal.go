@@ -71,11 +71,11 @@ func dbType(dataType schema.DataType, maxLength int) string {
 	panic("not impl DBType")
 
 }
-func SqliteType(typeName string) schema.DataType {
-	a, _ := sqliteType(typeName)
+func SqliteType(colName, typeName string) schema.DataType {
+	a, _ := sqliteType(colName, typeName)
 	return a
 }
-func sqliteType(typeName string) (schema.DataType, int) {
+func sqliteType(colName, typeName string) (schema.DataType, int) {
 	/*
 		<1> 如果声明类型包含”INT”字符串，那么这个列被赋予INTEGER近似
 		<2> 如果这个列的声明类型包含”CHAR”，”CLOB”，或者”TEXT”中的任意一个，那么这个列就有了TEXT近似。注意类型VARCHAR包含了”CHAR”字符串，那么也就被赋予了TEXT近似
@@ -104,6 +104,12 @@ func sqliteType(typeName string) (schema.DataType, int) {
 		return schema.TypeBytea, 0
 	}
 	if strings.Contains(typeName, "DATE") || strings.Contains(typeName, "TIME") {
+		return schema.TypeDatetime, 0
+	}
+	if strings.Contains(strings.ToUpper(colName), "TIME") ||
+		strings.Contains(strings.ToUpper(colName), "DATE") ||
+		strings.Contains(strings.ToUpper(colName), "日期") ||
+		strings.Contains(strings.ToUpper(colName), "时间") {
 		return schema.TypeDatetime, 0
 	}
 	return schema.TypeFloat, 0

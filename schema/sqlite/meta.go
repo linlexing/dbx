@@ -53,7 +53,9 @@ func (m *meta) CreateTableAsSQL(db common.DB, tableName, strSQL string,
 	//加上主键定义
 	s = s + fmt.Sprintf(",\n  CONSTRAINT %s_pkey primary key(%s)\n)",
 		tableName, strings.Join(pks, ","))
-	rev = []string{s, fmt.Sprintf("insert into %s %s", tableName, strSQL)}
+	rev = []string{s,
+		"drop table " + tmpTableName,
+		fmt.Sprintf("insert into %s %s", tableName, strSQL)}
 	return
 }
 func (m *meta) TableEmpty(db common.DB, tableName string) (bool, error) {

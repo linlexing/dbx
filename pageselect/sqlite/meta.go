@@ -46,7 +46,7 @@ func (m *meta) ColumnTypes(rows *sql.Rows) ([]*scan.ColumnType, error) {
 		rev = append(rev,
 			&scan.ColumnType{
 				Name: one.Name(),
-				Type: sqlite.SqliteType(one.DatabaseTypeName()),
+				Type: sqlite.SqliteType(one.Name(), one.DatabaseTypeName()),
 			})
 	}
 	return rev, nil

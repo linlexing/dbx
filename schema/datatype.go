@@ -16,6 +16,47 @@ type ErrInvalidDataType struct {
 	d DataType
 }
 
+//字符串转换成时间，按照各种可能的格式
+func StrToDate(s string) (tm time.Time, err error) {
+	tm, err = time.ParseInLocation("2006-1-2", s, time.Local)
+	if err == nil {
+		return
+	}
+	tm, err = time.ParseInLocation("2006-1-2 15:4:5", s, time.Local)
+	if err == nil {
+		return
+	}
+	tm, err = time.ParseInLocation("2006-1-2T15:4:5", s, time.Local)
+	if err == nil {
+		return
+	}
+	tm, err = time.ParseInLocation("2006/1/2", s, time.Local)
+	if err == nil {
+		return
+	}
+	tm, err = time.ParseInLocation("2006/1/2 15:4:5", s, time.Local)
+	if err == nil {
+		return
+	}
+	tm, err = time.ParseInLocation("2006-1-2 15:4:5-07:00", s, time.Local)
+	if err == nil {
+		return
+	}
+	tm, err = time.ParseInLocation("20060102", s, time.Local)
+	if err == nil {
+		return
+	}
+	tm, err = time.ParseInLocation("2006-1-2 15:4:5.999999999 -0700 MST", s, time.Local)
+	if err == nil {
+		return
+	}
+	tm, err = time.ParseInLocation(time.RFC3339, s, time.Local)
+	if err == nil {
+		return
+	}
+	tm, err = time.ParseInLocation(time.RFC3339Nano, s, time.Local)
+	return
+}
 func (e *ErrInvalidDataType) Error() string {
 	return fmt.Sprintf("invalid data type:%d", e.d)
 }
@@ -151,48 +192,6 @@ func (d DataType) ChineseString() (string, error) {
 	}
 }
 
-//字符串转换成时间，按照各种可能的格式
-func strToDate(s string) (tm time.Time, err error) {
-	tm, err = time.ParseInLocation("2006-1-2", s, time.Local)
-	if err == nil {
-		return
-	}
-	tm, err = time.ParseInLocation("2006-1-2 15:4:5", s, time.Local)
-	if err == nil {
-		return
-	}
-	tm, err = time.ParseInLocation("2006-1-2T15:4:5", s, time.Local)
-	if err == nil {
-		return
-	}
-	tm, err = time.ParseInLocation("2006/1/2", s, time.Local)
-	if err == nil {
-		return
-	}
-	tm, err = time.ParseInLocation("2006/1/2 15:4:5", s, time.Local)
-	if err == nil {
-		return
-	}
-	tm, err = time.ParseInLocation("2006-1-2 15:4:5-07:00", s, time.Local)
-	if err == nil {
-		return
-	}
-	tm, err = time.ParseInLocation("20060102", s, time.Local)
-	if err == nil {
-		return
-	}
-	tm, err = time.ParseInLocation("2006-1-2 15:4:5.999999999 -0700 MST", s, time.Local)
-	if err == nil {
-		return
-	}
-	tm, err = time.ParseInLocation(time.RFC3339, s, time.Local)
-	if err == nil {
-		return
-	}
-	tm, err = time.ParseInLocation(time.RFC3339Nano, s, time.Local)
-	return
-}
-
 //ParseString 将一个字符串转换成标准值
 func (d DataType) ParseString(v string) (interface{}, error) {
 	if len(v) == 0 {
@@ -219,7 +218,7 @@ func (d DataType) ParseString(v string) (interface{}, error) {
 		return i, nil
 
 	case TypeDatetime:
-		tm, err := strToDate(v)
+		tm, err := StrToDate(v)
 		if err != nil {
 			return nil, fmt.Errorf("[%s] not time value", v)
 		}
@@ -323,9 +322,9 @@ func (d DataType) ParseScan(v interface{}) (result interface{}, err error) {
 		case time.Time, *time.Time:
 			result = tv
 		case string:
-			result, err = strToDate(tv)
+			result, err = StrToDate(tv)
 		case []byte:
-			result, err = strToDate(string(tv))
+			result, err = StrToDate(string(tv))
 		default:
 			err = fmt.Errorf("error type,%T", v)
 		}
@@ -471,7 +470,7 @@ func (d DataType) ParseJSON(v interface{}) (interface{}, error) {
 		return nil, fmt.Errorf("the %#v not is base64 string", v)
 	case TypeDatetime: //RFC3339
 		if tv, ok := v.(string); ok {
-			return strToDate(tv)
+			return StrToDate(tv)
 		}
 		return nil, fmt.Errorf("the %#v not is time string", v)
 

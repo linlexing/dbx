@@ -122,7 +122,7 @@ func (m *meta) OpenTable(db common.DB, tableName string) (*schema.Table, error) 
 			TrueType:    col.Type,
 			Null:        col.NotNull != 1,
 		}
-		c.Type, c.MaxLength = sqliteType(col.Type)
+		c.Type, c.MaxLength = sqliteType(col.Name, col.Type)
 		columns = append(columns, c)
 	}
 
