@@ -1,43 +1,15 @@
 package sqlite
 
 import (
-	"encoding/binary"
 	"fmt"
 	"log"
-	"math/rand"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/linlexing/dbx/common"
 	"github.com/linlexing/dbx/schema"
 )
 
-//GetTempTableName 获取一个临时表名
-func getTempTableName(db common.DB, prev string) (string, error) {
-	if len(prev) == 0 {
-		return "", fmt.Errorf("prev can't empty")
-	}
-	//确定名称
-	tableName := ""
-	rand.Seed(time.Now().UnixNano())
-	bys := make([]byte, 4)
-	icount := 0
-	for {
-		binary.BigEndian.PutUint32(bys, rand.Uint32())
-		tableName = fmt.Sprintf("%s%X", prev, bys)
-		if exists, err := tableExists(db, tableName); err != nil {
-			return "", err
-		} else if !exists {
-			break
-		}
-		icount++
-		if icount > 100 {
-			return "", fmt.Errorf("find table name too much")
-		}
-	}
-	return tableName, nil
-}
 func tableRenameSQL(oldName string, newName string) []string {
 	return []string{fmt.Sprintf("ALTER table %s RENAME TO %s", oldName, newName)}
 }

@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/linlexing/dbx/common"
+	"github.com/linlexing/dbx/ddb"
 	"github.com/linlexing/dbx/schema"
 )
 
@@ -34,7 +35,7 @@ func (m *meta) ChangeTableSQL(db common.DB, change *schema.TableSchemaChange) (r
 		return
 	}
 	//先创建新表
-	tmpTableName, err := getTempTableName(db, "tu__")
+	tmpTableName, err := ddb.GetTempTableName("tu__")
 	if err != nil {
 		log.Println(err)
 		return nil, err

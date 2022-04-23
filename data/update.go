@@ -30,7 +30,7 @@ type Update struct {
 }
 
 //Exec 执行一个更新操作，并返回影响的行数
-func (u *Update) Exec(db common.DB) (icount int64, err error) {
+func (u *Update) Exec(db common.DB, param ...interface{}) (icount int64, err error) {
 	if len(u.Table.PrimaryKeys) == 0 {
 		err = fmt.Errorf("table %s not have primary key", u.Table.FullName())
 		return
@@ -110,13 +110,13 @@ func (u *Update) Exec(db common.DB) (icount int64, err error) {
 		if err != nil {
 			return
 		}
-		if _, err = db.Exec(strBefore); err != nil {
+		if _, err = db.Exec(strBefore, param...); err != nil {
 			return
 		}
 	}
-	sr, err := db.Exec(strSQL, setVals...)
+	sr, err := db.Exec(strSQL, append(setVals, param...)...)
 	if err != nil {
-		err = common.NewSQLError(err, strSQL, setVals...)
+		err = common.NewSQLError(err, strSQL, append(setVals, param...)...)
 		return
 	}
 	icount, err = sr.RowsAffected()

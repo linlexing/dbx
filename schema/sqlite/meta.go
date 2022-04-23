@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/linlexing/dbx/common"
+	"github.com/linlexing/dbx/ddb"
 	"github.com/linlexing/dbx/schema"
 )
 
@@ -21,14 +22,16 @@ func init() {
 }
 
 //CreateTableAs 执行create table as select语句
-func (m *meta) CreateTableAsSQL(db common.DB, tableName, strSQL string, pks []string) (rev []string, err error) {
-	tmpTableName, err := getTempTableName(db, "t_")
+//todo:不支持date类型，会转换成num类型，需要整改
+func (m *meta) CreateTableAsSQL(db common.DB, tableName, strSQL string,
+	param []interface{}, pks []string) (rev []string, err error) {
+	tmpTableName, err := ddb.GetTempTableName("t_")
 	if err != nil {
 		return
 	}
 	//由于sqlite不支持alter table，所以需要先创建表，然后insert
 	s := fmt.Sprintf("CREATE TABLE %s as select * from (%s) limit 0", tmpTableName, strSQL)
-	if _, err := db.Exec(s); err != nil {
+	if _, err := db.Exec(s, param...); err != nil {
 		err = common.NewSQLError(err, s)
 		log.Println(err)
 		return nil, err

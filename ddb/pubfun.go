@@ -117,7 +117,7 @@ func QueryMaps(db common.Queryer, strSQL string,
 }
 
 //GetTempTableName 获取一个临时表名
-func GetTempTableName(db DB, prev string) (string, error) {
+func GetTempTableName(prev string) (string, error) {
 
 	if len(prev) == 0 {
 		return "", fmt.Errorf("prev can't empty")

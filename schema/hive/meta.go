@@ -20,7 +20,8 @@ func init() {
 }
 
 //CreateTableAsSQL 生成create table as select语句
-func (m *meta) CreateTableAsSQL(db common.DB, tableName, strSQL string, pks []string) ([]string, error) {
+func (m *meta) CreateTableAsSQL(db common.DB, tableName, strSQL string, param []interface{},
+	pks []string) ([]string, error) {
 	panic("not impl")
 }
 func (m *meta) ChangeTableSQL(db common.DB, change *schema.TableSchemaChange) ([]string, error) {
