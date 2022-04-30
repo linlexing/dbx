@@ -516,6 +516,9 @@ func mainStruct2Row(vval reflect.Value, conv converFieldName) (main map[string]i
 		if v.child {
 			if tmpVal != nil {
 				child[v.childName] = tmpVal.([]map[string]interface{})
+			} else {
+				//为空的明细表需要保留，否则日志记录会每次重复出现remove
+				child[v.childName] = nil
 			}
 		} else {
 			main[v.define.Name] = tmpVal
