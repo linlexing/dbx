@@ -287,7 +287,7 @@ func (node *Node) string(prev string, fields map[string]schema.DataType,
 			comment = prev + fmt.Sprintf("/*%s(from %s on %s where %s)*/\n",
 				cPrev, node.From, strings.Join(iwhere, " and "), node.PlainText)
 		}
-		return comment + prev + "(" + cPrev + "(" + innerText + "))"
+		return comment + prev + "(" + cPrev + innerText + ")"
 	case NodeInTable:
 		from := node.From
 		if getview != nil {
