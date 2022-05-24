@@ -18,3 +18,7 @@ func Next() (string, error) {
 	binary.LittleEndian.PutUint64(b, id)
 	return base32.StdEncoding.WithPadding(base32.NoPadding).EncodeToString(b), nil
 }
+
+func NextInt() (uint64, error) {
+	return sf.NextID()
+}
