@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/linlexing/dbx/common"
 	"github.com/linlexing/dbx/data"
 )
 
@@ -19,7 +18,7 @@ func init() {
 func (m *meta) Concat(vals ...string) string {
 	return fmt.Sprintf("CONCAT(%s)", strings.Join(vals, ","))
 }
-func (m *meta) Merge(db common.DB, destTable, srcTable string, pks, columns []string) error {
+func (m *meta) Merge(destTable, srcDataSQL string, pks, columns []string) string {
 	updateSet := []string{}
 	pkMap := map[string]bool{}
 	onConflict := "ON CONFLICT(" + strings.Join(pks, ",") + ")"
@@ -39,11 +38,10 @@ func (m *meta) Merge(db common.DB, destTable, srcTable string, pks, columns []st
 	} else {
 		onConflict = onConflict + " DO NOTHING"
 	}
-	strSQL := fmt.Sprintf("insert %s into %s(%s)select %s from %s %s",
+	return fmt.Sprintf("insert %s into %s(%s)select %s from (%s) merge_src %s",
 		ignore, destTable, strings.Join(columns, ","), strings.Join(columns, ","),
-		srcTable, onConflict)
-	_, err := db.Exec(strSQL)
-	return err
+		srcDataSQL, onConflict)
+
 }
 func (m *meta) Minus(table1, where1, table2, where2 string, primaryKeys, cols []string) string {
 	strSql := ""

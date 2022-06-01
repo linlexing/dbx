@@ -867,5 +867,7 @@ func (t *Table) Replace(oldRows, newRows []map[string]interface{}) (insCount, up
 
 //Merge 将另一个表中的数据合并进本表，要求两个表的主键相同,相同主键的被覆盖
 func (t *Table) Merge(tabName string, cols ...string) error {
-	return Find(t.Driver).Merge(t.DB, t.FullName(), tabName, t.PrimaryKeys, cols)
+	strSQL := Find(t.Driver).Merge(t.FullName(), "select * from "+tabName, t.PrimaryKeys, cols)
+	_, err := t.DB.Exec(strSQL)
+	return err
 }
