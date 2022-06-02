@@ -105,7 +105,7 @@ func dbDefineNull(c *schema.Column) string {
 
 //tableRenameSQL 处理表改名，旧名可以是多个，任意一个对上就改名，如果都没有存在，则不处理，也不返回出错
 func tableRenameSQL(oldName string, newName string) []string {
-	return []string{fmt.Sprintf("rename table %s TO %s", oldName, newName)}
+	return []string{fmt.Sprintf("rename %s TO %s", oldName, newName)}
 }
 func tableExists(db common.DB, tabName string) (bool, error) {
 	var schemaName string
