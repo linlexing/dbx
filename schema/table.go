@@ -66,7 +66,7 @@ func (t *Table) check() error {
 			return fmt.Errorf("column %d name is empty", i)
 		}
 		if _, ok := cm[strings.ToUpper(c.Name)]; ok {
-			return fmt.Errorf("column %d name is dup", i)
+			return fmt.Errorf("column %d name [%s] is dup", i, c.Name)
 		}
 		cm[strings.ToUpper(c.Name)] = true
 	}
