@@ -43,6 +43,9 @@ var tempFunc = template.FuncMap{
 	},
 	"fields": strings.Fields,
 	"split":  strings.Split,
+	"dec": func(i int) int {
+		return i - 1
+	},
 	"N": func(start, end int) (stream chan int) {
 		stream = make(chan int)
 		go func() {
