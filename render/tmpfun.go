@@ -43,6 +43,16 @@ var tempFunc = template.FuncMap{
 	},
 	"fields": strings.Fields,
 	"split":  strings.Split,
+	"N": func(start, end int) (stream chan int) {
+		stream = make(chan int)
+		go func() {
+			for i := start; i <= end; i++ {
+				stream <- i
+			}
+			close(stream)
+		}()
+		return
+	},
 }
 
 //AddFunc 增加模板函数，如果前面有同名的函数，将被覆盖
