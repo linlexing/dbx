@@ -46,6 +46,7 @@ var tempFunc = template.FuncMap{
 	"dec": func(i int) int {
 		return i - 1
 	},
+	"int": strconv.Atoi,
 	"N": func(start, end int) (stream chan int) {
 		stream = make(chan int)
 		go func() {
