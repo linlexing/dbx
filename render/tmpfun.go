@@ -8,8 +8,8 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/google/uuid"
 	"github.com/linlexing/dbx/suid"
+	"github.com/pborman/uuid"
 )
 
 var tempFunc = template.FuncMap{

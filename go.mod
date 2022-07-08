@@ -11,6 +11,7 @@ require (
 	github.com/linlexing/mapfun v1.0.1
 	github.com/mattn/go-sqlite3 v1.14.0
 	github.com/patrickmn/go-cache v2.1.0+incompatible
+	github.com/pborman/uuid v1.2.1
 	github.com/sirupsen/logrus v1.6.0
 	github.com/sony/sonyflake v1.0.0
 	github.com/stretchr/testify v1.6.1 // indirect
