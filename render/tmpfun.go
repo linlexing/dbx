@@ -1,13 +1,31 @@
 package render
 
 import (
+	"encoding/base64"
+	"encoding/hex"
 	"fmt"
 	"strconv"
 	"strings"
 	"text/template"
+
+	"github.com/google/uuid"
+	"github.com/linlexing/dbx/suid"
 )
 
 var tempFunc = template.FuncMap{
+	"guid64": func() string {
+		return base64.RawURLEncoding.EncodeToString(uuid.NewUUID())
+	},
+	"guid": func() string {
+		return strings.ToUpper(hex.EncodeToString(uuid.NewUUID()))
+	},
+	"suid": func() string {
+		id, err := suid.Next()
+		if err != nil {
+			return err.Error()
+		}
+		return id
+	},
 	//P 函数将具体的参数值转换成文字量，这里不用绑定，会有一些性能损失
 	"P": func(val interface{}) string {
 		switch tv := val.(type) {
