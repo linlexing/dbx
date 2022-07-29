@@ -52,6 +52,19 @@ func NewTable(name string) *Table {
 	return rev
 }
 
+//名称和所有字段的名称转换成大写
+func (t *Table) ToUpper() {
+
+	t.Name = strings.ToUpper(t.Name)
+	for i, v := range t.PrimaryKeys {
+		t.PrimaryKeys[i] = strings.ToUpper(v)
+	}
+	for _, v := range t.Columns {
+		v.Name = strings.ToUpper(v.Name)
+	}
+
+}
+
 //FullName 返回全名称，包括schema
 func (t *Table) FullName() string {
 	if len(t.Schema) > 0 {

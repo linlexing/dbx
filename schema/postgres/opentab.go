@@ -64,7 +64,7 @@ func getPk(db common.DB, tableName string) ([]string, error) {
 
 	names := []*idOrder{}
 	strSQL := fmt.Sprintf(
-		`SELECT upper(a.attname),a.attnum
+		`SELECT a.attname,a.attnum
 			FROM   pg_index i
 			JOIN   pg_attribute a ON a.attrelid = i.indrelid
 				AND a.attnum = ANY(i.indkey)
@@ -106,7 +106,7 @@ func getPk(db common.DB, tableName string) ([]string, error) {
 //0代表false 1代表true
 func getTableColumns(db common.DB, schemaName, tableName string) ([]columnType, error) {
 	columns := []columnType{}
-	strSQL := `select upper(column_name) as "DBNAME",
+	strSQL := `select column_name as "DBNAME",
 					(case when is_nullable='YES' then 1 else 0 end) as "DBNULL",
 					(case when data_type in ('text', 'character varying','jsob','jsonb','ARRAY','USER-DEFINED',
 						'uuid','boolean','daterange','int8range','numrange','tsrange')
@@ -178,7 +178,7 @@ func getTableIndexes(db common.DB, schemaName, tableName string) ([]indexType, e
 	strSQL := `select
 					(select nspname from pg_namespace where oid=i.relnamespace) as "INDEXOWNER",
 					i.relname as "INDEXNAME",
-					upper(min(a.attname)) as "COLUMNNAME",
+					min(a.attname) as "COLUMNNAME",
 					ix.indisunique as "INDISUNIQUE"
 				from
 				    pg_class t,

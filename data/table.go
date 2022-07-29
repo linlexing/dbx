@@ -29,7 +29,7 @@ type Table struct {
 	ColumnTypes    []*scan.ColumnType
 	notnullColumns []string
 	ColumnNames    []string
-	columnsMap     map[string]*schema.Column //用于快速查询
+	columnsMap     map[string]*schema.Column //用于快速查询，名称用大写的
 }
 
 //NewTable 用schema.Table构造一个Table,没有数据库操作发生
@@ -49,7 +49,19 @@ func NewTable(driver string, db common.DB, st *schema.Table) *Table {
 
 //OpenTable 从数据库取出结构构造Table,表名用 schema.tablename的方式,
 //如果不读取数据，仅定义结构，应当使用schema.Table
+//注意：这里返回的所有字段名都转换成了大写，如果要获取实际的字段名，使用OpenTableCase
 func OpenTable(driver string, db common.DB, tabName string) (*Table, error) {
+	if len(tabName) == 0 {
+		return nil, errors.New("table name is empty")
+	}
+	st, err := schema.Find(driver).OpenTable(db, tabName)
+	if err != nil {
+		return nil, err
+	}
+	st.ToUpper()
+	return NewTable(driver, db, st), nil
+}
+func OpenTableCase(driver string, db common.DB, tabName string) (*Table, error) {
 	if len(tabName) == 0 {
 		return nil, errors.New("table name is empty")
 	}
@@ -80,9 +92,13 @@ func (t *Table) BuildColumnIndex() {
 			Name: col.Name,
 			Type: col.Type,
 		})
-		t.columnsMap[col.Name] = col
+		t.columnsMap[strings.ToUpper(col.Name)] = col
 	}
 
+}
+func (t *Table) findColumn(name string) (*schema.Column, bool) {
+	rev, ok := t.columnsMap[strings.ToUpper(name)]
+	return rev, ok
 }
 
 //RefreshSchema 从数据库重新检索表结构
@@ -124,7 +140,7 @@ func (t *Table) Row(pks ...interface{}) (map[string]interface{}, error) {
 func (t *Table) ToJSON(row map[string]interface{}) (map[string]interface{}, error) {
 	transRecord := map[string]interface{}{}
 	for k, v := range row {
-		col, ok := t.columnsMap[k]
+		col, ok := t.findColumn(k)
 		if !ok {
 			return nil, fmt.Errorf("not found column %s", k)
 		}
@@ -138,10 +154,11 @@ func (t *Table) ToJSON(row map[string]interface{}) (map[string]interface{}, erro
 
 //FromJSON 将一个json数据转换回row
 //注意传入的字段不一定是全字段
+//字段名忽略大小写
 func (t *Table) FromJSON(row map[string]interface{}) (map[string]interface{}, error) {
 	transRecord := map[string]interface{}{}
 	for k, v := range row {
-		col, ok := t.columnsMap[k]
+		col, ok := t.findColumn(k)
 		if !ok {
 			return nil, fmt.Errorf("not found column %s", k)
 		}
@@ -158,7 +175,7 @@ func (t *Table) FromJSON(row map[string]interface{}) (map[string]interface{}, er
 func (t *Table) SafeFromJSON(row map[string]interface{}) map[string]interface{} {
 	transRecord := map[string]interface{}{}
 	for k, v := range row {
-		col, ok := t.columnsMap[k]
+		col, ok := t.findColumn(k)
 		if !ok {
 			continue
 		}
