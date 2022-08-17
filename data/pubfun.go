@@ -22,7 +22,7 @@ func Bind(driver, strSQL string) string {
 	if x, found := bindCache.Get(key); found {
 		return x.(string)
 	}
-	x := sqlx.Rebind(sqlx.BindType(driver), strSQL)
+	x := Rebind(BindType(driver), strSQL)
 	bindCache.Set(key, x, cache.DefaultExpiration)
 	return x
 }
