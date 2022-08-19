@@ -881,9 +881,57 @@ func (t *Table) Replace(oldRows, newRows []map[string]interface{}) (insCount, up
 	err = t.Insert(insertRows)
 	return
 }
+func (t *Table) pgMergeForNotNull(tabName string, cols ...string) error {
+	updateCols := []string{}
+	linkCols := []string{}
+	insertNotExistsLink := []string{}
+	pkMap := map[string]struct{}{}
+	for _, c := range t.PrimaryKeys {
+		pkMap[c] = struct{}{}
+		linkCols = append(linkCols, fmt.Sprintf("%s.%s=t.%[2]s", t.Name, c))
+		insertNotExistsLink = append(insertNotExistsLink, fmt.Sprintf("dest.%s=src.%[1]s", c))
+	}
+	for _, col := range cols {
+		if _, ok := pkMap[col]; !ok {
+			updateCols = append(updateCols, fmt.Sprintf("%s=t.%[1]s", col))
+		}
+	}
+	updateSQL := fmt.Sprintf("update %s set %s from %s t where %s",
+		t.Name, strings.Join(updateCols, ","), tabName, strings.Join(linkCols, " and "))
+	if _, err := t.DB.Exec(updateSQL); err != nil {
+		return err
+	}
+	//再insert
+	insertSQL := fmt.Sprintf(
+		"insert into %s(%s)select %[2]s from %[3]s src where not exists(select 1 from %[1]s dest where %[4]s)",
+		t.Name, strings.Join(cols, ","), tabName, strings.Join(insertNotExistsLink, " and "))
+	_, err := t.DB.Exec(insertSQL)
+	return err
+
+}
 
 //Merge 将另一个表中的数据合并进本表，要求两个表的主键相同,相同主键的被覆盖
 func (t *Table) Merge(tabName string, cols ...string) error {
+	colMap := map[string]struct{}{}
+	for _, c := range cols {
+		colMap[c] = struct{}{}
+	}
+	//判断是否是postgres
+	switch t.Driver {
+	case "pgx", "postgres", "postgresql":
+		//是否有非空字段而且不在字段范围内
+		hasNotNull := false
+		for _, col := range t.Columns {
+			if _, ok := colMap[col.Name]; !ok && !col.Null {
+				hasNotNull = true
+				break
+			}
+		}
+		if hasNotNull {
+			//改用分离的update和insert
+			return t.pgMergeForNotNull(tabName, cols...)
+		}
+	}
 	strSQL := Find(t.Driver).Merge(t.FullName(), "select * from "+tabName, t.PrimaryKeys, cols)
 	_, err := t.DB.Exec(strSQL)
 	return err
