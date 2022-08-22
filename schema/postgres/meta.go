@@ -15,13 +15,16 @@ import (
 
 const driverName = "postgres"
 const driverNamePgx = "pgx"
+const driverNameGauss = "opengauss"
 
 type meta struct {
 }
 
 func init() {
-	schema.Register(driverName, new(meta))
-	schema.Register(driverNamePgx, new(meta))
+	m := new(meta)
+	schema.Register(driverName, m)
+	schema.Register(driverNamePgx, m)
+	schema.Register(driverNameGauss, m)
 }
 
 //执行create table as select语句

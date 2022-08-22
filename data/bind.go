@@ -13,11 +13,21 @@ const (
 	AT
 )
 
+//是否是postgresql数据库
+func IsPostgres(driver string) bool {
+	switch driver {
+	case "postgres", "opengauss", "pgx", "pq-timeouts", "cloudsqlpostgres":
+		return true
+	}
+	return false
+}
+
 // BindType returns the bindtype for a given database given a drivername.
 func BindType(driverName string) int {
-	switch driverName {
-	case "postgres", "pgx", "pq-timeouts", "cloudsqlpostgres":
+	if IsPostgres(driverName) {
 		return DOLLAR
+	}
+	switch driverName {
 	case "mysql":
 		return QUESTION
 	case "sqlite3":

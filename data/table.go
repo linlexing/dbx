@@ -917,8 +917,7 @@ func (t *Table) Merge(tabName string, cols ...string) error {
 		colMap[c] = struct{}{}
 	}
 	//判断是否是postgres
-	switch t.Driver {
-	case "pgx", "postgres", "postgresql":
+	if IsPostgres(t.Driver) {
 		//是否有非空字段而且不在字段范围内
 		hasNotNull := false
 		for _, col := range t.Columns {
