@@ -16,7 +16,7 @@ const (
 //是否是postgresql数据库
 func IsPostgres(driver string) bool {
 	switch driver {
-	case "postgres", "opengauss", "pgx", "pq-timeouts", "cloudsqlpostgres":
+	case "postgres", "pgx-opengauss", "opengauss", "pgx", "pq-timeouts", "cloudsqlpostgres":
 		return true
 	}
 	return false

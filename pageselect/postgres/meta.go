@@ -17,6 +17,7 @@ import (
 const driverName = "postgres"
 const driverNamePgx = "pgx"
 const driverNameGauss = "opengauss"
+const driverNamePgxGauss = "pgx-opengauss"
 
 type meta struct{}
 
@@ -25,6 +26,7 @@ func init() {
 	ps.Register(driverName, m)
 	ps.Register(driverNamePgx, m)
 	ps.Register(driverNameGauss, m)
+	ps.Register(driverNamePgxGauss, m)
 }
 func fromDBType(ty string) schema.DataType {
 	switch ty {
