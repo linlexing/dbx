@@ -27,7 +27,7 @@ type idOrder struct {
 	Name string
 }
 
-//获取主键字段编号的列表
+// 获取主键字段编号的列表
 func getPKIDS(db common.DB, tableName string) ([]int, error) {
 	strSQL := fmt.Sprintf(
 		`SELECT unnest(i.indkey) as pkid
@@ -53,8 +53,8 @@ func getPKIDS(db common.DB, tableName string) ([]int, error) {
 	return result, rows.Err()
 }
 
-//获取主键字段
-//tablename需要加单引号才能被sql语句识别
+// 获取主键字段
+// tablename需要加单引号才能被sql语句识别
 func getPk(db common.DB, tableName string) ([]string, error) {
 	//为适应华为高斯，改成两步获取
 	ids, err := getPKIDS(db, tableName)
@@ -102,8 +102,8 @@ func getPk(db common.DB, tableName string) ([]string, error) {
 
 }
 
-//columnType中DBNULL被定义为int类型
-//0代表false 1代表true
+// columnType中DBNULL被定义为int类型
+// 0代表false 1代表true
 func getTableColumns(db common.DB, schemaName, tableName string) ([]columnType, error) {
 	columns := []columnType{}
 	strSQL := `select column_name as "DBNAME",
@@ -147,7 +147,8 @@ func getTableColumns(db common.DB, schemaName, tableName string) ([]columnType, 
 						c.nspname = outa.table_schema AND
 						a.attname = outa.column_name) as "TRUETYPE"
 				from information_schema.columns outa
-				where table_schema ilike $1 and table_name ilike $2`
+				where table_schema ilike $1 and table_name ilike $2
+				order by ordinal_position`
 
 	rows, err := db.Query(strSQL, schemaName, tableName)
 	if err != nil {
@@ -172,7 +173,7 @@ func getTableColumns(db common.DB, schemaName, tableName string) ([]columnType, 
 
 }
 
-//SQL语句查询结果为null
+// SQL语句查询结果为null
 func getTableIndexes(db common.DB, schemaName, tableName string) ([]indexType, error) {
 	indexes := []indexType{}
 	strSQL := `select
