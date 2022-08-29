@@ -10,13 +10,13 @@ import (
 	"github.com/linlexing/dbx/schema"
 )
 
-//UpdateSet 是update set的一个子句
+// UpdateSet 是update set的一个子句
 type UpdateSet struct {
 	Column string
 	Value  string
 }
 
-//Update 是一个批量更新的类
+// Update 是一个批量更新的类
 type Update struct {
 	Table            *schema.Table
 	DataSQL          string
@@ -29,7 +29,7 @@ type Update struct {
 	SQLRenderFunc    template.FuncMap
 }
 
-//Exec 执行一个更新操作，并返回影响的行数
+// Exec 执行一个更新操作，并返回影响的行数
 func (u *Update) Exec(db common.DB, param ...interface{}) (icount int64, err error) {
 	if len(u.Table.PrimaryKeys) == 0 {
 		err = fmt.Errorf("table %s not have primary key", u.Table.FullName())
@@ -122,4 +122,10 @@ func (u *Update) Exec(db common.DB, param ...interface{}) (icount int64, err err
 	icount, err = sr.RowsAffected()
 
 	return
+}
+func init() {
+	render.AddFunc(template.FuncMap{
+		"concat_sql": func(driver string, val ...string) string {
+			return Find(driver).Concat(val...)
+		}})
 }

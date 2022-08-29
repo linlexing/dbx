@@ -77,14 +77,14 @@ var tempFunc = template.FuncMap{
 	},
 }
 
-//AddFunc 增加模板函数，如果前面有同名的函数，将被覆盖
+// AddFunc 增加模板函数，如果前面有同名的函数，将被覆盖
 func AddFunc(fs template.FuncMap) {
 	for k, v := range fs {
 		tempFunc[k] = v
 	}
 }
 
-//Cell是用来模拟可变变量的，模板系统不允许修改变量的值，因此用struct来模拟
+// Cell是用来模拟可变变量的，模板系统不允许修改变量的值，因此用struct来模拟
 type cell struct{ v interface{} }
 
 func newCell(v ...interface{}) (*cell, error) {
