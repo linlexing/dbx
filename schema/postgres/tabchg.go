@@ -2,18 +2,99 @@ package postgres
 
 import (
 	"fmt"
+	"log"
 	"strings"
 
 	"github.com/linlexing/dbx/common"
+	"github.com/linlexing/dbx/ddb"
 	"github.com/linlexing/dbx/schema"
 )
 
+func (m *meta) changeTableSQLGauss(db common.DB, change *schema.TableSchemaChange) (rev []string, err error) {
+	tabName := change.NewName
+
+	//先创建新表
+	tmpTableName, err := ddb.GetTempTableName("tu__")
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+	tab := schema.NewTable(tmpTableName)
+	cols := []*schema.Column{}
+	selFields := []string{} //select 的列名
+	intoFields := []string{}
+outLoop:
+	for _, one := range change.OriginFields {
+		//如果是删除，忽略这列
+		for _, rmFieldName := range change.RemoveFields {
+			if rmFieldName == one.Name {
+				continue outLoop
+			}
+		}
+		col := one
+		selFields = append(selFields, one.Name)
+		//找出修改后的新列，如有
+		for _, upField := range change.ChangeFields {
+			if upField.OldField == one {
+				col = upField.NewField
+				break
+			}
+		}
+		intoFields = append(intoFields, col.Name)
+		cols = append(cols, col)
+	}
+	//加上新增的列
+	for _, insField := range change.ChangeFields {
+		if insField.OldField == nil {
+			cols = append(cols, insField.NewField)
+		}
+	}
+	tab.Columns = cols
+	tab.PrimaryKeys = change.PK
+
+	list, err := m.CreateTableSQL(db, tab)
+	if err != nil {
+		return
+	}
+	rev = append(rev, list...)
+	//如果有intoFields，则再复制数据
+	if len(intoFields) > 0 {
+		rev = append(rev, fmt.Sprintf("insert into %s(%s)select %s from %s",
+			tmpTableName, strings.Join(intoFields, ","),
+			strings.Join(selFields, ","), tabName))
+	}
+	//然后drop 旧表
+	rev = append(rev, "drop table "+tabName)
+	rev = append(rev, tableRenameSQL(tmpTableName, tabName)...)
+	return
+
+}
 func (m *meta) ChangeTableSQL(db common.DB, change *schema.TableSchemaChange) (rev []string, err error) {
 	tabName := change.NewName
 	//处理表更名,处理过后，所有后续操作都在新表名上进行
 	if change.OldName != change.NewName {
 		rev = append(rev, tableRenameSQL(change.OldName, change.NewName)...)
 	}
+	//如果是华为高斯，不能直接修改主键，则需要用临时表来迁移数据
+	if m.isGauss() {
+		needCopy := change.PKChange
+		if !needCopy {
+			//判断主键类型有没有变化
+		out:
+			for _, one := range change.ChangeFields {
+				for _, pk := range change.PK {
+					if strings.EqualFold(pk, one.OldField.Name) {
+						needCopy = true
+						break out
+					}
+				}
+			}
+		}
+		if needCopy {
+			return m.changeTableSQLGauss(db, change)
+		}
+	}
+
 	//如果主键变更，则需要先除去主键
 	if change.PKChange {
 		list, err := dropTablePrimaryKeySQL(db, tabName)

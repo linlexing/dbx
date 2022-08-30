@@ -19,17 +19,26 @@ const driverNameGauss = "opengauss"
 const driverNamePgxGauss = "pgx-opengauss"
 
 type meta struct {
+	driverName string
+}
+
+// 是否高斯数据库
+func (m *meta) isGauss() bool {
+	switch m.driverName {
+	case driverNameGauss, driverNamePgxGauss:
+		return true
+	}
+	return false
 }
 
 func init() {
-	m := new(meta)
-	schema.Register(driverName, m)
-	schema.Register(driverNamePgx, m)
-	schema.Register(driverNameGauss, m)
-	schema.Register(driverNamePgxGauss, m)
+	schema.Register(driverName, &meta{driverName})
+	schema.Register(driverNamePgx, &meta{driverNamePgx})
+	schema.Register(driverNameGauss, &meta{driverNameGauss})
+	schema.Register(driverNamePgxGauss, &meta{driverNamePgxGauss})
 }
 
-//执行create table as select语句
+// 执行create table as select语句
 func (m *meta) CreateTableAsSQL(db common.DB, tableName, strSQL string,
 	param []interface{}, pks []string) ([]string, error) {
 	return []string{fmt.Sprintf("CREATE TABLE %s as %s", tableName, strSQL),

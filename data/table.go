@@ -19,8 +19,8 @@ import (
 	"github.com/linlexing/dbx/schema"
 )
 
-//Table 表现一个数据库表,扩展了schema.Table ，提供了数据访问，
-//注意该表实例后，不能再去修改其结构
+// Table 表现一个数据库表,扩展了schema.Table ，提供了数据访问，
+// 注意该表实例后，不能再去修改其结构
 type Table struct {
 	Driver string
 	DB     common.DB
@@ -32,7 +32,7 @@ type Table struct {
 	columnsMap     map[string]*schema.Column //用于快速查询，名称用大写的
 }
 
-//NewTable 用schema.Table构造一个Table,没有数据库操作发生
+// NewTable 用schema.Table构造一个Table,没有数据库操作发生
 func NewTable(driver string, db common.DB, st *schema.Table) *Table {
 	rev := &Table{
 		Driver:         driver,
@@ -47,9 +47,9 @@ func NewTable(driver string, db common.DB, st *schema.Table) *Table {
 	return rev
 }
 
-//OpenTable 从数据库取出结构构造Table,表名用 schema.tablename的方式,
-//如果不读取数据，仅定义结构，应当使用schema.Table
-//注意：这里返回的所有字段名都转换成了大写，如果要获取实际的字段名，使用OpenTableCase
+// OpenTable 从数据库取出结构构造Table,表名用 schema.tablename的方式,
+// 如果不读取数据，仅定义结构，应当使用schema.Table
+// 注意：这里返回的所有字段名都转换成了大写，如果要获取实际的字段名，使用OpenTableCase
 func OpenTable(driver string, db common.DB, tabName string) (*Table, error) {
 	if len(tabName) == 0 {
 		return nil, errors.New("table name is empty")
@@ -75,8 +75,8 @@ func (t *Table) bind(strSQL string) string {
 	return Bind(t.Driver, strSQL)
 }
 
-//BuildColumnIndex 在变动表结构后调用，一般是自动调用，只有在NewTable后，
-//又去手工变动过schema.Table.Columns,才需要去手动调用
+// BuildColumnIndex 在变动表结构后调用，一般是自动调用，只有在NewTable后，
+// 又去手工变动过schema.Table.Columns,才需要去手动调用
 func (t *Table) BuildColumnIndex() {
 	//构造索引
 	t.ColumnNames = []string{}
@@ -101,7 +101,7 @@ func (t *Table) findColumn(name string) (*schema.Column, bool) {
 	return rev, ok
 }
 
-//RefreshSchema 从数据库重新检索表结构
+// RefreshSchema 从数据库重新检索表结构
 func (t *Table) RefreshSchema() error {
 	tab, err := schema.Find(t.Driver).OpenTable(t.DB, t.FullName())
 	if err != nil {
@@ -112,7 +112,7 @@ func (t *Table) RefreshSchema() error {
 	return nil
 }
 
-//Row 根据一个主键值返回一个记录,如果没有找到返回nil
+// Row 根据一个主键值返回一个记录,如果没有找到返回nil
 func (t *Table) Row(pks ...interface{}) (map[string]interface{}, error) {
 	whereList := []string{}
 	if len(t.PrimaryKeys) != len(pks) {
@@ -135,8 +135,8 @@ func (t *Table) Row(pks ...interface{}) (map[string]interface{}, error) {
 	return t.ScanMap(rows)
 }
 
-//ToJSON 将一行数据转换成json,日期、二进制、int64数据转换成文本
-//注意传入的字段不一定是全字段
+// ToJSON 将一行数据转换成json,日期、二进制、int64数据转换成文本
+// 注意传入的字段不一定是全字段
 func (t *Table) ToJSON(row map[string]interface{}) (map[string]interface{}, error) {
 	transRecord := map[string]interface{}{}
 	for k, v := range row {
@@ -152,9 +152,9 @@ func (t *Table) ToJSON(row map[string]interface{}) (map[string]interface{}, erro
 	return transRecord, nil
 }
 
-//FromJSON 将一个json数据转换回row
-//注意传入的字段不一定是全字段
-//字段名忽略大小写
+// FromJSON 将一个json数据转换回row
+// 注意传入的字段不一定是全字段
+// 字段名忽略大小写
 func (t *Table) FromJSON(row map[string]interface{}) (map[string]interface{}, error) {
 	transRecord := map[string]interface{}{}
 	for k, v := range row {
@@ -170,8 +170,8 @@ func (t *Table) FromJSON(row map[string]interface{}) (map[string]interface{}, er
 	return transRecord, nil
 }
 
-//SafeFromJSON 将一个json数据转换回row,忽略不能转换的字段
-//注意传入的字段不一定是全字段
+// SafeFromJSON 将一个json数据转换回row,忽略不能转换的字段
+// 注意传入的字段不一定是全字段
 func (t *Table) SafeFromJSON(row map[string]interface{}) map[string]interface{} {
 	transRecord := map[string]interface{}{}
 	for k, v := range row {
@@ -188,13 +188,13 @@ func (t *Table) SafeFromJSON(row map[string]interface{}) map[string]interface{} 
 	return transRecord
 }
 
-//ScanSlice 根据一个Scaner，再根据Table的字段数据类型，扫描出一个slice
+// ScanSlice 根据一个Scaner，再根据Table的字段数据类型，扫描出一个slice
 func (t *Table) ScanSlice(s common.Scaner) (result []interface{}, err error) {
 	result, err = scan.TypeScan(s, t.ColumnTypes)
 	return
 }
 
-//ScanMap 根据一个Scaner，再根据Table的字段数据类型，扫描出一个map
+// ScanMap 根据一个Scaner，再根据Table的字段数据类型，扫描出一个map
 func (t *Table) ScanMap(s common.Scaner) (result map[string]interface{}, err error) {
 	outList, err := t.ScanSlice(s)
 	if err != nil {
@@ -207,7 +207,7 @@ func (t *Table) ScanMap(s common.Scaner) (result map[string]interface{}, err err
 	return result, nil
 }
 
-//QueryOrderRows 直接返回所有记录
+// QueryOrderRows 直接返回所有记录
 func (t *Table) QueryOrderRows(orderby []string, where string,
 	param ...interface{}) (rows []map[string]interface{}, err error) {
 	rs, err := t.QueryOrder(orderby, where, param...)
@@ -226,7 +226,7 @@ func (t *Table) QueryOrderRows(orderby []string, where string,
 	return
 }
 
-//QueryOrder 查询返回排序记录，where如有参数，必须用 ?
+// QueryOrder 查询返回排序记录，where如有参数，必须用 ?
 func (t *Table) QueryOrder(orderby []string, where string,
 	param ...interface{}) (rows *sql.Rows, err error) {
 
@@ -247,17 +247,17 @@ func (t *Table) QueryOrder(orderby []string, where string,
 	return
 }
 
-//Query 查询返回记录，无排序
+// Query 查询返回记录，无排序
 func (t *Table) Query(where string, param ...interface{}) (*sql.Rows, error) {
 	return t.QueryOrder(nil, where, param...)
 }
 
-//QueryRows 直接返回记录
+// QueryRows 直接返回记录
 func (t *Table) QueryRows(where string, param ...interface{}) ([]map[string]interface{}, error) {
 	return t.QueryOrderRows(nil, where, param...)
 }
 
-//KeyExists 检查一个主键是否存在
+// KeyExists 检查一个主键是否存在
 func (t *Table) KeyExists(pks ...interface{}) (result bool, err error) {
 	whereList := []string{}
 
@@ -283,7 +283,7 @@ func (t *Table) KeyExists(pks ...interface{}) (result bool, err error) {
 
 }
 
-//KeyValues 返回一个记录的主键值,row中的字段名会忽略大小写和主键进行比较
+// KeyValues 返回一个记录的主键值,row中的字段名会忽略大小写和主键进行比较
 func (t *Table) KeyValues(row map[string]interface{}) []interface{} {
 	rev := []interface{}{}
 	nameMap := map[string]string{}
@@ -296,8 +296,8 @@ func (t *Table) KeyValues(row map[string]interface{}) []interface{} {
 	return rev
 }
 
-//MustCount 统计记录数
-//参数可以传入string 代表where,map[string]interface{} 代表字段条件
+// MustCount 统计记录数
+// 参数可以传入string 代表where,map[string]interface{} 代表字段条件
 func (t *Table) MustCount(where string, params ...interface{}) int64 {
 	i, err := t.Count(where, params...)
 	if err != nil {
@@ -309,8 +309,8 @@ func (t *Table) MustCount(where string, params ...interface{}) int64 {
 
 }
 
-//Exists 检测指定条件的记录是否存在，只要用于Bill.Remove方法，目前没有用到数据的exists，
-//后期优化性能，可以考虑改成select 1 from dual where exists()
+// Exists 检测指定条件的记录是否存在，只要用于Bill.Remove方法，目前没有用到数据的exists，
+// 后期优化性能，可以考虑改成select 1 from dual where exists()
 func (t *Table) Exists(where string, params ...interface{}) (rev bool, err error) {
 	strSQL := "select 1 from " + t.FullName()
 	if len(where) > 0 {
@@ -329,7 +329,7 @@ func (t *Table) Exists(where string, params ...interface{}) (rev bool, err error
 	return
 }
 
-//Count 统计表中记录数，其实没什么逻辑，就是省了组合一个sql语句
+// Count 统计表中记录数，其实没什么逻辑，就是省了组合一个sql语句
 func (t *Table) Count(where string, params ...interface{}) (rev int64, err error) {
 	strSQL := "select count(*) from " + t.FullName()
 	if len(where) > 0 {
@@ -357,8 +357,8 @@ func truncateTimeZone(tm time.Time) time.Time {
 	return time.Date(tm.Year(), tm.Month(), tm.Day(), tm.Hour(), tm.Minute(), tm.Second(), 0, time.UTC)
 }
 
-//检查row中是否含有非空字段的值，以及去掉多余的字段值
-//如果是oracle，则需要去除时间中的时区，以免触发ORA-01878错误
+// 检查row中是否含有非空字段的值，以及去掉多余的字段值
+// 如果是oracle，则需要去除时间中的时区，以免触发ORA-01878错误
 func (t *Table) checkAndConvertRow(row map[string]interface{}) error {
 	if t.Driver == "oci8" {
 		for k, v := range row {
@@ -370,7 +370,7 @@ func (t *Table) checkAndConvertRow(row map[string]interface{}) error {
 	return t.checkNotNull(row)
 }
 
-//ImportFromTable 从另一个表中导入数据，表中列数量、名称、类型必须一致
+// ImportFromTable 从另一个表中导入数据，表中列数量、名称、类型必须一致
 func (t *Table) ImportFromTable(srcTable *Table, progressFunc func(string, interface{}), where string,
 	args ...interface{}) (iCount int64, err error) {
 	if len(t.ColumnNames) != len(srcTable.ColumnNames) {
@@ -390,9 +390,9 @@ func (t *Table) ImportFromTable(srcTable *Table, progressFunc func(string, inter
 	return t.ImportFrom(srcTable.DB, progressFunc, query, args...)
 }
 
-//ImportFrom 从一个查询中导入数据,其列必须与表中数量一致,且序号类型一致，因为可能是异构数据库
-//所以不能用直接的CreateTableAs,由于数据可能比较多，采用5秒钟提交一次事务，
-//所以Table.DB必须是TxDB
+// ImportFrom 从一个查询中导入数据,其列必须与表中数量一致,且序号类型一致，因为可能是异构数据库
+// 所以不能用直接的CreateTableAs,由于数据可能比较多，采用5秒钟提交一次事务，
+// 所以Table.DB必须是TxDB
 func (t *Table) ImportFrom(db common.Queryer, progressFunc func(string, interface{}), query string,
 	args ...interface{}) (iCount int64, err error) {
 	var rowCount int64
@@ -499,7 +499,7 @@ func (t *Table) ImportFrom(db common.Queryer, progressFunc func(string, interfac
 	return
 }
 
-//InsertSQL 生成一个InsertSQL
+// InsertSQL 生成一个InsertSQL
 func (t *Table) InsertSQL() string {
 	insertSQL := fmt.Sprintf(
 		"insert into %s(%s)values(%s)",
@@ -510,7 +510,7 @@ func (t *Table) InsertSQL() string {
 
 }
 
-//仅非空字段生成语句
+// 仅非空字段生成语句
 func (t *Table) insertAsPack(row map[string]interface{}) (err error) {
 	columns := []string{}
 	data := []interface{}{}
@@ -532,7 +532,7 @@ func (t *Table) insertAsPack(row map[string]interface{}) (err error) {
 	return
 }
 
-//编码key值，如果是复合主键，则用gob序列化
+// 编码key值，如果是复合主键，则用gob序列化
 func (t *Table) encodeKey(keys ...interface{}) []byte {
 	if len(keys) == 1 {
 		switch t.ColumnByName(t.PrimaryKeys[0]).Type {
@@ -554,7 +554,7 @@ func (t *Table) encodeKey(keys ...interface{}) []byte {
 
 }
 
-//解开主键
+// 解开主键
 func (t *Table) decodeKey(key []byte) []interface{} {
 
 	if len(t.PrimaryKeys) == 1 {
@@ -579,7 +579,7 @@ func (t *Table) decodeKey(key []byte) []interface{} {
 	return rev
 }
 
-//Insert 插入一批记录,使用第一行数据中的字段，并没有使用表中的字段,因此可以插入部分字段
+// Insert 插入一批记录,使用第一行数据中的字段，并没有使用表中的字段,因此可以插入部分字段
 func (t *Table) Insert(rows []map[string]interface{}) (err error) {
 	if len(rows) == 0 {
 		return nil
@@ -631,7 +631,7 @@ func (t *Table) Insert(rows []map[string]interface{}) (err error) {
 	return
 }
 
-//Delete 删除记录，全部字段值将被生成where字句(text、bytea除外)
+// Delete 删除记录，全部字段值将被生成where字句(text、bytea除外)
 func (t *Table) Delete(rows []map[string]interface{}) (delCount int64, err error) {
 	//考虑到null值，所有的行不能用一个语句，必须单独删除
 	for _, v := range rows {
@@ -644,7 +644,7 @@ func (t *Table) Delete(rows []map[string]interface{}) (delCount int64, err error
 	return
 }
 
-//RemoveByKeyValues 根据完整或者部分主键值，删除记录，返回删除的行数
+// RemoveByKeyValues 根据完整或者部分主键值，删除记录，返回删除的行数
 func (t *Table) RemoveByKeyValues(keyValues ...interface{}) (delCount int64, err error) {
 	whereList := []string{}
 	for i := range keyValues {
@@ -705,7 +705,7 @@ func (t *Table) buildWhere(row map[string]interface{}) (string, []interface{}) {
 
 }
 
-//Remove 删除一个记录，必须是全指标的记录
+// Remove 删除一个记录，必须是全指标的记录
 func (t *Table) Remove(row map[string]interface{}) (delCount int64, err error) {
 	err = t.checkAndConvertRow(row)
 	if err != nil {
@@ -726,18 +726,43 @@ func (t *Table) Remove(row map[string]interface{}) (delCount int64, err error) {
 	return
 }
 
-//UpdateByKey 通过一个key更新记录
+// UpdateByKey 通过一个key更新记录
 func (t *Table) UpdateByKey(key []interface{}, row map[string]interface{}) (upCount int64, err error) {
 
 	whereList := []string{}
 	for _, v := range t.PrimaryKeys {
 		whereList = append(whereList, fmt.Sprintf("%s=?", v))
 	}
-
-	return t.UpdateByWhere(row, strings.Join(whereList, " and\n"), key...)
+	//移除主键内容，因为update不需要，而且对于华为分布式数据库，会出错
+	fRow := map[string]interface{}{}
+	for k, v := range row {
+		found := false
+		for _, one := range t.PrimaryKeys {
+			if strings.EqualFold(one, k) {
+				found = true
+				break
+			}
+		}
+		if !found {
+			fRow[k] = v
+		}
+	}
+	//如果只有主键，则需要检查库中是否已有记录，需要返回成功更新行数，因为外层用来判断是否要insert
+	if len(fRow) == 0 {
+		exists, err := t.KeyExists(key...)
+		if err != nil {
+			return -1, err
+		}
+		if exists {
+			return 1, nil
+		}
+		//外层来进行insert
+		return 0, nil
+	}
+	return t.UpdateByWhere(fRow, strings.Join(whereList, " and\n"), key...)
 }
 
-//UpdateByWhere 通过一个条件更新指定的字段值
+// UpdateByWhere 通过一个条件更新指定的字段值
 func (t *Table) UpdateByWhere(row map[string]interface{}, where string, params ...interface{}) (upCount int64, err error) {
 	if len(row) == 0 {
 		err = fmt.Errorf("data is null,row:%v,where:%v,params:%#v", row, where, params)
@@ -778,7 +803,7 @@ func (t *Table) UpdateByWhere(row map[string]interface{}, where string, params .
 	return
 }
 
-//Update 只有修改过的字段才被更新，where采用全部旧值判断（没有长度的string将不参与，因为oracle会出错）
+// Update 只有修改过的字段才被更新，where采用全部旧值判断（没有长度的string将不参与，因为oracle会出错）
 func (t *Table) Update(oldData, newData map[string]interface{}) (upCount int64, err error) {
 	if oldData == nil || len(oldData) == 0 || newData == nil || len(newData) == 0 {
 		err = errors.New("data is empty")
@@ -804,8 +829,8 @@ func (t *Table) Update(oldData, newData map[string]interface{}) (upCount int64, 
 	return t.UpdateByWhere(chgs, whereStr, whereVals...)
 }
 
-//Save 保存一个记录，先尝试用keyvalue去update，如果更新到记录为0再insert，
-//逻辑上是正确的，同时，速度也会有保障
+// Save 保存一个记录，先尝试用keyvalue去update，如果更新到记录为0再insert，
+// 逻辑上是正确的，同时，速度也会有保障
 func (t *Table) Save(row map[string]interface{}) error {
 	if len(t.PrimaryKeys) == 0 {
 		return errors.New("no pk")
@@ -820,7 +845,7 @@ func (t *Table) Save(row map[string]interface{}) error {
 	return t.insertAsPack(row)
 }
 
-//BatchSave 批量保存记录，返回插入和更新记录数,注意性能，update采用bykey方式
+// BatchSave 批量保存记录，返回插入和更新记录数,注意性能，update采用bykey方式
 func (t *Table) BatchSave(rows []map[string]interface{}) (insNum int64, updNum int64, err error) {
 	//得到一个插入用的sql.Stmt
 	insertStmt, err := t.DB.Prepare(t.InsertSQL())
@@ -862,7 +887,7 @@ func (t *Table) BatchSave(rows []map[string]interface{}) (insNum int64, updNum i
 	return
 }
 
-//Replace 将一批记录替换成另一批记录，自动删除旧在新中不存在，插入新在旧中不存在的，更新主键相同的
+// Replace 将一批记录替换成另一批记录，自动删除旧在新中不存在，插入新在旧中不存在的，更新主键相同的
 func (t *Table) Replace(oldRows, newRows []map[string]interface{}) (insCount, upCount, delCount int64, err error) {
 
 	if delCount, err = t.Delete(mapfun.Difference(oldRows, newRows, t.PrimaryKeys)); err != nil {
@@ -910,7 +935,7 @@ func (t *Table) pgMergeForNotNull(tabName string, cols ...string) error {
 
 }
 
-//Merge 将另一个表中的数据合并进本表，要求两个表的主键相同,相同主键的被覆盖
+// Merge 将另一个表中的数据合并进本表，要求两个表的主键相同,相同主键的被覆盖
 func (t *Table) Merge(tabName string, cols ...string) error {
 	colMap := map[string]struct{}{}
 	for _, c := range cols {

@@ -11,7 +11,7 @@ import (
 	"github.com/linlexing/dbx/schema"
 )
 
-//createColumnIndex 新增单字段索引
+// createColumnIndex 新增单字段索引
 func createColumnIndexSQL(tableName string, unique bool, colName string) []string {
 	ustr := ""
 	if unique {
@@ -29,8 +29,12 @@ func removeColumnsSQL(tabName string, cols []string) []string {
 	return []string{fmt.Sprintf("ALTER TABLE %s %s", tabName, strings.Join(strList, ","))}
 }
 
+// 同时更改主键的约束名称
 func tableRenameSQL(oldName string, newName string) []string {
-	return []string{fmt.Sprintf("ALTER TABLE %s RENAME TO %s", oldName, strings.ToLower(newName))}
+	return []string{
+		fmt.Sprintf("ALTER TABLE %s RENAME TO %s", oldName, strings.ToLower(newName)),
+		fmt.Sprintf("ALTER TABLE %s RENAME CONSTRAINT %s_pkey TO %s_pkey",
+			strings.ToLower(newName), oldName, strings.ToLower(newName))}
 }
 func dropColumnIndexSQL(tableName, indexName string) []string {
 	return []string{fmt.Sprintf("DROP INDEX %s", indexName)}
@@ -74,8 +78,8 @@ func dropTablePrimaryKeySQL(db common.DB, tableName string) ([]string, error) {
 	return []string{fmt.Sprintf("ALTER TABLE %s DROP CONSTRAINT %s", tableName, pkCons)}, nil
 }
 
-//addTablePrimaryKey 新增主键
-//只有当表不存在主键时，才可以新增主键
+// addTablePrimaryKey 新增主键
+// 只有当表不存在主键时，才可以新增主键
 func addTablePrimaryKeySQL(tableName string, pks []string) []string {
 	return []string{fmt.Sprintf("ALTER TABLE %s ADD PRIMARY KEY(%s)", tableName, strings.Join(pks, ","))}
 }
