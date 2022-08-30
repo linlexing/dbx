@@ -82,10 +82,12 @@ func (m *meta) ChangeTableSQL(db common.DB, change *schema.TableSchemaChange) (r
 			//判断主键类型有没有变化
 		out:
 			for _, one := range change.ChangeFields {
-				for _, pk := range change.PK {
-					if strings.EqualFold(pk, one.OldField.Name) {
-						needCopy = true
-						break out
+				if one.OldField != nil {
+					for _, pk := range change.PK {
+						if strings.EqualFold(pk, one.OldField.Name) {
+							needCopy = true
+							break out
+						}
 					}
 				}
 			}
