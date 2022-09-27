@@ -30,7 +30,7 @@ func init() {
 	columnTrueType = r
 }
 
-//Table 代表数据库中一个物理表
+// Table 代表数据库中一个物理表
 type Table struct {
 	Schema      string
 	Name        string
@@ -39,7 +39,7 @@ type Table struct {
 	PrimaryKeys []string
 }
 
-//NewTable 返回一个新表，名称会自动依据句点拆分为shcema和name
+// NewTable 返回一个新表，名称会自动依据句点拆分为shcema和name
 func NewTable(name string) *Table {
 	rev := new(Table)
 	ns := strings.Split(name, ".")
@@ -52,7 +52,7 @@ func NewTable(name string) *Table {
 	return rev
 }
 
-//名称和所有字段的名称转换成大写
+// 名称和所有字段的名称转换成大写
 func (t *Table) ToUpper() {
 
 	t.Name = strings.ToUpper(t.Name)
@@ -65,7 +65,7 @@ func (t *Table) ToUpper() {
 
 }
 
-//FullName 返回全名称，包括schema
+// FullName 返回全名称，包括schema
 func (t *Table) FullName() string {
 	if len(t.Schema) > 0 {
 		return t.Schema + "." + t.Name
@@ -91,7 +91,7 @@ func (t *Table) check() error {
 	return nil
 }
 
-//Create 创建一个新表，如果表已经存在，则失败
+// Create 创建一个新表，如果表已经存在，则失败
 func (t *Table) Create(driver string, db common.DB) error {
 	if err := t.check(); err != nil {
 		return err
@@ -111,8 +111,13 @@ func (t *Table) Create(driver string, db common.DB) error {
 	return common.BatchRunAndPrint(db, list)
 
 }
+func (t *Table) AddColumn(name string, dtype DataType, maxLength int) *Column {
+	c := &Column{Name: name, Type: dtype, MaxLength: maxLength}
+	t.Columns = append(t.Columns, c)
+	return c
+}
 
-//Update 更新一个表结构到数据库中
+// Update 更新一个表结构到数据库中
 func (t *Table) Update(driver string, db common.DB) error {
 	list, err := t.Extract(driver, db)
 	if err != nil {
@@ -166,7 +171,7 @@ func (t *Table) extract(driver string, db common.DB) (*tableSchema, error) {
 	return sch, nil
 }
 
-//Extract 提取更新一个表的结构所需要的SQL语句清单
+// Extract 提取更新一个表的结构所需要的SQL语句清单
 func (t *Table) Extract(driver string, db common.DB) ([]string, error) {
 	if err := t.check(); err != nil {
 		return nil, err
@@ -179,7 +184,7 @@ func (t *Table) Extract(driver string, db common.DB) ([]string, error) {
 	return sch.extract()
 }
 
-//大小写不敏感
+// 大小写不敏感
 func (t *Table) findColumnAnyName(names ...string) *Column {
 	//用map作为检索索引
 	idx := map[string]bool{}
@@ -194,7 +199,7 @@ func (t *Table) findColumnAnyName(names ...string) *Column {
 	return nil
 }
 
-//ColumnByName 根据一个名称返回一个字段，如果没有找到，返回nil
+// ColumnByName 根据一个名称返回一个字段，如果没有找到，返回nil
 func (t *Table) ColumnByName(name string) *Column {
 	for _, col := range t.Columns {
 		if strings.ToUpper(name) == strings.ToUpper(col.Name) {
@@ -204,11 +209,12 @@ func (t *Table) ColumnByName(name string) *Column {
 	return nil
 }
 
-//DefineScript 采用脚本的方式定义表，如下：
-//  a str(3) not null
-//  b int	--注释
-//  c date not null index
-//  primary key(a,c)
+// DefineScript 采用脚本的方式定义表，如下：
+//
+//	a str(3) not null
+//	b int	--注释
+//	c date not null index
+//	primary key(a,c)
 func (t *Table) DefineScript(src string) error {
 
 	pks := []string{}
