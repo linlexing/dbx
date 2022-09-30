@@ -6,7 +6,7 @@ import (
 
 	"github.com/jmoiron/sqlx"
 	"github.com/linlexing/dbx/schema"
-	_ "github.com/mattn/go-sqlite3"
+	// _ "github.com/mattn/go-sqlite3"
 )
 
 type testDB struct {
@@ -19,7 +19,7 @@ var sqdb = "e:\\temp\\dump932726563"
 
 //var sqdb = "E:\\SQLite\\test.db"
 
-//create
+// create
 func createTestDB() *testDB {
 	rev := testDB{fileName: sqdb}
 
@@ -255,7 +255,7 @@ func tableTest02() *schema.Table {
 }
 
 // tablechange
-//修改已经存在的字段
+// 修改已经存在的字段
 func TestChangeTable(t *testing.T) {
 	testDB := createTestDB()
 	db := testDB.DB
@@ -279,7 +279,7 @@ func TestChangeTable(t *testing.T) {
 	}
 }
 
-//增加新的字段
+// 增加新的字段
 func TestChangeTable01(t *testing.T) {
 	testDB := createTestDB()
 	db := testDB.DB

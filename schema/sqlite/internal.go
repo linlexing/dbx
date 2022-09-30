@@ -15,7 +15,7 @@ func tableRenameSQL(oldName string, newName string) []string {
 }
 func tableExists(db common.DB, tabName string) (bool, error) {
 
-	strSQL := "SELECT count(*) FROM sqlite_master WHERE type='table' AND name=:tname COLLATE NOCASE"
+	strSQL := "SELECT count(*) FROM sqlite_master WHERE type='table' AND name=? COLLATE NOCASE"
 	var iCount int64
 
 	if err := db.QueryRow(strSQL, tabName).Scan(&iCount); err != nil {
@@ -27,7 +27,7 @@ func tableExists(db common.DB, tabName string) (bool, error) {
 	return iCount > 0, nil
 }
 
-//createColumnIndex 新增单字段索引
+// createColumnIndex 新增单字段索引
 func createColumnIndexSQL(tableName string, unique bool, colName string) []string {
 	ns := strings.Split(tableName, ".")
 	schemaName := ""

@@ -6,10 +6,10 @@ import (
 
 	_ "github.com/lib/pq"
 	"github.com/linlexing/dbx/schema"
-	_ "github.com/mattn/go-sqlite3"
+	// _ "github.com/mattn/go-sqlite3"
 )
 
-////
+// //
 func getDb() (*sql.DB, error) {
 	return sql.Open("sqlite3", "./testDB.db")
 

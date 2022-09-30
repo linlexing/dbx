@@ -5,7 +5,6 @@ import (
 	"encoding/csv"
 	"fmt"
 	"log"
-	"regexp"
 	"strings"
 
 	"github.com/linlexing/dbx/scan"
@@ -13,7 +12,7 @@ import (
 	ps "github.com/linlexing/dbx/pageselect"
 	"github.com/linlexing/dbx/schema"
 	"github.com/linlexing/dbx/schema/sqlite"
-	sqlite3 "github.com/mattn/go-sqlite3"
+	// sqlite3 "github.com/mattn/go-sqlite3"
 )
 
 const driverName = "sqlite3"
@@ -22,16 +21,16 @@ type meta struct{}
 
 func init() {
 	ps.Register(driverName, new(meta))
-	regex := func(re, s string) (bool, error) {
-		return regexp.MatchString(re, s)
-	}
-	sql.Register("sqlite3_with_go_func",
-		&sqlite3.SQLiteDriver{
+	// regex := func(re, s string) (bool, error) {
+	// 	return regexp.MatchString(re, s)
+	// }
+	// sql.Register("sqlite3_with_go_func",
+	// 	&sqlite3.SQLiteDriver{
 
-			ConnectHook: func(conn *sqlite3.SQLiteConn) error {
-				return conn.RegisterFunc("regexp", regex, true)
-			},
-		})
+	// 		ConnectHook: func(conn *sqlite3.SQLiteConn) error {
+	// 			return conn.RegisterFunc("regexp", regex, true)
+	// 		},
+	// 	})
 }
 func (m *meta) QuotedIdentifier(col string) string {
 	return "`" + col + "`"
