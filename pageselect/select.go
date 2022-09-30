@@ -27,12 +27,12 @@ var (
 	opeExpre = map[string]PageSelecter{}
 )
 
-//Register 注册一个数据库接口，其实现了指定的方法
+// Register 注册一个数据库接口，其实现了指定的方法
 func Register(driver string, ps PageSelecter) {
 	opeExpre[driver] = ps
 }
 
-//Find 根据一个驱动找到正确的Ps
+// Find 根据一个驱动找到正确的Ps
 func Find(driver string) PageSelecter {
 	//sqlite3可能会有不同的变种
 	if strings.HasPrefix(driver, "sqlite3") {
@@ -46,8 +46,8 @@ func Find(driver string) PageSelecter {
 
 }
 
-//PageSelect 表示一个select 类，可以附加条件和分页参数,注意，所有用到的列名会被quoted，
-//所以需要保证大小写正确
+// PageSelect 表示一个select 类，可以附加条件和分页参数,注意，所有用到的列名会被quoted，
+// 所以需要保证大小写正确
 type PageSelect struct {
 	DriverName string
 	//是否自动把字段名加上引号
@@ -65,7 +65,7 @@ type PageSelect struct {
 	SQLRenderArgs interface{} //sql语句在查询前，还会用template进行一次渲染，这里传入渲染的参数
 }
 
-//isNotNullField 返回一个字段是不是非空的，用于生成order by 子句
+// isNotNullField 返回一个字段是不是非空的，用于生成order by 子句
 func (s *PageSelect) isNotNullField(field string) bool {
 	for _, one := range s.NotNullFields {
 		if one == field {
@@ -81,9 +81,8 @@ func (s *PageSelect) columnName(name string) string {
 	return name
 }
 
-//BuildSQL 构造sql语句，和相应的参数值
-func (s *PageSelect) BuildSQL() (strSQL string, err error) {
-
+// BuildSQL 构造sql语句，和相应的参数值
+func (s *PageSelect) BuildSQLNoRender() (strSQL string, err error) {
 	if len(s.SQL) == 0 {
 		return "", errors.New("sql is empty")
 	}
@@ -173,13 +172,22 @@ func (s *PageSelect) BuildSQL() (strSQL string, err error) {
 			strSQL = strings.TrimSpace(fmt.Sprintf("select %s from (\n%s\n) wholesql %s%s", sel, s.SQL, where, orderby))
 		}
 	}
+	return
+}
+
+// BuildSQL 构造sql语句，和相应的参数值
+func (s *PageSelect) BuildSQL() (strSQL string, err error) {
+	strSQL, err = s.BuildSQLNoRender()
+	if err != nil {
+		return
+	}
 	//在最后返回前，调用render
 	strSQL, err = render.RenderSQL(strSQL, s.SQLRenderArgs)
 
 	return
 }
 
-//QueryRows 根据设置返回一页数据
+// QueryRows 根据设置返回一页数据
 func (s *PageSelect) QueryRows(db common.DB) (result []map[string]interface{}, cols []*scan.ColumnType, err error) {
 	var strSQL string
 	strSQL, err = s.BuildSQL()
@@ -224,7 +232,7 @@ func (s *PageSelect) QueryRows(db common.DB) (result []map[string]interface{}, c
 	return
 }
 
-//渲染sql
+// 渲染sql
 func (s *PageSelect) renderSQL() (string, error) {
 	return render.RenderSQL(s.SQL, s.SQLRenderArgs)
 }
@@ -275,7 +283,7 @@ func (s *PageSelect) BuildTotalSQL(cols ...string) (strSQL string, err error) {
 
 }
 
-//BuildRowCountSQL 构造Count的语句
+// BuildRowCountSQL 构造Count的语句
 func (s *PageSelect) BuildRowCountSQL() (strSQL string, err error) {
 
 	if len(s.SQL) == 0 {
@@ -312,7 +320,7 @@ func (s *PageSelect) BuildRowCountSQL() (strSQL string, err error) {
 	return
 }
 
-//Total 汇总数值字段
+// Total 汇总数值字段
 func (s *PageSelect) Total(db common.DB, cols ...string) (result map[string]interface{}, err error) {
 	var strSQL string
 	if strSQL, err = s.BuildTotalSQL(cols...); err != nil {
@@ -342,7 +350,7 @@ func (s *PageSelect) Total(db common.DB, cols ...string) (result map[string]inte
 	return
 }
 
-//RowCount 根据现有设置，汇总出记录总数
+// RowCount 根据现有设置，汇总出记录总数
 func (s *PageSelect) RowCount(db common.DB, driver string) (r int64, err error) {
 	r = -1
 	var strSQL string
@@ -356,7 +364,7 @@ func (s *PageSelect) RowCount(db common.DB, driver string) (r int64, err error) 
 	return
 }
 
-//NewPageSelect 新建一个查询类
+// NewPageSelect 新建一个查询类
 func NewPageSelect(driverName, strSQL string, colTypes ColumnTypes, manualPage bool) *PageSelect {
 
 	return &PageSelect{

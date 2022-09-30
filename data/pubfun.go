@@ -15,8 +15,8 @@ var (
 	bindCache = cache.New(5*time.Minute, 10*time.Minute)
 )
 
-//Bind 将?占位符替换成实际驱动的占位符
-//发现sqlx.Rebind分配大量内存，加上缓存
+// Bind 将?占位符替换成实际驱动的占位符
+// 发现sqlx.Rebind分配大量内存，加上缓存
 func Bind(driver, strSQL string) string {
 	key := driver + ":" + strSQL
 	if x, found := bindCache.Get(key); found {
@@ -27,18 +27,19 @@ func Bind(driver, strSQL string) string {
 	return x
 }
 
-//In 将一个参数类型是数组的参数对应的?，扩展成多个?，并把参数也扁平化
+// In 将一个参数类型是数组的参数对应的?，扩展成多个?，并把参数也扁平化
 func In(query string, args ...interface{}) (string, []interface{}, error) {
 	return sqlx.In(query, args...)
 }
 
-//AsInt 返回整形
+// AsInt 返回整形
 func AsInt(db common.Queryer, strSQL string, args ...interface{}) (r int64, err error) {
 	c := []byte{}
 	row := db.QueryRow(strSQL, args...)
-	if err := row.Scan(&c); err != nil {
+	if err = row.Scan(&c); err != nil {
 		log.Println(err)
 		err = common.NewSQLError(err, strSQL)
+		return
 	}
 	str := string(c)
 	if strings.Contains(str, "e") || strings.Contains(str, ".") {
@@ -57,7 +58,7 @@ func AsInt(db common.Queryer, strSQL string, args ...interface{}) (r int64, err 
 	return
 }
 
-//RunAtTx 在一个事务中运行，自动处理commit 和rollback
+// RunAtTx 在一个事务中运行，自动处理commit 和rollback
 func RunAtTx(db common.TxDB, callback func(common.Txer) error) (err error) {
 	var tx common.Txer
 	if tx, err = db.Begin(); err != nil {
