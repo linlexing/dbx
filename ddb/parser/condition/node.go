@@ -13,10 +13,10 @@ import (
 	"github.com/linlexing/dbx/schema"
 )
 
-//NodeType 节点的类型
+// NodeType 节点的类型
 type NodeType string
 
-//GetUserConditionViewDefineFunc 获取视图定义的函数
+// GetUserConditionViewDefineFunc 获取视图定义的函数
 type GetUserConditionViewDefineFunc func(string) (string, error)
 
 const (
@@ -38,7 +38,7 @@ const (
 	CommentPlainText = "/*PLAINTEXT*/"
 )
 
-//encodeCSV 压缩一个字符串数组成csv数据，没有换行
+// encodeCSV 压缩一个字符串数组成csv数据，没有换行
 func encodeCSV(val []string) string {
 	bys := bytes.NewBuffer(nil)
 	csvW := csv.NewWriter(bys)
@@ -51,7 +51,7 @@ func encodeCSV(val []string) string {
 	return string(buf[0 : len(buf)-1])
 }
 
-//decodeCSV 解开一个csv
+// decodeCSV 解开一个csv
 func decodeCSV(val string) []string {
 	if len(val) == 0 {
 		return nil
@@ -63,13 +63,13 @@ func decodeCSV(val string) []string {
 	return s
 }
 
-//NodeLinkColumn 关联条件
+// NodeLinkColumn 关联条件
 type NodeLinkColumn struct {
 	OuterColumn string //外层字段，即数据字段
 	InnerColumn string //内层字段，即数据源字段
 }
 
-//Node 一个条件节点，可以有子节点，也可以是叶子
+// Node 一个条件节点，可以有子节点，也可以是叶子
 type Node struct {
 	NodeType  NodeType
 	Reverse   bool // 条件是否反转，即是否加上not，对于 and or节点无效
@@ -84,7 +84,7 @@ type Node struct {
 	Children  []*Node
 }
 
-//NewLogicNode 分配一个逻辑节点，and、or
+// NewLogicNode 分配一个逻辑节点，and、or
 func NewLogicNode(nodeType NodeType, children []*Node) *Node {
 	return &Node{
 		NodeType: nodeType,
@@ -92,7 +92,7 @@ func NewLogicNode(nodeType NodeType, children []*Node) *Node {
 	}
 }
 
-//NewConditionNode 分配一个条件节点
+// NewConditionNode 分配一个条件节点
 func NewConditionNode(field string, operate pageselect.Operator, value, value2 string) *Node {
 	rev := &Node{
 		NodeType: NodeCondition,
@@ -106,7 +106,7 @@ func NewConditionNode(field string, operate pageselect.Operator, value, value2 s
 	return rev
 }
 
-//NewPlainNode 分配一个文本条件节点
+// NewPlainNode 分配一个文本条件节点
 func NewPlainNode(text string) *Node {
 	return &Node{
 		NodeType:  NodePlain,
@@ -114,7 +114,7 @@ func NewPlainNode(text string) *Node {
 	}
 }
 
-//NewInTableNode 分配一个InTable条件节点
+// NewInTableNode 分配一个InTable条件节点
 func NewInTableNode(column, from, inColumn, where string, reverse bool) *Node {
 
 	return &Node{
@@ -128,7 +128,7 @@ func NewInTableNode(column, from, inColumn, where string, reverse bool) *Node {
 	}
 }
 
-//NewExistsNode 分配一个Exists条件节点
+// NewExistsNode 分配一个Exists条件节点
 func NewExistsNode(from string, link []NodeLinkColumn, where string, reverse bool) *Node {
 	return &Node{
 		NodeType:  NodeExists,
@@ -139,7 +139,7 @@ func NewExistsNode(from string, link []NodeLinkColumn, where string, reverse boo
 	}
 }
 
-//NewCountNode 分配一个Count条件节点
+// NewCountNode 分配一个Count条件节点
 func NewCountNode(from string, link []NodeLinkColumn, where string,
 	operate pageselect.Operator, value, value2 string) *Node {
 	return &Node{
@@ -153,7 +153,7 @@ func NewCountNode(from string, link []NodeLinkColumn, where string,
 	}
 }
 
-//简化一个Node，将and/or尽量合并成一层
+// 简化一个Node，将and/or尽量合并成一层
 func (node *Node) reduction() {
 	switch node.NodeType {
 	case NodeAnd:
@@ -533,19 +533,26 @@ func (node *Node) string(prev string, fields map[string]schema.DataType,
 	}
 }
 
-//WhereString 返回规范化的where条件,传入视图列表，用于关联表查询的语句
+// WhereString 返回规范化的where条件,传入视图列表，用于关联表查询的语句
 func (node *Node) WhereString(fields map[string]schema.DataType, outerTableName string,
 	getview GetUserConditionViewDefineFunc, buildComment bool) string {
 	return node.string("", fields, outerTableName, getview, buildComment)
 }
 
-//ReferToColumns 条件中涉及到的列
+// ReferToColumns 条件中涉及到的列
 func (node *Node) ReferToColumns() []string {
 	rev := []string{}
+	mapRev := map[string]struct{}{}
 	switch node.NodeType {
 	case NodeAnd, NodeOr:
 		for _, one := range node.Children {
-			rev = append(rev, one.ReferToColumns()...)
+			for _, c := range one.ReferToColumns() {
+				if _, ok := mapRev[c]; !ok {
+					rev = append(rev, c)
+					mapRev[c] = struct{}{}
+				}
+			}
+
 		}
 	case NodeCondition:
 		rev = append(rev, node.Field)
@@ -554,7 +561,7 @@ func (node *Node) ReferToColumns() []string {
 	return rev
 }
 
-//ParserNode 根据一个where条件，返回node
+// ParserNode 根据一个where条件，返回node
 func ParserNode(val string) *Node {
 	if len(val) == 0 {
 		return nil
@@ -699,7 +706,7 @@ func processIn(comment string) *Node {
 	panic("invalid intable format:" + txt)
 }
 
-//处理注释，识别关联查询并生成node列表
+// 处理注释，识别关联查询并生成node列表
 func processComment(define string) (rev string, vars map[string]interface{}) {
 	wait := define
 	vars = map[string]interface{}{}
@@ -749,7 +756,7 @@ func processComment(define string) (rev string, vars map[string]interface{}) {
 	return
 }
 
-//ConditionLines 遍历树，返回条件数组
+// ConditionLines 遍历树，返回条件数组
 func (node *Node) ConditionLines(fields map[string]schema.DataType, outerTableName string, getview GetUserConditionViewDefineFunc) []*pageselect.ConditionLine {
 	rev := []*pageselect.ConditionLine{}
 	switch node.NodeType {
