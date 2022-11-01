@@ -41,9 +41,17 @@ func init() {
 // 执行create table as select语句
 func (m *meta) CreateTableAsSQL(db common.DB, tableName, strSQL string,
 	param []interface{}, pks []string) ([]string, error) {
-	return []string{fmt.Sprintf("CREATE TABLE %s as %s", tableName, strSQL),
-		fmt.Sprintf("ALTER TABLE %s ADD PRIMARY KEY(%s)", tableName, strings.Join(pks, ",")),
-	}, nil
+	if m.isGauss() {
+		return []string{fmt.Sprintf("CREATE TABLE %s DISTRIBUTE BY HASH(%s) as %s",
+			tableName, strings.Join(pks, ","), strSQL),
+			fmt.Sprintf("ALTER TABLE %s ADD PRIMARY KEY(%s)", tableName, strings.Join(pks, ",")),
+		}, nil
+
+	} else {
+		return []string{fmt.Sprintf("CREATE TABLE %s as %s", tableName, strSQL),
+			fmt.Sprintf("ALTER TABLE %s ADD PRIMARY KEY(%s)", tableName, strings.Join(pks, ",")),
+		}, nil
+	}
 }
 func (m *meta) TableEmpty(db common.DB, tableName string) (bool, error) {
 	var a int
