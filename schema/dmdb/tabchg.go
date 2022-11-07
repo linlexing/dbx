@@ -11,7 +11,7 @@ import (
 func (m *meta) ChangeTableSQL(db common.DB, change *schema.TableSchemaChange) (rev []string, err error) {
 	tabName := change.NewName
 	//处理表更名,处理过后，所有后续操作都在新表名上进行
-	if change.OldName != change.NewName {
+	if !strings.EqualFold(change.OldName, change.NewName) {
 		rev = append(rev, tableRenameSQL(change.OldName, change.NewName)...)
 	}
 	//如果主键变更，则需要先除去主键
@@ -49,7 +49,7 @@ func processColumnSQL(tabName string, oldCol, newCol *schema.Column) (rev []stri
 		return
 	}
 	//如果是更名，需要先处理
-	if strings.ToUpper(oldCol.Name) != strings.ToUpper(newCol.Name) {
+	if !strings.EqualFold(oldCol.Name, newCol.Name) {
 		rev = append(rev, fmt.Sprintf("alter table %s rename column %s to %s", tabName, oldCol.Name, newCol.Name))
 	}
 	if !oldCol.EqueNoIndexAndName(newCol) {

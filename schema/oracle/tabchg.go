@@ -11,7 +11,7 @@ import (
 func (m *meta) ChangeTableSQL(db common.DB, change *schema.TableSchemaChange) (rev []string, err error) {
 	tabName := change.NewName
 	//处理表更名,处理过后，所有后续操作都在新表名上进行
-	if change.OldName != change.NewName {
+	if !strings.EqualFold(change.OldName, change.NewName) {
 		rev = append(rev, tableRenameSQL(change.OldName, change.NewName)...)
 	}
 	//如果主键变更，则需要先除去主键

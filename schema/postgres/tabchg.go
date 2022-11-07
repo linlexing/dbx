@@ -27,7 +27,7 @@ outLoop:
 	for _, one := range change.OriginFields {
 		//如果是删除，忽略这列
 		for _, rmFieldName := range change.RemoveFields {
-			if rmFieldName == one.Name {
+			if strings.EqualFold(rmFieldName, one.Name) {
 				continue outLoop
 			}
 		}
@@ -72,7 +72,7 @@ outLoop:
 func (m *meta) ChangeTableSQL(db common.DB, change *schema.TableSchemaChange) (rev []string, err error) {
 	tabName := change.NewName
 	//处理表更名,处理过后，所有后续操作都在新表名上进行
-	if change.OldName != change.NewName {
+	if !strings.EqualFold(change.OldName, change.NewName) {
 		rev = append(rev, tableRenameSQL(change.OldName, change.NewName)...)
 	}
 	//如果是华为高斯，不能直接修改主键，则需要用临时表来迁移数据
