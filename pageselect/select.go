@@ -106,10 +106,7 @@ func (s *PageSelect) BuildSQLNoRender() (strSQL string, err error) {
 				return
 			}
 		} else {
-			strSQL, err = s.renderSQL()
-			if err != nil {
-				return
-			}
+			strSQL = s.SQL
 		}
 		return
 	}
