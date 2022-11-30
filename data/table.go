@@ -2,6 +2,7 @@ package data
 
 import (
 	"bytes"
+	"context"
 	"database/sql"
 	"encoding/gob"
 	"errors"
@@ -511,7 +512,7 @@ func (t *Table) InsertSQL() string {
 }
 
 // 仅非空字段生成语句
-func (t *Table) insertAsPack(row map[string]interface{}) (err error) {
+func (t *Table) insertAsPack(ctx context.Context, row map[string]interface{}) (err error) {
 	columns := []string{}
 	data := []interface{}{}
 
@@ -578,9 +579,12 @@ func (t *Table) decodeKey(key []byte) []interface{} {
 	}
 	return rev
 }
+func (t *Table) Insert(rows []map[string]interface{}) (err error) {
+	return t.InsertContext(context.Background(), rows)
+}
 
 // Insert 插入一批记录,使用第一行数据中的字段，并没有使用表中的字段,因此可以插入部分字段
-func (t *Table) Insert(rows []map[string]interface{}) (err error) {
+func (t *Table) InsertContext(ctx context.Context, rows []map[string]interface{}) (err error) {
 	if len(rows) == 0 {
 		return nil
 	}
@@ -589,7 +593,7 @@ func (t *Table) Insert(rows []map[string]interface{}) (err error) {
 
 			return
 		}
-		return t.insertAsPack(rows[0])
+		return t.insertAsPack(ctx, rows[0])
 
 	}
 	cols := []string{}
@@ -828,10 +832,13 @@ func (t *Table) Update(oldData, newData map[string]interface{}) (upCount int64, 
 	}
 	return t.UpdateByWhere(chgs, whereStr, whereVals...)
 }
+func (t *Table) Save(row map[string]interface{}) error {
+	return t.SaveContext(context.Background(), row)
+}
 
 // Save 保存一个记录，先尝试用keyvalue去update，如果更新到记录为0再insert，
 // 逻辑上是正确的，同时，速度也会有保障
-func (t *Table) Save(row map[string]interface{}) error {
+func (t *Table) SaveContext(ctx context.Context, row map[string]interface{}) error {
 	if len(t.PrimaryKeys) == 0 {
 		return errors.New("no pk")
 	}
@@ -842,7 +849,7 @@ func (t *Table) Save(row map[string]interface{}) error {
 	if i > 0 {
 		return nil
 	}
-	return t.insertAsPack(row)
+	return t.insertAsPack(ctx, row)
 }
 
 // BatchSave 批量保存记录，返回插入和更新记录数,注意性能，update采用bykey方式

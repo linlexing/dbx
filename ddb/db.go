@@ -11,17 +11,18 @@ import (
 	"github.com/linlexing/dbx/data"
 )
 
-//DB 一个能返回DriverName 的DB,并且所有的sql统一使用?作为参数占位符
+// DB 一个能返回DriverName 的DB,并且所有的sql统一使用?作为参数占位符
 type DB interface {
 	common.DB
 	DriverName() string
 	ConnectString() string
 }
 
-//TxDB 一个能返回DriverName 的TxDB,并且所有的sql统一使用?作为参数占位符
+// TxDB 一个能返回DriverName 的TxDB,并且所有的sql统一使用?作为参数占位符
 type TxDB interface {
 	common.TxDB
 	Beginx() (Txer, error)
+	BeginTxx(ctx context.Context, opts *sql.TxOptions) (Txer, error)
 	Driver() driver.Driver
 	DriverName() string
 	ConnectString() string
@@ -87,6 +88,28 @@ func (d *db) Beginx() (Txer, error) {
 	}
 	return rev, nil
 }
+func (d *db) BeginTx(ctx context.Context, opts *sql.TxOptions) (common.Txer, error) {
+	return d.db.BeginTx(ctx, opts)
+}
+func (d *db) BeginTxx(ctx context.Context, opts *sql.TxOptions) (Txer, error) {
+	t, err := d.db.BeginTx(ctx, opts)
+	if err != nil {
+		return nil, err
+	}
+	rev := &tx{
+		driverName:    d.DriverName(),
+		tx:            t,
+		connectString: d.ConnectString(),
+	}
+	return rev, nil
+}
+func (d *db) ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error) {
+	r, err := d.db.ExecContext(ctx, data.Bind(d.driverName, query), args...)
+	if err != nil {
+		err = common.NewSQLError(err, query, args...)
+	}
+	return r, err
+}
 func (d *db) Exec(query string, args ...interface{}) (sql.Result, error) {
 	//无参数不用转换
 	if len(args) > 0 {
@@ -99,7 +122,13 @@ func (d *db) Exec(query string, args ...interface{}) (sql.Result, error) {
 	}
 	return r, err
 }
-
+func (d *db) QueryContext(ctx context.Context, query string, args ...any) (*sql.Rows, error) {
+	r, err := d.db.QueryContext(ctx, data.Bind(d.driverName, query), args...)
+	if err != nil {
+		err = common.NewSQLError(err, query, args...)
+	}
+	return r, err
+}
 func (d *db) Query(query string, args ...interface{}) (*sql.Rows, error) {
 	//无参数不用转换
 	if len(args) > 0 {
@@ -118,7 +147,12 @@ func (d *db) QueryRow(query string, args ...interface{}) *sql.Row {
 	}
 	return d.db.QueryRow(query, args...)
 }
-
+func (d *db) QueryRowContext(ctx context.Context, query string, args ...any) *sql.Row {
+	return d.db.QueryRowContext(ctx, data.Bind(d.driverName, query), args...)
+}
+func (d *db) PrepareContext(ctx context.Context, query string) (*sql.Stmt, error) {
+	return d.db.PrepareContext(ctx, data.Bind(d.driverName, query))
+}
 func (d *db) Prepare(query string) (*sql.Stmt, error) {
 	return d.db.Prepare(data.Bind(d.driverName, query))
 }
