@@ -14,9 +14,18 @@ import (
 // 	return new(TreeShapeListener)
 // }
 
-// func (*TreeShapeListener) EnterEveryRule(ctx antlr.ParserRuleContext) {
-// 	// fmt.Println(ctx.ToStringTree)
-// }
+//	func (*TreeShapeListener) EnterEveryRule(ctx antlr.ParserRuleContext) {
+//		// fmt.Println(ctx.ToStringTree)
+//	}
+func TestEasy(t *testing.T) {
+	node := ParserNode(`
+        a <> b + c
+)`)
+	spew.Dump(node)
+	spew.Dump(node.ConditionLines(nil, "wholesql", nil))
+	println("========================")
+	println(node.WhereString(nil, "wholesql", nil, true))
+}
 func TestMain(t *testing.T) {
 	t.Log("start")
 	// node := ParserNode(`a=1 and /*PLAINTEXT*/

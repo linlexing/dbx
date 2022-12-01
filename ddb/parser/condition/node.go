@@ -187,6 +187,18 @@ func (node *Node) reduction() {
 func signString(str string) string {
 	return "'" + strings.ReplaceAll(str, "'", "''") + "'"
 }
+func ifExpr(v string) bool {
+	return len(v) >= 2 && v[0] == '`' && v[len(v)-1] == '`'
+}
+func decodeExpr(v string) string {
+	return v[1 : len(v)-1]
+}
+func ifels[T string](b bool, v1, v2 T) T {
+	if b {
+		return v1
+	}
+	return v2
+}
 func (node *Node) string(prev string, fields map[string]schema.DataType,
 	outerTableName string, getview GetUserConditionViewDefineFunc, buildComment bool) string {
 	switch node.NodeType {
@@ -344,55 +356,58 @@ func (node *Node) string(prev string, fields map[string]schema.DataType,
 		switch op {
 		case pageselect.OperatorEqu, pageselect.OperatorGreaterThan,
 			pageselect.OperatorGreaterThanOrEqu, pageselect.OperatorLessThan,
-			pageselect.OperatorLessThanOrEqu, pageselect.OperatorRegexp, pageselect.OperatorNotRegexp:
-			var v string
-			if fields[node.Field] == schema.TypeInt ||
-				fields[node.Field] == schema.TypeFloat {
-				//数值型的，空值自动转换成0
-				if len(node.Value) == 0 {
-					v = "0"
+			pageselect.OperatorLessThanOrEqu, pageselect.OperatorRegexp,
+			pageselect.OperatorNotRegexp, pageselect.OperatorNotEqu:
+			v := node.Value
+			if ifExpr(v) {
+				v = v[1 : len(v)-1]
+			} else {
+				if fields[node.Field] == schema.TypeInt ||
+					fields[node.Field] == schema.TypeFloat {
+					//数值型的，空值自动转换成0
+					if len(v) == 0 {
+						v = "0"
+					}
 				} else {
-					v = node.Value
+					v = signString(v)
 				}
-			} else {
-				v = signString(node.Value)
 			}
+
 			return prev +
-				fmt.Sprintf("%s %s %s", node.Field, op.String(), v)
-		case pageselect.OperatorNotEqu:
-			var v string
-			if fields[node.Field] == schema.TypeInt ||
-				fields[node.Field] == schema.TypeFloat {
-				v = node.Value
-			} else {
-				v = signString(node.Value)
-			}
-			return prev +
-				fmt.Sprintf("%s <> %s", node.Field, v)
+				fmt.Sprintf("%s %s %s", node.Field,
+					ifels(op == pageselect.OperatorNotEqu, "<>", op.String()), v)
+
 		//OperatorLike 包含
 		case pageselect.OperatorLike:
 			return prev +
-				fmt.Sprintf("%s LIKE %s", node.Field, signString("%"+node.Value+"%"))
+				fmt.Sprintf("%s LIKE %s", node.Field, ifels(ifExpr(node.Value),
+					decodeExpr(node.Value), signString("%"+node.Value+"%")))
 		//OperatorNotLike 不包含
 		case pageselect.OperatorNotLike:
 			return prev +
-				fmt.Sprintf("%s NOT LIKE %s", node.Field, signString("%"+node.Value+"%"))
+				fmt.Sprintf("%s NOT LIKE %s", node.Field, ifels(ifExpr(node.Value),
+					decodeExpr(node.Value), signString("%"+node.Value+"%")))
+
 			//OperatorPrefix 前缀
 		case pageselect.OperatorPrefix:
 			return prev +
-				fmt.Sprintf("%s LIKE %s", node.Field, signString(node.Value+"%"))
+				fmt.Sprintf("%s LIKE %s", node.Field, ifels(ifExpr(node.Value),
+					decodeExpr(node.Value), signString(node.Value+"%")))
 			//OperatorNotPrefix 非前缀
 		case pageselect.OperatorNotPrefix:
 			return prev +
-				fmt.Sprintf("%s NOT LIKE %s", node.Field, signString(node.Value+"%"))
+				fmt.Sprintf("%s NOT LIKE %s", node.Field, ifels(ifExpr(node.Value),
+					decodeExpr(node.Value), signString("%"+node.Value+"%")))
 			//OperatorSuffix 后缀
 		case pageselect.OperatorSuffix:
 			return prev +
-				fmt.Sprintf("%s LIKE %s", node.Field, signString("%"+node.Value))
+				fmt.Sprintf("%s LIKE %s", node.Field, ifels(ifExpr(node.Value),
+					decodeExpr(node.Value), signString("%"+node.Value)))
 			//OperatorNotSuffix 非后缀
 		case pageselect.OperatorNotSuffix:
 			return prev +
-				fmt.Sprintf("%s NOT LIKE %s", node.Field, signString("%"+node.Value))
+				fmt.Sprintf("%s NOT LIKE %s", node.Field, ifels(ifExpr(node.Value),
+					decodeExpr(node.Value), signString("%"+node.Value)))
 			//OperatorIn 在列表
 		case pageselect.OperatorIn:
 			list := []string{}
@@ -440,7 +455,7 @@ func (node *Node) string(prev string, fields map[string]schema.DataType,
 				v = "0"
 			}
 			return prev +
-				fmt.Sprintf("LENGTH(%s) = %s", node.Field, v)
+				fmt.Sprintf("LENGTH(%s) = %s", node.Field, ifels(ifExpr(v), decodeExpr(v), v))
 
 			//OperatorLengthNotEqu 长度不等于
 		case pageselect.OperatorLengthNotEqu:
@@ -451,7 +466,7 @@ func (node *Node) string(prev string, fields map[string]schema.DataType,
 			}
 
 			return prev +
-				fmt.Sprintf("LENGTH(%s) <> %s", node.Field, v)
+				fmt.Sprintf("LENGTH(%s) <> %s", node.Field, ifels(ifExpr(v), decodeExpr(v), v))
 			//OperatorLengthGreaterThan 长度大于
 		case pageselect.OperatorLengthGreaterThan:
 			//空转换成0
@@ -461,7 +476,7 @@ func (node *Node) string(prev string, fields map[string]schema.DataType,
 			}
 
 			return prev +
-				fmt.Sprintf("LENGTH(%s) > %s", node.Field, v)
+				fmt.Sprintf("LENGTH(%s) > %s", node.Field, ifels(ifExpr(v), decodeExpr(v), v))
 			//OperatorLengthGreaterThanOrEqu 长度 >=
 		case pageselect.OperatorLengthGreaterThanOrEqu:
 			//空转换成0
@@ -471,7 +486,7 @@ func (node *Node) string(prev string, fields map[string]schema.DataType,
 			}
 
 			return prev +
-				fmt.Sprintf("LENGTH(%s) >= %s", node.Field, v)
+				fmt.Sprintf("LENGTH(%s) >= %s", node.Field, ifels(ifExpr(v), decodeExpr(v), v))
 			//OperatorLengthLessThan 长度 <
 		case pageselect.OperatorLengthLessThan:
 			//空转换成0
@@ -481,7 +496,7 @@ func (node *Node) string(prev string, fields map[string]schema.DataType,
 			}
 
 			return prev +
-				fmt.Sprintf("LENGTH(%s) < %s", node.Field, v)
+				fmt.Sprintf("LENGTH(%s) < %s", node.Field, ifels(ifExpr(v), decodeExpr(v), v))
 			//OperatorLengthLessThanOrEqu 长度<=
 		case pageselect.OperatorLengthLessThanOrEqu:
 			//空转换成0
@@ -491,7 +506,7 @@ func (node *Node) string(prev string, fields map[string]schema.DataType,
 			}
 
 			return prev +
-				fmt.Sprintf("LENGTH(%s) <= %s", node.Field, v)
+				fmt.Sprintf("LENGTH(%s) <= %s", node.Field, ifels(ifExpr(v), decodeExpr(v), v))
 		case pageselect.OperatorBetween:
 			var v, v2 string
 			if fields[node.Field] == schema.TypeInt ||
@@ -504,7 +519,8 @@ func (node *Node) string(prev string, fields map[string]schema.DataType,
 					v2 = "0"
 				}
 			} else {
-				v, v2 = signString(node.Value), signString(node.Value2)
+				v, v2 = ifels(ifExpr(node.Value), decodeExpr(node.Value), node.Value),
+					ifels(ifExpr(node.Value2), decodeExpr(node.Value2), node.Value2)
 			}
 			return prev +
 				fmt.Sprintf("%s between %s and %s", node.Field, v, v2)
@@ -512,15 +528,17 @@ func (node *Node) string(prev string, fields map[string]schema.DataType,
 			var v, v2 string
 			if fields[node.Field] == schema.TypeInt ||
 				fields[node.Field] == schema.TypeFloat {
+				v, v2 = node.Value, node.Value2
 				if len(v) == 0 {
 					v = "0"
 				}
 				if len(v2) == 0 {
 					v2 = "0"
 				}
-				v, v2 = node.Value, node.Value2
+
 			} else {
-				v, v2 = signString(node.Value), signString(node.Value2)
+				v, v2 = ifels(ifExpr(node.Value), decodeExpr(node.Value), node.Value),
+					ifels(ifExpr(node.Value2), decodeExpr(node.Value2), node.Value2)
 			}
 			return prev +
 				fmt.Sprintf("%s not between %s and %s", node.Field, v, v2)

@@ -61,21 +61,31 @@ const (
 	commentDynamicNode = "/*DYNAMIC-NODE*/"
 )
 
-//SqlWhereVisitorImpl 完成条件串的转换，只支持简单的 字段名 运算符 值 条件
+// SqlWhereVisitorImpl 完成条件串的转换，只支持简单的 字段名 运算符 值 条件
 type SqlWhereVisitorImpl struct {
 	parser.SqlVisitor
 	vars map[string]interface{}
 }
 
-//去除单引号，如果有的话
-func decodeSignStringIf(str string) string {
-	if len(str) < 2 {
-		return str
+// 去除单引号，如果有的话,没有单引号，将自动换成“,用于代表表达式
+func decodeExprOrConst(expr parser.IExprContext) string {
+	if expr1, ok := expr.(*parser.ExprContext); ok {
+		val := expr1.Value()
+		if val == nil {
+			return "`" + expr.GetText() + "`"
+		}
+		if val1, ok := val.(*parser.ValueContext); ok {
+
+			if txt := val1.TextLiteral(); txt != nil {
+				str := txt.GetText()
+				return strings.ReplaceAll(str[1:len(str)-1], "''", "'")
+			}
+
+		}
+
 	}
-	if str[0] == '\'' && str[len(str)-1] == '\'' {
-		return strings.ReplaceAll(str[1:len(str)-1], "''", "'")
-	}
-	return str
+	return expr.GetText()
+
 }
 func NewSqlWhereVisitorImpl() *SqlWhereVisitorImpl {
 	return &SqlWhereVisitorImpl{
@@ -140,7 +150,7 @@ func (s *SqlWhereVisitorImpl) VisitLogicExpression(ctx *parser.LogicExpressionCo
 						default:
 							panic("invalid length opereate " + operate.GetText())
 						}
-						return NewConditionNode(tv.FunctionArg().GetText(), ope, decodeSignStringIf(expr2.GetText()), "")
+						return NewConditionNode(tv.FunctionArg().GetText(), ope, decodeExprOrConst(expr2), "")
 					}
 				}
 				panic("invalid function " + tv.FunctionName().GetText())
@@ -171,7 +181,7 @@ func (s *SqlWhereVisitorImpl) VisitLogicExpression(ctx *parser.LogicExpressionCo
 		default:
 			panic("invalid opereate " + operate.GetText())
 		}
-		return NewConditionNode(expr1.GetText(), ope, decodeSignStringIf(expr2.GetText()), "")
+		return NewConditionNode(expr1.GetText(), ope, decodeExprOrConst(expr2), "")
 
 	}
 	//BETWEEN
@@ -180,10 +190,10 @@ func (s *SqlWhereVisitorImpl) VisitLogicExpression(ctx *parser.LogicExpressionCo
 		between != nil && expr2 != nil && expr3 != nil {
 		if not != nil {
 			return NewConditionNode(expr1.GetText(), pageselect.OperatorNotBetween,
-				decodeSignStringIf(expr2.GetText()), decodeSignStringIf(expr3.GetText()))
+				decodeExprOrConst(expr2), decodeExprOrConst(expr3))
 		}
 		return NewConditionNode(expr1.GetText(), pageselect.OperatorBetween,
-			decodeSignStringIf(expr2.GetText()), decodeSignStringIf(expr3.GetText()))
+			decodeExprOrConst(expr2), decodeExprOrConst(expr3))
 	}
 	//IN/NOT IN
 	if not, in, expr := ctx.NOT(), ctx.IN(), ctx.AllExpr(); in != nil && len(expr) > 1 {
@@ -199,7 +209,7 @@ func (s *SqlWhereVisitorImpl) VisitLogicExpression(ctx *parser.LogicExpressionCo
 		strs := []string{}
 		//需要将in后面的表达式进行字面量的转换，去掉引号
 		for _, one := range expr[1:] {
-			strs = append(strs, decodeSignStringIf(one.GetText()))
+			strs = append(strs, decodeExprOrConst(one))
 		}
 		bys := bytes.NewBufferString("")
 		r := csv.NewWriter(bys)
@@ -216,7 +226,7 @@ func (s *SqlWhereVisitorImpl) VisitLogicExpression(ctx *parser.LogicExpressionCo
 		if !isColumn(field) {
 			return NewPlainNode(getText(ctx))
 		}
-		str := decodeSignStringIf(val.GetText())
+		str := decodeExprOrConst(val)
 		var first, last byte
 		if len(str) > 0 {
 			first = str[0]
