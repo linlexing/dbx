@@ -95,6 +95,9 @@ func (m *meta) Avg(col string) string {
 	return fmt.Sprintf("avg(cast(nvl(%s,0) as decimal(29,6)))", col)
 }
 func valueExpress(dataType schema.DataType, value string) string {
+	if len(value) >= 2 && value[0] == '`' && value[len(value)-1] == '`' {
+		return value[1 : len(value)-1]
+	}
 	switch dataType {
 	case schema.TypeFloat, schema.TypeInt:
 		return value

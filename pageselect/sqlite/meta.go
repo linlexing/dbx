@@ -229,6 +229,9 @@ func (m *meta) GetOperatorExpress(ope ps.Operator, dataType schema.DataType, col
 }
 
 func valueExpress(dataType schema.DataType, value string) string {
+	if len(value) >= 2 && value[0] == '`' && value[len(value)-1] == '`' {
+		return value[1 : len(value)-1]
+	}
 	switch dataType {
 	case schema.TypeFloat, schema.TypeInt:
 		return value

@@ -75,8 +75,11 @@ func (m *meta) LimitSQL(sel, strSQL, where, orderby string, limit int) string {
 		sel, strSQL, where, orderby, limit)
 }
 
-//返回一个字段值的字符串表达式
+// 返回一个字段值的字符串表达式
 func valueExpress(dataType schema.DataType, value string) string {
+	if len(value) >= 2 && value[0] == '`' && value[len(value)-1] == '`' {
+		return value[1 : len(value)-1]
+	}
 	switch dataType {
 	case schema.TypeFloat, schema.TypeInt:
 		return value
