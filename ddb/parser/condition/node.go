@@ -72,8 +72,10 @@ type NodeLinkColumn struct {
 // Node 一个条件节点，可以有子节点，也可以是叶子
 type Node struct {
 	NodeType  NodeType
-	Reverse   bool // 条件是否反转，即是否加上not，对于 and or节点无效
+	Reverse   bool //条件是否反转，即是否加上not，对于 and or节点无效
 	Field     string
+	Func      string   //针对字段处理的函数,第一个参数是字段名
+	Args      []string //函数的参数
 	Operate   pageselect.Operator
 	Value     string
 	Value2    string           //用于区间运算符，尾值
@@ -90,6 +92,18 @@ func NewLogicNode(nodeType NodeType, children []*Node) *Node {
 		NodeType: nodeType,
 		Children: children,
 	}
+}
+
+// NewConditionNode 分配一个条件节点
+func NewFuncNode(field, funcName string, args []string) *Node {
+	rev := &Node{
+		NodeType: NodeCondition,
+		Field:    field,
+		Func:     funcName,
+		Args:     args,
+	}
+
+	return rev
 }
 
 // NewConditionNode 分配一个条件节点
@@ -174,9 +188,9 @@ func (node *Node) reduction() {
 		for _, one := range node.Children {
 			one.reduction()
 			if one.NodeType == NodeOr {
-				for _, sub := range one.Children {
-					nodes = append(nodes, sub)
-				}
+
+				nodes = append(nodes, one.Children...)
+
 			} else {
 				nodes = append(nodes, one)
 			}
@@ -198,6 +212,17 @@ func ifels[T string](b bool, v1, v2 T) T {
 		return v1
 	}
 	return v2
+}
+func (node *Node) fieldName() string {
+	fieldName := node.Field
+	if len(node.Func) > 0 {
+		args := ""
+		if len(node.Args) > 0 {
+			args = "," + strings.Join(node.Args, ",")
+		}
+		fieldName = fmt.Sprintf("%s(%s%s)", node.Func, node.Field, args)
+	}
+	return fieldName
 }
 func (node *Node) string(prev string, fields map[string]schema.DataType,
 	outerTableName string, getview GetUserConditionViewDefineFunc, buildComment bool) string {
@@ -342,6 +367,7 @@ func (node *Node) string(prev string, fields map[string]schema.DataType,
 		// list[len(list)-1] = list[len(list)-1] + ")"
 		return prev + "(\n" + strings.Join(list, " OR\n") + "\n" + prev + ")"
 	case NodeCondition:
+
 		op := node.Operate
 		//计算反转
 		if node.Reverse {
@@ -362,8 +388,7 @@ func (node *Node) string(prev string, fields map[string]schema.DataType,
 			if ifExpr(v) {
 				v = v[1 : len(v)-1]
 			} else {
-				if fields[node.Field] == schema.TypeInt ||
-					fields[node.Field] == schema.TypeFloat {
+				if node.isNumberField(fields[node.Field]) {
 					//数值型的，空值自动转换成0
 					if len(v) == 0 {
 						v = "0"
@@ -374,47 +399,46 @@ func (node *Node) string(prev string, fields map[string]schema.DataType,
 			}
 
 			return prev +
-				fmt.Sprintf("%s %s %s", node.Field,
+				fmt.Sprintf("%s %s %s", node.fieldName(),
 					ifels(op == pageselect.OperatorNotEqu, "<>", op.String()), v)
 
 		//OperatorLike 包含
 		case pageselect.OperatorLike:
 			return prev +
-				fmt.Sprintf("%s LIKE %s", node.Field, ifels(ifExpr(node.Value),
+				fmt.Sprintf("%s LIKE %s", node.fieldName(), ifels(ifExpr(node.Value),
 					decodeExpr(node.Value), signString("%"+node.Value+"%")))
 		//OperatorNotLike 不包含
 		case pageselect.OperatorNotLike:
 			return prev +
-				fmt.Sprintf("%s NOT LIKE %s", node.Field, ifels(ifExpr(node.Value),
+				fmt.Sprintf("%s NOT LIKE %s", node.fieldName(), ifels(ifExpr(node.Value),
 					decodeExpr(node.Value), signString("%"+node.Value+"%")))
 
 			//OperatorPrefix 前缀
 		case pageselect.OperatorPrefix:
 			return prev +
-				fmt.Sprintf("%s LIKE %s", node.Field, ifels(ifExpr(node.Value),
+				fmt.Sprintf("%s LIKE %s", node.fieldName(), ifels(ifExpr(node.Value),
 					decodeExpr(node.Value), signString(node.Value+"%")))
 			//OperatorNotPrefix 非前缀
 		case pageselect.OperatorNotPrefix:
 			return prev +
-				fmt.Sprintf("%s NOT LIKE %s", node.Field, ifels(ifExpr(node.Value),
+				fmt.Sprintf("%s NOT LIKE %s", node.fieldName(), ifels(ifExpr(node.Value),
 					decodeExpr(node.Value), signString("%"+node.Value+"%")))
 			//OperatorSuffix 后缀
 		case pageselect.OperatorSuffix:
 			return prev +
-				fmt.Sprintf("%s LIKE %s", node.Field, ifels(ifExpr(node.Value),
+				fmt.Sprintf("%s LIKE %s", node.fieldName(), ifels(ifExpr(node.Value),
 					decodeExpr(node.Value), signString("%"+node.Value)))
 			//OperatorNotSuffix 非后缀
 		case pageselect.OperatorNotSuffix:
 			return prev +
-				fmt.Sprintf("%s NOT LIKE %s", node.Field, ifels(ifExpr(node.Value),
+				fmt.Sprintf("%s NOT LIKE %s", node.fieldName(), ifels(ifExpr(node.Value),
 					decodeExpr(node.Value), signString("%"+node.Value)))
 			//OperatorIn 在列表
 		case pageselect.OperatorIn:
 			list := []string{}
 			for _, one := range decodeCSV(node.Value) {
 				var v string
-				if fields[node.Field] == schema.TypeInt ||
-					fields[node.Field] == schema.TypeFloat {
+				if node.isNumberField(fields[node.Field]) {
 					v = one
 				} else {
 					v = signString(one)
@@ -422,14 +446,13 @@ func (node *Node) string(prev string, fields map[string]schema.DataType,
 				list = append(list, v)
 			}
 			return prev +
-				fmt.Sprintf("%s IN (%s)", node.Field, encodeCSV(list))
+				fmt.Sprintf("%s IN (%s)", node.fieldName(), encodeCSV(list))
 			//OperatorNotIn 不在列表
 		case pageselect.OperatorNotIn:
 			list := []string{}
 			for _, one := range decodeCSV(node.Value) {
 				var v string
-				if fields[node.Field] == schema.TypeInt ||
-					fields[node.Field] == schema.TypeFloat {
+				if node.isNumberField(fields[node.Field]) {
 					v = one
 				} else {
 					v = signString(one)
@@ -437,15 +460,15 @@ func (node *Node) string(prev string, fields map[string]schema.DataType,
 				list = append(list, v)
 			}
 			return prev +
-				fmt.Sprintf("%s NOT IN (%s)", node.Field, encodeCSV(list))
+				fmt.Sprintf("%s NOT IN (%s)", node.fieldName(), encodeCSV(list))
 			//OperatorIsNull 为空
 		case pageselect.OperatorIsNull:
 			return prev +
-				fmt.Sprintf("%s IS NULL", node.Field)
+				fmt.Sprintf("%s IS NULL", node.fieldName())
 			//OperatorIsNotNull is not null
 		case pageselect.OperatorIsNotNull:
 			return prev +
-				fmt.Sprintf("%s IS NOT NULL", node.Field)
+				fmt.Sprintf("%s IS NOT NULL", node.fieldName())
 
 			//OperatorLengthEqu 长度等于
 		case pageselect.OperatorLengthEqu:
@@ -455,7 +478,7 @@ func (node *Node) string(prev string, fields map[string]schema.DataType,
 				v = "0"
 			}
 			return prev +
-				fmt.Sprintf("LENGTH(%s) = %s", node.Field, ifels(ifExpr(v), decodeExpr(v), v))
+				fmt.Sprintf("LENGTH(%s) = %s", node.fieldName(), ifels(ifExpr(v), decodeExpr(v), v))
 
 			//OperatorLengthNotEqu 长度不等于
 		case pageselect.OperatorLengthNotEqu:
@@ -509,8 +532,7 @@ func (node *Node) string(prev string, fields map[string]schema.DataType,
 				fmt.Sprintf("LENGTH(%s) <= %s", node.Field, ifels(ifExpr(v), decodeExpr(v), v))
 		case pageselect.OperatorBetween:
 			var v, v2 string
-			if fields[node.Field] == schema.TypeInt ||
-				fields[node.Field] == schema.TypeFloat {
+			if node.isNumberField(fields[node.Field]) {
 				v, v2 = node.Value, node.Value2
 				if len(v) == 0 {
 					v = "0"
@@ -523,11 +545,10 @@ func (node *Node) string(prev string, fields map[string]schema.DataType,
 					ifels(ifExpr(node.Value2), decodeExpr(node.Value2), node.Value2)
 			}
 			return prev +
-				fmt.Sprintf("%s between %s and %s", node.Field, v, v2)
+				fmt.Sprintf("%s between %s and %s", node.fieldName(), v, v2)
 		case pageselect.OperatorNotBetween:
 			var v, v2 string
-			if fields[node.Field] == schema.TypeInt ||
-				fields[node.Field] == schema.TypeFloat {
+			if node.isNumberField(fields[node.Field]) {
 				v, v2 = node.Value, node.Value2
 				if len(v) == 0 {
 					v = "0"
@@ -541,7 +562,7 @@ func (node *Node) string(prev string, fields map[string]schema.DataType,
 					ifels(ifExpr(node.Value2), decodeExpr(node.Value2), node.Value2)
 			}
 			return prev +
-				fmt.Sprintf("%s not between %s and %s", node.Field, v, v2)
+				fmt.Sprintf("%s not between %s and %s", node.fieldName(), v, v2)
 		default:
 			panic("not impl " + node.Operate.String())
 		}
@@ -549,6 +570,9 @@ func (node *Node) string(prev string, fields map[string]schema.DataType,
 	default:
 		panic("not impl")
 	}
+}
+func (node *Node) isNumberField(dat schema.DataType) bool {
+	return len(node.Func) == 0 && (dat == schema.TypeInt || dat == schema.TypeFloat)
 }
 
 // WhereString 返回规范化的where条件,传入视图列表，用于关联表查询的语句
@@ -817,6 +841,8 @@ func (node *Node) ConditionLines(fields map[string]schema.DataType, outerTableNa
 		}
 		rev = append(rev, &pageselect.ConditionLine{
 			ColumnName: node.Field,
+			Func:       node.Func,
+			Args:       node.Args,
 			Operators:  op,
 			Value:      node.Value,
 			Value2:     node.Value2,

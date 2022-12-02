@@ -1,8 +1,6 @@
 package condition
 
 import (
-	"bytes"
-	"encoding/csv"
 	"regexp"
 	"strings"
 
@@ -107,8 +105,30 @@ func (s *SqlWhereVisitorImpl) Visit(tree antlr.ParseTree) interface{} {
 func (s *SqlWhereVisitorImpl) VisitWhereClause(ctx *parser.WhereClauseContext) interface{} {
 	return ctx.LogicExpression().Accept(s)
 }
-func isColumn(expr parser.IExprContext) bool {
-	return expr.(*parser.ExprContext).ColumnName() != nil
+
+// func isColumn(expr parser.IExprContext) bool {
+// 	return expr.(*parser.ExprContext).ColumnName() != nil
+// }
+
+// 将运算符左边的表达式转换成node的name和func
+func expr2NodeName(expr parser.IExprContext) *Node {
+	if funcCall := expr.(*parser.ExprContext).FunctionCall(); funcCall != nil {
+
+		switch tv := funcCall.(*parser.FunctionCallContext).CommonFunction().(type) {
+		case *parser.CommonFunctionContext:
+			// tv := fc.(*parser.CommonFunctionContext)
+			funcName := strings.ToUpper(tv.FunctionName().GetText())
+			exprList := tv.FunctionArg().(*parser.FunctionArgContext).AllExpr()
+			args := make([]string, len(exprList))
+			for i, one := range exprList {
+				args[i] = one.GetText()
+			}
+			return NewFuncNode(args[0], funcName, args[1:])
+		default:
+			panic("invalid function " + tv.GetText())
+		}
+	}
+	return &Node{Field: expr.GetText(), NodeType: NodeCondition}
 }
 func (s *SqlWhereVisitorImpl) VisitLogicExpression(ctx *parser.LogicExpressionContext) interface{} {
 	//逻辑关系隔开的条件
@@ -125,38 +145,46 @@ func (s *SqlWhereVisitorImpl) VisitLogicExpression(ctx *parser.LogicExpressionCo
 	}
 	//运算符隔开的单个条件
 	if expr1, operate, expr2 := ctx.Expr(0), ctx.ComparisonOperator(), ctx.Expr(1); expr1 != nil && operate != nil && expr2 != nil {
-		if funcCall := expr1.(*parser.ExprContext).FunctionCall(); funcCall != nil {
+		node := expr2NodeName(expr1)
+		// if funcCall := expr1.(*parser.ExprContext).FunctionCall(); funcCall != nil {
 
-			switch tv := funcCall.(*parser.FunctionCallContext).CommonFunction().(type) {
-			case *parser.CommonFunctionContext:
-				// tv := fc.(*parser.CommonFunctionContext)
-				if strings.ToUpper(tv.FunctionName().GetText()) == "LENGTH" {
-					if exprList := tv.FunctionArg().(*parser.FunctionArgContext).AllExpr(); len(exprList) == 1 &&
-						isColumn(exprList[0]) {
-						var ope pageselect.Operator
-						switch operate.GetText() {
-						case "=":
-							ope = pageselect.OperatorLengthEqu
-						case ">":
-							ope = pageselect.OperatorLengthGreaterThan
-						case "<":
-							ope = pageselect.OperatorLengthLessThan
-						case "<=":
-							ope = pageselect.OperatorLengthLessThanOrEqu
-						case ">=":
-							ope = pageselect.OperatorLengthGreaterThanOrEqu
-						case "<>":
-							ope = pageselect.OperatorLengthNotEqu
-						default:
-							panic("invalid length opereate " + operate.GetText())
-						}
-						return NewConditionNode(tv.FunctionArg().GetText(), ope, decodeExprOrConst(expr2), "")
-					}
-				}
-				panic("invalid function " + tv.FunctionName().GetText())
+		// 	switch tv := funcCall.(*parser.FunctionCallContext).CommonFunction().(type) {
+		// 	case *parser.CommonFunctionContext:
+		// 		// tv := fc.(*parser.CommonFunctionContext)
+		// 		funcName := strings.ToUpper(tv.FunctionName().GetText())
+		// 		exprList := tv.FunctionArg().(*parser.FunctionArgContext).AllExpr()
+		// 		switch funcName {
+		// 		case "LENGTH":
+		// 			return NewFuncNode(tv.FunctionArg().GetText(), funcName, nil, operate.GetText(), decodeExprOrConst(expr2), "")
+		// 		}
+		// 		return NewConditionNode(tv.FunctionArg().GetText(), ope, decodeExprOrConst(expr2), "")
+		// 		if strings.ToUpper(tv.FunctionName().GetText()) == "LENGTH" {
+		// 			if exprList := tv.FunctionArg().(*parser.FunctionArgContext).AllExpr(); len(exprList) == 1 &&
+		// 				isColumn(exprList[0]) {
+		// 				var ope pageselect.Operator
+		// 				switch operate.GetText() {
+		// 				case "=":
+		// 					ope = pageselect.OperatorLengthEqu
+		// 				case ">":
+		// 					ope = pageselect.OperatorLengthGreaterThan
+		// 				case "<":
+		// 					ope = pageselect.OperatorLengthLessThan
+		// 				case "<=":
+		// 					ope = pageselect.OperatorLengthLessThanOrEqu
+		// 				case ">=":
+		// 					ope = pageselect.OperatorLengthGreaterThanOrEqu
+		// 				case "<>":
+		// 					ope = pageselect.OperatorLengthNotEqu
+		// 				default:
+		// 					panic("invalid length opereate " + operate.GetText())
+		// 				}
+		// 				return NewConditionNode(tv.FunctionArg().GetText(), ope, decodeExprOrConst(expr2), "")
+		// 			}
+		// 		}
+		// 		panic("invalid function " + tv.FunctionName().GetText())
 
-			}
-		}
+		// 	}
+		// }
 		// if !isColumn(expr1) {
 		// 	return NewPlainNode(getText(ctx))
 		// }
@@ -181,51 +209,51 @@ func (s *SqlWhereVisitorImpl) VisitLogicExpression(ctx *parser.LogicExpressionCo
 		default:
 			panic("invalid opereate " + operate.GetText())
 		}
-		return NewConditionNode(expr1.GetText(), ope, decodeExprOrConst(expr2), "")
+		node.Operate = ope
+		node.Value = decodeExprOrConst(expr2)
+
+		return node
 
 	}
 	//BETWEEN
 	if not, expr1, between, expr2, expr3 :=
 		ctx.NOT(), ctx.Expr(0), ctx.BETWEEN(), ctx.Expr(1), ctx.Expr(2); expr1 != nil &&
 		between != nil && expr2 != nil && expr3 != nil {
+		node := expr2NodeName(expr1)
 		if not != nil {
-			return NewConditionNode(expr1.GetText(), pageselect.OperatorNotBetween,
-				decodeExprOrConst(expr2), decodeExprOrConst(expr3))
+			node.Operate = pageselect.OperatorNotBetween
+		} else {
+			node.Operate = pageselect.OperatorBetween
 		}
-		return NewConditionNode(expr1.GetText(), pageselect.OperatorBetween,
-			decodeExprOrConst(expr2), decodeExprOrConst(expr3))
+		node.Value = decodeExprOrConst(expr2)
+		node.Value2 = decodeExprOrConst(expr3)
+		return node
+
 	}
 	//IN/NOT IN
 	if not, in, expr := ctx.NOT(), ctx.IN(), ctx.AllExpr(); in != nil && len(expr) > 1 {
-		if !isColumn(expr[0]) {
-			return NewPlainNode(getText(ctx))
-		}
-		var ope pageselect.Operator
+		node := expr2NodeName(expr[0])
 		if not != nil {
-			ope = pageselect.OperatorNotIn
+			node.Operate = pageselect.OperatorNotIn
 		} else {
-			ope = pageselect.OperatorIn
+			node.Operate = pageselect.OperatorIn
 		}
 		strs := []string{}
 		//需要将in后面的表达式进行字面量的转换，去掉引号
 		for _, one := range expr[1:] {
 			strs = append(strs, decodeExprOrConst(one))
 		}
-		bys := bytes.NewBufferString("")
-		r := csv.NewWriter(bys)
-		if err := r.WriteAll([][]string{strs}); err != nil {
-			panic(err)
-		}
-		return NewConditionNode(expr[0].GetText(), ope, bys.String(), "")
+
+		node.Value = strings.Join(strs, ",")
+		return node
 	}
 
 	//LIKE/NOT LIKE
 	if not, like, field, val :=
 		ctx.NOT(), ctx.LIKE(), ctx.Expr(0), ctx.Expr(1); like != nil &&
 		field != nil && val != nil {
-		if !isColumn(field) {
-			return NewPlainNode(getText(ctx))
-		}
+		node := expr2NodeName(field)
+
 		str := decodeExprOrConst(val)
 		var first, last byte
 		if len(str) > 0 {
@@ -266,18 +294,22 @@ func (s *SqlWhereVisitorImpl) VisitLogicExpression(ctx *parser.LogicExpressionCo
 				valStr = str
 			}
 		}
-		return NewConditionNode(field.GetText(), ope, valStr, "")
+		node.Operate = ope
+		node.Value = valStr
+		return node
 	}
 	//IS NULL/IS NOT NULL
 	if is, not, null, field :=
 		ctx.IS(), ctx.NOT(), ctx.NULL(), ctx.Expr(0); is != nil && null != nil && field != nil {
-		if !isColumn(field) {
-			return NewPlainNode(getText(ctx))
-		}
+		node := expr2NodeName(field)
+
 		if not != nil {
-			return NewConditionNode(field.GetText(), pageselect.OperatorIsNotNull, "", "")
+			node.Operate = pageselect.OperatorIsNotNull
+
+		} else {
+			node.Operate = pageselect.OperatorIsNull
 		}
-		return NewConditionNode(field.GetText(), pageselect.OperatorIsNull, "", "")
+		return node
 
 	}
 	//动态node '(' logicExpression ')'

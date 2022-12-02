@@ -14,11 +14,12 @@ const (
 	OR = "OR"
 )
 
-//ConditionLine 条件一行
+// ConditionLine 条件一行
 type ConditionLine struct {
-	LeftBrackets string
-	ColumnName   string
-
+	LeftBrackets  string
+	ColumnName    string
+	Func          string
+	Args          []string
 	Operators     Operator
 	Value         string
 	Value2        string //用于 between
@@ -27,26 +28,36 @@ type ConditionLine struct {
 	PlainText     string //与上面的条件成and关系
 }
 
-//SQLCondition 模板条件,多行并且可以带一段高级条件
+// SQLCondition 模板条件,多行并且可以带一段高级条件
 type SQLCondition struct {
 	Name      string
 	Lines     []*ConditionLine
 	PlainText string
 }
 
-//GetExpress 根据条件返回一个SQL条件
+// GetExpress 根据条件返回一个SQL条件
 func (c *ConditionLine) GetExpress(driver string, dataType schema.DataType, autoQuoted bool) string {
 	//加上括号
 	rev := ""
+	colName := ""
 	if len(c.ColumnName) > 0 {
-		colName := c.ColumnName
+		colName = c.ColumnName
 		if autoQuoted {
 			colName = Find(driver).QuotedIdentifier(colName)
+		}
+
+		if len(c.Func) > 0 {
+			args := ""
+			if len(c.Args) > 0 {
+				args = "," + strings.Join(c.Args, ",")
+			}
+			colName = fmt.Sprintf("%s(%s%s)", c.Func, colName, args)
 		}
 		rev = fmt.Sprintf("%s%s%s", c.LeftBrackets,
 			Find(driver).GetOperatorExpress(c.Operators, dataType, colName, c.Value, c.Value2),
 			c.RightBrackets)
 	}
+
 	if len(c.PlainText) > 0 {
 		if len(rev) > 0 {
 			rev += " " + c.LeftBrackets + AND + c.RightBrackets + " "
@@ -56,7 +67,7 @@ func (c *ConditionLine) GetExpress(driver string, dataType schema.DataType, auto
 	return rev
 }
 
-//BuildWhere 构造where条件，可选传入一个schema.Table来更准确地界定每列的数据类型
+// BuildWhere 构造where条件，可选传入一个schema.Table来更准确地界定每列的数据类型
 func (c *SQLCondition) BuildWhere(driver string, cols ColumnTypes, autoQuoted bool) string {
 	strLines := []string{}
 
