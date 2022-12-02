@@ -205,6 +205,9 @@ func ifExpr(v string) bool {
 	return len(v) >= 2 && v[0] == '`' && v[len(v)-1] == '`'
 }
 func decodeExpr(v string) string {
+	if len(v) < 2 {
+		return v
+	}
 	return v[1 : len(v)-1]
 }
 func ifels[T string](b bool, v1, v2 T) T {

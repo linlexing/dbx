@@ -18,7 +18,7 @@ import (
 //		// fmt.Println(ctx.ToStringTree)
 //	}
 func TestEasy(t *testing.T) {
-	node := ParserNode(`名称 IN ('税务登记信息','税务记录信息','国税务记录信息')`)
+	node := ParserNode(`length(abc)>0`)
 	spew.Dump(node)
 	spew.Dump(node.ConditionLines(nil, "wholesql", nil))
 	println("========================")

@@ -146,6 +146,27 @@ func (s *SqlWhereVisitorImpl) VisitLogicExpression(ctx *parser.LogicExpressionCo
 	//运算符隔开的单个条件
 	if expr1, operate, expr2 := ctx.Expr(0), ctx.ComparisonOperator(), ctx.Expr(1); expr1 != nil && operate != nil && expr2 != nil {
 		node := expr2NodeName(expr1)
+		//长度返回整型，特殊处理
+		if strings.EqualFold(node.Func, "LENGTH") {
+			var ope pageselect.Operator
+			switch operate.GetText() {
+			case "=":
+				ope = pageselect.OperatorLengthEqu
+			case ">":
+				ope = pageselect.OperatorLengthGreaterThan
+			case "<":
+				ope = pageselect.OperatorLengthLessThan
+			case "<=":
+				ope = pageselect.OperatorLengthLessThanOrEqu
+			case ">=":
+				ope = pageselect.OperatorLengthGreaterThanOrEqu
+			case "<>":
+				ope = pageselect.OperatorLengthNotEqu
+			default:
+				panic("invalid length opereate " + operate.GetText())
+			}
+			return NewConditionNode(node.Field, ope, decodeExprOrConst(expr2), "")
+		}
 		// if funcCall := expr1.(*parser.ExprContext).FunctionCall(); funcCall != nil {
 
 		// 	switch tv := funcCall.(*parser.FunctionCallContext).CommonFunction().(type) {
