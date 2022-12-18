@@ -209,6 +209,23 @@ func (t *Table) ColumnByName(name string) *Column {
 	return nil
 }
 
+// 获取字段的脚本
+func (t *Table) GetDefineScript() (string, error) {
+	list := []string{}
+	for _, one := range t.Columns {
+		str, err := stringifyColumn(one, false)
+		if err != nil {
+			return "", err
+		}
+		list = append(list, "\t"+str)
+	}
+	//添加主键定义
+	if len(t.PrimaryKeys) > 0 {
+		list = append(list, fmt.Sprintf("\tprimary key(%s)", strings.Join(t.PrimaryKeys, ",")))
+	}
+	return strings.Join(list, "\n"), nil
+}
+
 // DefineScript 采用脚本的方式定义表，如下：
 //
 //	a str(3) not null

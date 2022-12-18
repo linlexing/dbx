@@ -12,6 +12,37 @@ type colDef struct {
 	isPK bool
 }
 
+func stringifyColumn(c *Column, isPk bool) (rev string, err error) {
+
+	line := c.Name + "\t"
+	if c.Type == TypeString {
+		if c.MaxLength > 0 {
+			line += fmt.Sprintf("STR(%d)", c.MaxLength)
+		} else {
+			line += "STR"
+		}
+	} else {
+		ty, err := c.Type.String()
+		if err != nil {
+			return "", err
+		}
+		line += ty
+	}
+	//主键不需要not null
+	if !isPk && !c.Null {
+		line += " NOT NULL"
+	}
+	if c.Index == Index {
+		line += " INDEX"
+	} else if c.Index == UniqueIndex {
+		line += " UINDEX"
+	}
+	if isPk {
+		line += " PRIMARY KEY"
+	}
+	return line, nil
+}
+
 func columnDefine(line, trueTypeLine, formerNameTag string) (result *colDef, err error) {
 	//先去除注释
 	result = &colDef{
@@ -75,6 +106,7 @@ func columnDefine(line, trueTypeLine, formerNameTag string) (result *colDef, err
 			index = NoIndex
 		default:
 			err = fmt.Errorf("%s ,error define %s", line, str)
+			return
 		}
 	}
 	if strings.HasPrefix(dataType, "STR(") {
