@@ -1,6 +1,7 @@
 package pageselect
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 	"fmt"
@@ -184,15 +185,19 @@ func (s *PageSelect) BuildSQL() (strSQL string, err error) {
 	return
 }
 
+func (s *PageSelect) QueryRows(db common.DB) ([]map[string]interface{}, []*scan.ColumnType, error) {
+	return s.QueryContext(context.Background(), db)
+}
+
 // QueryRows 根据设置返回一页数据
-func (s *PageSelect) QueryRows(db common.DB) (result []map[string]interface{}, cols []*scan.ColumnType, err error) {
+func (s *PageSelect) QueryContext(ctx context.Context, db common.DB) (result []map[string]interface{}, cols []*scan.ColumnType, err error) {
 	var strSQL string
 	strSQL, err = s.BuildSQL()
 	if err != nil {
 		return
 	}
 	var rows *sql.Rows
-	if rows, err = db.Query(strSQL); err != nil {
+	if rows, err = db.QueryContext(ctx, strSQL); err != nil {
 		err = common.NewSQLError(err, strSQL)
 		log.Println(err)
 		return

@@ -13,21 +13,12 @@ const (
 )
 
 var (
-	columnReg      *regexp.Regexp
-	columnTrueType *regexp.Regexp
+	columnReg      = regexp.MustCompile(`(?i)([\p{Han}_a-zA-Z0-9]+)(\s+bytea|\s+date|\s+float|\s+int|\s+str\([0-9]+\)|\s+str|)(\s+null|\s+not null|)(\s+uindex|\s+index|)`)
+	columnTrueType = regexp.MustCompile(`(?i)(postgres|oci8|sqlite3|mysql)\s+(.+)`)
 )
 
 func init() {
-	r, err := regexp.Compile(`(?i)([\p{Han}_a-zA-Z0-9]+)(\s+bytea|\s+date|\s+float|\s+int|\s+str\([0-9]+\)|\s+str|)(\s+null|\s+not null|)(\s+uindex|\s+index|)`)
-	if err != nil {
-		panic(err)
-	}
-	columnReg = r
-	r, err = regexp.Compile(`(?i)(postgres|oci8|sqlite3|mysql)\s+(.+)`)
-	if err != nil {
-		panic(err)
-	}
-	columnTrueType = r
+
 }
 
 // Table 代表数据库中一个物理表

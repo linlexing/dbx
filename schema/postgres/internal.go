@@ -8,6 +8,7 @@ import (
 	"database/sql"
 
 	"github.com/linlexing/dbx/common"
+	"github.com/linlexing/dbx/data"
 	"github.com/linlexing/dbx/schema"
 )
 
@@ -84,7 +85,7 @@ func addTablePrimaryKeySQL(tableName string, pks []string) []string {
 	return []string{fmt.Sprintf("ALTER TABLE %s ADD PRIMARY KEY(%s)", tableName, strings.Join(pks, ","))}
 }
 func colDBType(c *schema.Column) string {
-	if (len(c.FetchDriver) == 0 || strings.ToLower(c.FetchDriver) == strings.ToLower(driverName)) && len(c.TrueType) > 0 {
+	if (len(c.FetchDriver) == 0 || data.IsPostgres(strings.ToLower(c.FetchDriver))) && len(c.TrueType) > 0 {
 		return c.TrueType
 	}
 	return dbType(c.Type, c.MaxLength)
