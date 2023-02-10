@@ -21,8 +21,8 @@ func init() {
 	schema.Register(driverName, new(meta))
 }
 
-//CreateTableAs 执行create table as select语句
-//todo:不支持date类型，会转换成num类型，需要整改
+// CreateTableAs 执行create table as select语句
+// todo:不支持date类型，会转换成num类型，需要整改
 func (m *meta) CreateTableAsSQL(db common.DB, tableName, strSQL string,
 	param []interface{}, pks []string) (rev []string, err error) {
 	tmpTableName, err := ddb.GetTempTableName("t_")
@@ -36,7 +36,7 @@ func (m *meta) CreateTableAsSQL(db common.DB, tableName, strSQL string,
 		log.Println(err)
 		return nil, err
 	}
-	s = "SELECT sql FROM sqlite_master WHERE type = 'table' AND name = :tname"
+	s = "SELECT sql FROM sqlite_master WHERE type = 'table' AND name = ?"
 
 	var createSQL string
 
@@ -133,7 +133,7 @@ func (m *meta) CreateIndexIfNotExistsSQL(db common.DB, unique bool, indexName, t
 }
 
 /*
-	open数据库时 若数据库不存在则会自动创建
+open数据库时 若数据库不存在则会自动创建
 */
 func (m *meta) CreateSchemaSQL(db common.DB, dbInfo schema.DataBaseInfo) ([]string, error) {
 	return []string{}, nil
