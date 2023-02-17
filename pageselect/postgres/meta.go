@@ -199,38 +199,6 @@ func (m *meta) GetOperatorExpress(ope ps.Operator, dataType schema.DataType, col
 				strSQL = fmt.Sprintf("%s not in (%s)", column, strings.Join(list, ",\n"))
 			}
 		}
-	case ps.OperatorLikeArray:
-		if value == "" {
-			strSQL = fmt.Sprintf("%s is null", column)
-		} else {
-
-			if array, err := csv.NewReader(strings.NewReader(value)).Read(); err != nil {
-				log.Panic(err)
-			} else {
-				list := []string{}
-				for _, v := range array {
-					list = append(list, valueExpress(dataType, "%"+v+"%"))
-				}
-				strSQL = fmt.Sprintf("%s like any (array[%s])", column, strings.Join(list, ",\n"))
-			}
-
-		}
-	case ps.OperatorNotLikeArray:
-		if value == "" {
-			strSQL = fmt.Sprintf("%s is not null", column)
-		} else {
-
-			if array, err := csv.NewReader(strings.NewReader(value)).Read(); err != nil {
-				log.Panic(err)
-			} else {
-				list := []string{}
-				for _, v := range array {
-					list = append(list, valueExpress(dataType, "%"+v+"%"))
-				}
-				strSQL = fmt.Sprintf("%s not like any (array[%s])", column, strings.Join(list, ",\n"))
-			}
-
-		}
 	case ps.OperatorRegexp: // "~" 正则
 		if value == "" {
 			strSQL = fmt.Sprintf("%s is null", column)
@@ -278,6 +246,7 @@ func (m *meta) GetOperatorExpress(ope ps.Operator, dataType schema.DataType, col
 		strSQL = fmt.Sprintf("%s between %s and %s", column, valueExpress(dataType, value), valueExpress(dataType, value2))
 	case ps.OperatorNotBetween:
 		strSQL = fmt.Sprintf("%s not between %s and %s", column, valueExpress(dataType, value), valueExpress(dataType, value2))
+		//包含列表.
 	default:
 		log.Panic(fmt.Errorf("the opt:%s not impl", ope))
 	}
