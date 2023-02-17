@@ -175,66 +175,6 @@ func (m *meta) GetOperatorExpress(ope ps.Operator, dataType schema.DataType, col
 				strSQL = fmt.Sprintf("%s not in (%s)", column, strings.Join(list, ",\n"))
 			}
 		}
-	case ps.OperatorLikeArray:
-		if value == "" {
-			strSQL = fmt.Sprintf("%s is null", column)
-		} else {
-
-			if array, err := csv.NewReader(strings.NewReader(value)).Read(); err != nil {
-				log.Panic(err)
-			} else {
-				rList := []string{}
-				var matchItems string
-				for _, v := range array {
-					//正则长度限制
-					if len(v) > 256 { //单个就超长就跳过
-						continue
-					}
-					if len(matchItems)+len(v) > 256 {
-						rList = append(rList, fmt.Sprintf("%s regexp '%s'", column, matchItems))
-						matchItems = ""
-					}
-					if len(matchItems) > 0 {
-						matchItems = matchItems + fmt.Sprintf("|%s", valueExpressNoQuotes(dataType, v))
-					} else {
-						matchItems = valueExpressNoQuotes(dataType, v)
-					}
-				}
-				rList = append(rList, fmt.Sprintf("%s regexp '%s'", column, matchItems))
-				strSQL = fmt.Sprintf("(%s)", strings.Join(rList, " or "))
-			}
-
-		}
-	case ps.OperatorNotLikeArray:
-		if value == "" {
-			strSQL = fmt.Sprintf("%s is not null", column)
-		} else {
-
-			if array, err := csv.NewReader(strings.NewReader(value)).Read(); err != nil {
-				log.Panic(err)
-			} else {
-				rList := []string{}
-				var matchItems string
-				for _, v := range array {
-					//正则长度限制
-					if len(v) > 256 { //单个就超长就跳过
-						continue
-					}
-					if len(matchItems)+len(v) > 256 {
-						rList = append(rList, fmt.Sprintf("%s regexp '%s'", column, matchItems))
-						matchItems = ""
-					}
-					if len(matchItems) > 0 {
-						matchItems = matchItems + fmt.Sprintf("|%s", valueExpressNoQuotes(dataType, v))
-					} else {
-						matchItems = valueExpressNoQuotes(dataType, v)
-					}
-				}
-				rList = append(rList, fmt.Sprintf("%s regexp '%s'", column, matchItems))
-				strSQL = fmt.Sprintf("not (%s)", strings.Join(rList, " or "))
-			}
-
-		}
 	case ps.OperatorRegexp: // "~" 正则
 		if value == "" {
 			strSQL = fmt.Sprintf("%s is null", column)
@@ -299,20 +239,6 @@ func valueExpress(dataType schema.DataType, value string) string {
 		return "'" + value + "'"
 	case schema.TypeString:
 		return "'" + strings.Replace(value, "'", "''", -1) + "'"
-
-	default:
-		panic(fmt.Errorf("not impl ValueExpress,type:%d", dataType))
-	}
-}
-func valueExpressNoQuotes(dataType schema.DataType, value string) string {
-	if len(value) >= 2 && value[0] == '`' && value[len(value)-1] == '`' {
-		return value[1 : len(value)-1]
-	}
-	switch dataType {
-	case schema.TypeFloat, schema.TypeInt, schema.TypeDatetime:
-		return value
-	case schema.TypeString:
-		return strings.Replace(value, "'", "''", -1)
 
 	default:
 		panic(fmt.Errorf("not impl ValueExpress,type:%d", dataType))
