@@ -386,8 +386,7 @@ func (node *Node) string(prev string, fields map[string]schema.DataType,
 		case pageselect.OperatorEqu, pageselect.OperatorGreaterThan,
 			pageselect.OperatorGreaterThanOrEqu, pageselect.OperatorLessThan,
 			pageselect.OperatorLessThanOrEqu, pageselect.OperatorRegexp,
-			pageselect.OperatorNotRegexp, pageselect.OperatorNotEqu,
-			pageselect.OperatorLikeArray, pageselect.OperatorNotLikeArray:
+			pageselect.OperatorNotRegexp, pageselect.OperatorNotEqu:
 			v := node.Value
 			if ifExpr(v) {
 				v = v[1 : len(v)-1]

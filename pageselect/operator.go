@@ -5,7 +5,7 @@ import (
 	"errors"
 )
 
-// Operator 表示条件中的运算符
+//Operator 表示条件中的运算符
 type Operator int
 
 const (
@@ -61,10 +61,6 @@ const (
 	OperatorBetween
 	//OperatorNotBetween not between
 	OperatorNotBetween
-	//OperatorLikeArray 包含列表
-	OperatorLikeArray
-	//OperatorNotLikeArray 不包含列表
-	OperatorNotLikeArray
 )
 
 var (
@@ -124,10 +120,6 @@ func makeOpMap() (map[Operator]Operator, map[Operator]Operator) {
 		OperatorBetween:
 		//OperatorNotBetween not between
 		OperatorNotBetween,
-		//OperatorLikeArray like array
-		OperatorLikeArray:
-		//OperatorNotLikeArray not like array
-		OperatorNotLikeArray,
 	}
 	revReverse := map[Operator]Operator{}
 	for k, v := range rev {
@@ -137,17 +129,17 @@ func makeOpMap() (map[Operator]Operator, map[Operator]Operator) {
 
 }
 
-// MarshalJSON 实现json的自定义的json序列化，主要是为了兼容前个直接保存字符串值的版本
+//MarshalJSON 实现json的自定义的json序列化，主要是为了兼容前个直接保存字符串值的版本
 func (o Operator) MarshalJSON() ([]byte, error) {
 	return json.Marshal(o.String())
 }
 
-// MarshalYAML 是支持yaml序列化
+//MarshalYAML 是支持yaml序列化
 func (o Operator) MarshalYAML() (interface{}, error) {
 	return o.String(), nil
 }
 
-// UnmarshalYAML 支持yaml反序列化
+//UnmarshalYAML 支持yaml反序列化
 func (o *Operator) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	var outstr string
 	if err := unmarshal(&outstr); err != nil {
@@ -161,7 +153,7 @@ func (o *Operator) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	return err
 }
 
-// UnmarshalJSON 实现自定义的json反序列化，主要是为了兼容前个版本
+//UnmarshalJSON 实现自定义的json反序列化，主要是为了兼容前个版本
 func (o *Operator) UnmarshalJSON(v []byte) error {
 	outstr := ""
 	if err := json.Unmarshal(v, &outstr); err != nil {
@@ -175,7 +167,7 @@ func (o *Operator) UnmarshalJSON(v []byte) error {
 	return err
 }
 
-// Reverse 反转运算符
+//Reverse 反转运算符
 func (o Operator) Reverse() Operator {
 	if v, ok := opMap[o]; ok {
 		return v
@@ -186,7 +178,7 @@ func (o Operator) Reverse() Operator {
 	panic("invalid op " + o.String())
 }
 
-// RemoveReverse 消除反转，如果是反向，返回正向，并返回true，否则不变，并返回false
+//RemoveReverse 消除反转，如果是反向，返回正向，并返回true，否则不变，并返回false
 func (o Operator) RemoveReverse() (Operator, bool) {
 	// 常见的运算符不要归正
 	switch o {
@@ -206,9 +198,7 @@ func (o Operator) RemoveReverse() (Operator, bool) {
 		OperatorLengthGreaterThanOrEqu,
 		OperatorLengthLessThan,
 		OperatorLengthLessThanOrEqu,
-		OperatorLengthNotEqu,
-		OperatorLikeArray,
-		OperatorNotLikeArray:
+		OperatorLengthNotEqu:
 		return o, false
 
 	}
@@ -218,7 +208,7 @@ func (o Operator) RemoveReverse() (Operator, bool) {
 	return o, false
 }
 
-// ParseOperatorFromString 将一个字符串转换成Operator值
+//ParseOperatorFromString 将一个字符串转换成Operator值
 func ParseOperatorFromString(str string) (Operator, error) {
 	switch str {
 	case "=":
@@ -273,17 +263,13 @@ func ParseOperatorFromString(str string) (Operator, error) {
 		return OperatorBetween, nil
 	case "![,]":
 		return OperatorNotBetween, nil
-	case "?[]":
-		return OperatorLikeArray, nil
-	case "!?[]":
-		return OperatorNotLikeArray, nil
 	default:
 		return 0, ErrInvalidOperator
 	}
 
 }
 
-// String 返回字符串形式
+//String 返回字符串形式
 func (o Operator) String() string {
 	switch o {
 	case OperatorEqu:
@@ -338,16 +324,12 @@ func (o Operator) String() string {
 		return "[,]"
 	case OperatorNotBetween:
 		return "![,]"
-	case OperatorLikeArray:
-		return "?[]"
-	case OperatorNotLikeArray:
-		return "!?[]"
 	default:
 		panic(ErrInvalidOperator)
 	}
 }
 
-// ChineseString 返回中文名称
+//ChineseString 返回中文名称
 func (o Operator) ChineseString() string {
 	switch o {
 	case OperatorEqu:
@@ -402,10 +384,6 @@ func (o Operator) ChineseString() string {
 		return "区间"
 	case OperatorNotBetween:
 		return "非区间"
-	case OperatorLikeArray:
-		return "包含列表"
-	case OperatorNotLikeArray:
-		return "不包含列表"
 	default:
 		panic(ErrInvalidOperator)
 	}
