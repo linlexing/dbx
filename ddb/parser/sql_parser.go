@@ -1,233 +1,254 @@
-// Code generated from Sql.g4 by ANTLR 4.7.2. DO NOT EDIT.
+// Code generated from Sql.g4 by ANTLR 4.12.0. DO NOT EDIT.
 
 package parser // Sql
 
 import (
 	"fmt"
-	"reflect"
 	"strconv"
+	"sync"
 
-	"github.com/antlr/antlr4/runtime/Go/antlr"
+	"github.com/antlr/antlr4/runtime/Go/antlr/v4"
 )
 
 // Suppress unused import errors
 var _ = fmt.Printf
-var _ = reflect.Copy
 var _ = strconv.Itoa
-
-
-var parserATN = []uint16{
-	3, 24715, 42794, 33075, 47597, 16764, 15335, 30598, 22884, 3, 63, 365, 
-	4, 2, 9, 2, 4, 3, 9, 3, 4, 4, 9, 4, 4, 5, 9, 5, 4, 6, 9, 6, 4, 7, 9, 7, 
-	4, 8, 9, 8, 4, 9, 9, 9, 4, 10, 9, 10, 4, 11, 9, 11, 4, 12, 9, 12, 4, 13, 
-	9, 13, 4, 14, 9, 14, 4, 15, 9, 15, 4, 16, 9, 16, 4, 17, 9, 17, 4, 18, 9, 
-	18, 4, 19, 9, 19, 4, 20, 9, 20, 4, 21, 9, 21, 4, 22, 9, 22, 4, 23, 9, 23, 
-	4, 24, 9, 24, 4, 25, 9, 25, 4, 26, 9, 26, 4, 27, 9, 27, 4, 28, 9, 28, 4, 
-	29, 9, 29, 4, 30, 9, 30, 4, 31, 9, 31, 3, 2, 3, 2, 3, 3, 3, 3, 3, 4, 3, 
-	4, 3, 5, 3, 5, 3, 6, 3, 6, 3, 7, 3, 7, 3, 7, 3, 8, 3, 8, 5, 8, 78, 10, 
-	8, 3, 9, 3, 9, 3, 10, 3, 10, 3, 11, 3, 11, 3, 12, 3, 12, 3, 12, 3, 12, 
-	3, 12, 3, 12, 3, 12, 3, 12, 3, 12, 3, 12, 5, 12, 96, 10, 12, 3, 12, 5, 
-	12, 99, 10, 12, 3, 12, 5, 12, 102, 10, 12, 3, 12, 5, 12, 105, 10, 12, 3, 
-	12, 5, 12, 108, 10, 12, 3, 12, 5, 12, 111, 10, 12, 3, 12, 3, 12, 3, 12, 
-	3, 12, 7, 12, 117, 10, 12, 12, 12, 14, 12, 120, 11, 12, 3, 13, 3, 13, 5, 
-	13, 124, 10, 13, 3, 13, 3, 13, 7, 13, 128, 10, 13, 12, 13, 14, 13, 131, 
-	11, 13, 3, 14, 3, 14, 5, 14, 135, 10, 14, 3, 14, 5, 14, 138, 10, 14, 3, 
-	15, 3, 15, 3, 15, 3, 15, 3, 15, 3, 15, 3, 15, 3, 15, 5, 15, 148, 10, 15, 
-	3, 15, 3, 15, 3, 15, 3, 15, 3, 15, 3, 15, 3, 15, 3, 15, 3, 15, 7, 15, 159, 
-	10, 15, 12, 15, 14, 15, 162, 11, 15, 3, 16, 3, 16, 3, 16, 5, 16, 167, 10, 
-	16, 3, 17, 3, 17, 5, 17, 171, 10, 17, 3, 18, 3, 18, 3, 18, 3, 18, 3, 18, 
-	3, 18, 3, 18, 3, 18, 3, 18, 5, 18, 182, 10, 18, 3, 18, 5, 18, 185, 10, 
-	18, 3, 19, 3, 19, 3, 19, 3, 19, 3, 19, 3, 19, 3, 19, 3, 19, 3, 19, 3, 19, 
-	3, 19, 3, 19, 3, 19, 3, 19, 5, 19, 201, 10, 19, 3, 20, 3, 20, 3, 20, 7, 
-	20, 206, 10, 20, 12, 20, 14, 20, 209, 11, 20, 3, 21, 3, 21, 5, 21, 213, 
-	10, 21, 3, 21, 3, 21, 3, 21, 5, 21, 218, 10, 21, 7, 21, 220, 10, 21, 12, 
-	21, 14, 21, 223, 11, 21, 3, 22, 3, 22, 3, 22, 3, 22, 3, 22, 5, 22, 230, 
-	10, 22, 3, 23, 3, 23, 3, 23, 3, 24, 3, 24, 3, 24, 3, 24, 3, 24, 3, 24, 
-	3, 24, 5, 24, 242, 10, 24, 3, 24, 3, 24, 3, 24, 3, 24, 3, 24, 3, 24, 3, 
-	24, 5, 24, 251, 10, 24, 3, 24, 3, 24, 3, 24, 3, 24, 3, 24, 7, 24, 258, 
-	10, 24, 12, 24, 14, 24, 261, 11, 24, 3, 24, 3, 24, 3, 24, 3, 24, 5, 24, 
-	267, 10, 24, 3, 24, 3, 24, 3, 24, 3, 24, 3, 24, 3, 24, 3, 24, 5, 24, 276, 
-	10, 24, 3, 24, 3, 24, 3, 24, 3, 24, 3, 24, 3, 24, 5, 24, 284, 10, 24, 3, 
-	24, 3, 24, 3, 24, 3, 24, 3, 24, 3, 24, 3, 24, 3, 24, 5, 24, 294, 10, 24, 
-	3, 24, 3, 24, 3, 24, 3, 24, 3, 24, 3, 24, 5, 24, 302, 10, 24, 3, 24, 3, 
-	24, 3, 24, 3, 24, 3, 24, 3, 24, 7, 24, 310, 10, 24, 12, 24, 14, 24, 313, 
-	11, 24, 3, 25, 3, 25, 3, 26, 3, 26, 3, 26, 3, 26, 3, 26, 7, 26, 322, 10, 
-	26, 12, 26, 14, 26, 325, 11, 26, 3, 27, 3, 27, 3, 28, 3, 28, 3, 28, 3, 
-	29, 3, 29, 3, 29, 3, 29, 3, 29, 7, 29, 337, 10, 29, 12, 29, 14, 29, 340, 
-	11, 29, 3, 30, 3, 30, 5, 30, 344, 10, 30, 3, 30, 3, 30, 3, 30, 3, 30, 5, 
-	30, 350, 10, 30, 3, 31, 3, 31, 3, 31, 3, 31, 5, 31, 356, 10, 31, 3, 31, 
-	3, 31, 3, 31, 3, 31, 3, 31, 5, 31, 363, 10, 31, 3, 31, 2, 5, 22, 28, 46, 
-	32, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 34, 36, 
-	38, 40, 42, 44, 46, 48, 50, 52, 54, 56, 58, 60, 2, 9, 4, 2, 58, 58, 60, 
-	60, 3, 2, 50, 52, 4, 2, 3, 3, 5, 5, 3, 2, 6, 7, 3, 2, 22, 25, 3, 2, 11, 
-	18, 3, 2, 43, 44, 2, 388, 2, 62, 3, 2, 2, 2, 4, 64, 3, 2, 2, 2, 6, 66, 
-	3, 2, 2, 2, 8, 68, 3, 2, 2, 2, 10, 70, 3, 2, 2, 2, 12, 72, 3, 2, 2, 2, 
-	14, 75, 3, 2, 2, 2, 16, 79, 3, 2, 2, 2, 18, 81, 3, 2, 2, 2, 20, 83, 3, 
-	2, 2, 2, 22, 85, 3, 2, 2, 2, 24, 123, 3, 2, 2, 2, 26, 132, 3, 2, 2, 2, 
-	28, 147, 3, 2, 2, 2, 30, 166, 3, 2, 2, 2, 32, 170, 3, 2, 2, 2, 34, 184, 
-	3, 2, 2, 2, 36, 200, 3, 2, 2, 2, 38, 202, 3, 2, 2, 2, 40, 210, 3, 2, 2, 
-	2, 42, 229, 3, 2, 2, 2, 44, 231, 3, 2, 2, 2, 46, 301, 3, 2, 2, 2, 48, 314, 
-	3, 2, 2, 2, 50, 316, 3, 2, 2, 2, 52, 326, 3, 2, 2, 2, 54, 328, 3, 2, 2, 
-	2, 56, 331, 3, 2, 2, 2, 58, 341, 3, 2, 2, 2, 60, 351, 3, 2, 2, 2, 62, 63, 
-	7, 58, 2, 2, 63, 3, 3, 2, 2, 2, 64, 65, 7, 58, 2, 2, 65, 5, 3, 2, 2, 2, 
-	66, 67, 7, 58, 2, 2, 67, 7, 3, 2, 2, 2, 68, 69, 7, 58, 2, 2, 69, 9, 3, 
-	2, 2, 2, 70, 71, 9, 2, 2, 2, 71, 11, 3, 2, 2, 2, 72, 73, 9, 3, 2, 2, 73, 
-	74, 7, 53, 2, 2, 74, 13, 3, 2, 2, 2, 75, 77, 7, 55, 2, 2, 76, 78, 7, 56, 
-	2, 2, 77, 76, 3, 2, 2, 2, 77, 78, 3, 2, 2, 2, 78, 15, 3, 2, 2, 2, 79, 80, 
-	7, 57, 2, 2, 80, 17, 3, 2, 2, 2, 81, 82, 7, 59, 2, 2, 82, 19, 3, 2, 2, 
-	2, 83, 84, 7, 61, 2, 2, 84, 21, 3, 2, 2, 2, 85, 86, 8, 12, 1, 2, 86, 87, 
-	7, 20, 2, 2, 87, 88, 5, 24, 13, 2, 88, 89, 7, 21, 2, 2, 89, 95, 5, 40, 
-	21, 2, 90, 91, 5, 12, 7, 2, 91, 92, 5, 40, 21, 2, 92, 93, 7, 54, 2, 2, 
-	93, 94, 5, 46, 24, 2, 94, 96, 3, 2, 2, 2, 95, 90, 3, 2, 2, 2, 95, 96, 3, 
-	2, 2, 2, 96, 98, 3, 2, 2, 2, 97, 99, 5, 44, 23, 2, 98, 97, 3, 2, 2, 2, 
-	98, 99, 3, 2, 2, 2, 99, 101, 3, 2, 2, 2, 100, 102, 5, 50, 26, 2, 101, 100, 
-	3, 2, 2, 2, 101, 102, 3, 2, 2, 2, 102, 104, 3, 2, 2, 2, 103, 105, 5, 54, 
-	28, 2, 104, 103, 3, 2, 2, 2, 104, 105, 3, 2, 2, 2, 105, 107, 3, 2, 2, 2, 
-	106, 108, 5, 56, 29, 2, 107, 106, 3, 2, 2, 2, 107, 108, 3, 2, 2, 2, 108, 
-	110, 3, 2, 2, 2, 109, 111, 5, 60, 31, 2, 110, 109, 3, 2, 2, 2, 110, 111, 
-	3, 2, 2, 2, 111, 118, 3, 2, 2, 2, 112, 113, 12, 3, 2, 2, 113, 114, 5, 14, 
-	8, 2, 114, 115, 5, 22, 12, 4, 115, 117, 3, 2, 2, 2, 116, 112, 3, 2, 2, 
-	2, 117, 120, 3, 2, 2, 2, 118, 116, 3, 2, 2, 2, 118, 119, 3, 2, 2, 2, 119, 
-	23, 3, 2, 2, 2, 120, 118, 3, 2, 2, 2, 121, 124, 7, 3, 2, 2, 122, 124, 5, 
-	26, 14, 2, 123, 121, 3, 2, 2, 2, 123, 122, 3, 2, 2, 2, 124, 129, 3, 2, 
-	2, 2, 125, 126, 7, 4, 2, 2, 126, 128, 5, 26, 14, 2, 127, 125, 3, 2, 2, 
-	2, 128, 131, 3, 2, 2, 2, 129, 127, 3, 2, 2, 2, 129, 130, 3, 2, 2, 2, 130, 
-	25, 3, 2, 2, 2, 131, 129, 3, 2, 2, 2, 132, 137, 5, 28, 15, 2, 133, 135, 
-	7, 19, 2, 2, 134, 133, 3, 2, 2, 2, 134, 135, 3, 2, 2, 2, 135, 136, 3, 2, 
-	2, 2, 136, 138, 5, 10, 6, 2, 137, 134, 3, 2, 2, 2, 137, 138, 3, 2, 2, 2, 
-	138, 27, 3, 2, 2, 2, 139, 140, 8, 15, 1, 2, 140, 148, 5, 2, 2, 2, 141, 
-	148, 5, 32, 17, 2, 142, 148, 5, 30, 16, 2, 143, 144, 7, 9, 2, 2, 144, 145, 
-	5, 28, 15, 2, 145, 146, 7, 10, 2, 2, 146, 148, 3, 2, 2, 2, 147, 139, 3, 
-	2, 2, 2, 147, 141, 3, 2, 2, 2, 147, 142, 3, 2, 2, 2, 147, 143, 3, 2, 2, 
-	2, 148, 160, 3, 2, 2, 2, 149, 150, 12, 6, 2, 2, 150, 151, 9, 4, 2, 2, 151, 
-	159, 5, 28, 15, 7, 152, 153, 12, 5, 2, 2, 153, 154, 9, 5, 2, 2, 154, 159, 
-	5, 28, 15, 6, 155, 156, 12, 4, 2, 2, 156, 157, 7, 8, 2, 2, 157, 159, 5, 
-	28, 15, 5, 158, 149, 3, 2, 2, 2, 158, 152, 3, 2, 2, 2, 158, 155, 3, 2, 
-	2, 2, 159, 162, 3, 2, 2, 2, 160, 158, 3, 2, 2, 2, 160, 161, 3, 2, 2, 2, 
-	161, 29, 3, 2, 2, 2, 162, 160, 3, 2, 2, 2, 163, 167, 5, 16, 9, 2, 164, 
-	167, 5, 18, 10, 2, 165, 167, 5, 20, 11, 2, 166, 163, 3, 2, 2, 2, 166, 164, 
-	3, 2, 2, 2, 166, 165, 3, 2, 2, 2, 167, 31, 3, 2, 2, 2, 168, 171, 5, 34, 
-	18, 2, 169, 171, 5, 36, 19, 2, 170, 168, 3, 2, 2, 2, 170, 169, 3, 2, 2, 
-	2, 171, 33, 3, 2, 2, 2, 172, 173, 9, 6, 2, 2, 173, 174, 7, 9, 2, 2, 174, 
-	175, 5, 38, 20, 2, 175, 176, 7, 10, 2, 2, 176, 185, 3, 2, 2, 2, 177, 178, 
-	7, 26, 2, 2, 178, 181, 7, 9, 2, 2, 179, 182, 7, 3, 2, 2, 180, 182, 5, 38, 
-	20, 2, 181, 179, 3, 2, 2, 2, 181, 180, 3, 2, 2, 2, 182, 183, 3, 2, 2, 2, 
-	183, 185, 7, 10, 2, 2, 184, 172, 3, 2, 2, 2, 184, 177, 3, 2, 2, 2, 185, 
-	35, 3, 2, 2, 2, 186, 187, 5, 8, 5, 2, 187, 188, 7, 9, 2, 2, 188, 189, 5, 
-	38, 20, 2, 189, 190, 7, 10, 2, 2, 190, 201, 3, 2, 2, 2, 191, 192, 7, 27, 
-	2, 2, 192, 201, 5, 38, 20, 2, 193, 194, 7, 49, 2, 2, 194, 195, 7, 9, 2, 
-	2, 195, 196, 5, 38, 20, 2, 196, 197, 7, 19, 2, 2, 197, 198, 5, 6, 4, 2, 
-	198, 199, 7, 10, 2, 2, 199, 201, 3, 2, 2, 2, 200, 186, 3, 2, 2, 2, 200, 
-	191, 3, 2, 2, 2, 200, 193, 3, 2, 2, 2, 201, 37, 3, 2, 2, 2, 202, 207, 5, 
-	28, 15, 2, 203, 204, 7, 4, 2, 2, 204, 206, 5, 28, 15, 2, 205, 203, 3, 2, 
-	2, 2, 206, 209, 3, 2, 2, 2, 207, 205, 3, 2, 2, 2, 207, 208, 3, 2, 2, 2, 
-	208, 39, 3, 2, 2, 2, 209, 207, 3, 2, 2, 2, 210, 212, 5, 42, 22, 2, 211, 
-	213, 5, 10, 6, 2, 212, 211, 3, 2, 2, 2, 212, 213, 3, 2, 2, 2, 213, 221, 
-	3, 2, 2, 2, 214, 215, 7, 4, 2, 2, 215, 217, 5, 42, 22, 2, 216, 218, 5, 
-	10, 6, 2, 217, 216, 3, 2, 2, 2, 217, 218, 3, 2, 2, 2, 218, 220, 3, 2, 2, 
-	2, 219, 214, 3, 2, 2, 2, 220, 223, 3, 2, 2, 2, 221, 219, 3, 2, 2, 2, 221, 
-	222, 3, 2, 2, 2, 222, 41, 3, 2, 2, 2, 223, 221, 3, 2, 2, 2, 224, 230, 5, 
-	4, 3, 2, 225, 226, 7, 9, 2, 2, 226, 227, 5, 22, 12, 2, 227, 228, 7, 10, 
-	2, 2, 228, 230, 3, 2, 2, 2, 229, 224, 3, 2, 2, 2, 229, 225, 3, 2, 2, 2, 
-	230, 43, 3, 2, 2, 2, 231, 232, 7, 28, 2, 2, 232, 233, 5, 46, 24, 2, 233, 
-	45, 3, 2, 2, 2, 234, 235, 8, 24, 1, 2, 235, 236, 5, 28, 15, 2, 236, 237, 
-	5, 48, 25, 2, 237, 238, 5, 28, 15, 2, 238, 302, 3, 2, 2, 2, 239, 241, 5, 
-	28, 15, 2, 240, 242, 7, 36, 2, 2, 241, 240, 3, 2, 2, 2, 241, 242, 3, 2, 
-	2, 2, 242, 243, 3, 2, 2, 2, 243, 244, 7, 38, 2, 2, 244, 245, 5, 28, 15, 
-	2, 245, 246, 7, 39, 2, 2, 246, 247, 5, 28, 15, 2, 247, 302, 3, 2, 2, 2, 
-	248, 250, 5, 28, 15, 2, 249, 251, 7, 36, 2, 2, 250, 249, 3, 2, 2, 2, 250, 
-	251, 3, 2, 2, 2, 251, 252, 3, 2, 2, 2, 252, 253, 7, 40, 2, 2, 253, 254, 
-	7, 9, 2, 2, 254, 259, 5, 28, 15, 2, 255, 256, 7, 4, 2, 2, 256, 258, 5, 
-	28, 15, 2, 257, 255, 3, 2, 2, 2, 258, 261, 3, 2, 2, 2, 259, 257, 3, 2, 
-	2, 2, 259, 260, 3, 2, 2, 2, 260, 262, 3, 2, 2, 2, 261, 259, 3, 2, 2, 2, 
-	262, 263, 7, 10, 2, 2, 263, 302, 3, 2, 2, 2, 264, 266, 5, 28, 15, 2, 265, 
-	267, 7, 36, 2, 2, 266, 265, 3, 2, 2, 2, 266, 267, 3, 2, 2, 2, 267, 268, 
-	3, 2, 2, 2, 268, 269, 7, 40, 2, 2, 269, 270, 7, 9, 2, 2, 270, 271, 5, 22, 
-	12, 2, 271, 272, 7, 10, 2, 2, 272, 302, 3, 2, 2, 2, 273, 275, 5, 28, 15, 
-	2, 274, 276, 7, 36, 2, 2, 275, 274, 3, 2, 2, 2, 275, 276, 3, 2, 2, 2, 276, 
-	277, 3, 2, 2, 2, 277, 278, 7, 47, 2, 2, 278, 279, 5, 28, 15, 2, 279, 302, 
-	3, 2, 2, 2, 280, 281, 5, 28, 15, 2, 281, 283, 7, 37, 2, 2, 282, 284, 7, 
-	36, 2, 2, 283, 282, 3, 2, 2, 2, 283, 284, 3, 2, 2, 2, 284, 285, 3, 2, 2, 
-	2, 285, 286, 7, 41, 2, 2, 286, 302, 3, 2, 2, 2, 287, 288, 7, 48, 2, 2, 
-	288, 289, 7, 9, 2, 2, 289, 290, 5, 22, 12, 2, 290, 291, 7, 10, 2, 2, 291, 
-	302, 3, 2, 2, 2, 292, 294, 7, 62, 2, 2, 293, 292, 3, 2, 2, 2, 293, 294, 
-	3, 2, 2, 2, 294, 295, 3, 2, 2, 2, 295, 296, 7, 9, 2, 2, 296, 297, 5, 46, 
-	24, 2, 297, 298, 7, 10, 2, 2, 298, 302, 3, 2, 2, 2, 299, 300, 7, 36, 2, 
-	2, 300, 302, 5, 46, 24, 5, 301, 234, 3, 2, 2, 2, 301, 239, 3, 2, 2, 2, 
-	301, 248, 3, 2, 2, 2, 301, 264, 3, 2, 2, 2, 301, 273, 3, 2, 2, 2, 301, 
-	280, 3, 2, 2, 2, 301, 287, 3, 2, 2, 2, 301, 293, 3, 2, 2, 2, 301, 299, 
-	3, 2, 2, 2, 302, 311, 3, 2, 2, 2, 303, 304, 12, 4, 2, 2, 304, 305, 7, 39, 
-	2, 2, 305, 310, 5, 46, 24, 5, 306, 307, 12, 3, 2, 2, 307, 308, 7, 42, 2, 
-	2, 308, 310, 5, 46, 24, 4, 309, 303, 3, 2, 2, 2, 309, 306, 3, 2, 2, 2, 
-	310, 313, 3, 2, 2, 2, 311, 309, 3, 2, 2, 2, 311, 312, 3, 2, 2, 2, 312, 
-	47, 3, 2, 2, 2, 313, 311, 3, 2, 2, 2, 314, 315, 9, 7, 2, 2, 315, 49, 3, 
-	2, 2, 2, 316, 317, 7, 29, 2, 2, 317, 318, 7, 30, 2, 2, 318, 323, 5, 52, 
-	27, 2, 319, 320, 7, 4, 2, 2, 320, 322, 5, 52, 27, 2, 321, 319, 3, 2, 2, 
-	2, 322, 325, 3, 2, 2, 2, 323, 321, 3, 2, 2, 2, 323, 324, 3, 2, 2, 2, 324, 
-	51, 3, 2, 2, 2, 325, 323, 3, 2, 2, 2, 326, 327, 5, 28, 15, 2, 327, 53, 
-	3, 2, 2, 2, 328, 329, 7, 35, 2, 2, 329, 330, 5, 46, 24, 2, 330, 55, 3, 
-	2, 2, 2, 331, 332, 7, 31, 2, 2, 332, 333, 7, 30, 2, 2, 333, 338, 5, 58, 
-	30, 2, 334, 335, 7, 4, 2, 2, 335, 337, 5, 58, 30, 2, 336, 334, 3, 2, 2, 
-	2, 337, 340, 3, 2, 2, 2, 338, 336, 3, 2, 2, 2, 338, 339, 3, 2, 2, 2, 339, 
-	57, 3, 2, 2, 2, 340, 338, 3, 2, 2, 2, 341, 343, 5, 28, 15, 2, 342, 344, 
-	9, 8, 2, 2, 343, 342, 3, 2, 2, 2, 343, 344, 3, 2, 2, 2, 344, 349, 3, 2, 
-	2, 2, 345, 346, 7, 32, 2, 2, 346, 350, 7, 33, 2, 2, 347, 348, 7, 32, 2, 
-	2, 348, 350, 7, 34, 2, 2, 349, 345, 3, 2, 2, 2, 349, 347, 3, 2, 2, 2, 349, 
-	350, 3, 2, 2, 2, 350, 59, 3, 2, 2, 2, 351, 362, 7, 45, 2, 2, 352, 353, 
-	5, 16, 9, 2, 353, 354, 7, 4, 2, 2, 354, 356, 3, 2, 2, 2, 355, 352, 3, 2, 
-	2, 2, 355, 356, 3, 2, 2, 2, 356, 357, 3, 2, 2, 2, 357, 363, 5, 16, 9, 2, 
-	358, 359, 5, 16, 9, 2, 359, 360, 7, 46, 2, 2, 360, 361, 5, 16, 9, 2, 361, 
-	363, 3, 2, 2, 2, 362, 355, 3, 2, 2, 2, 362, 358, 3, 2, 2, 2, 363, 61, 3, 
-	2, 2, 2, 43, 77, 95, 98, 101, 104, 107, 110, 118, 123, 129, 134, 137, 147, 
-	158, 160, 166, 170, 181, 184, 200, 207, 212, 217, 221, 229, 241, 250, 259, 
-	266, 275, 283, 293, 301, 309, 311, 323, 338, 343, 349, 355, 362,
-}
-var deserializer = antlr.NewATNDeserializer(nil)
-var deserializedATN = deserializer.DeserializeFromUInt16(parserATN)
-
-var literalNames = []string{
-	"", "'*'", "','", "'/'", "'+'", "'-'", "'||'", "'('", "')'", "'='", "'>'", 
-	"'<'", "'>='", "'<='", "'<>'", "'~'", "'!~'",
-}
-var symbolicNames = []string{
-	"", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "AS", 
-	"SELECT", "FROM", "MAX", "SUM", "AVG", "MIN", "COUNT", "DISTINCT", "WHERE", 
-	"GROUP", "BY", "ORDER", "NULLS", "FIRST", "LAST", "HAVING", "NOT", "IS", 
-	"BETWEEN", "AND", "IN", "NULL", "OR", "ASC", "DESC", "LIMIT", "OFFSET", 
-	"LIKE", "EXISTS", "CAST", "INNER", "LEFT", "RIGHT", "JOIN", "ON", "UNION", 
-	"ALL", "DECIMAL_LITERAL", "ID", "TEXT_STRING", "TEXT_ALIAS", "BIND_VARIABLE", 
-	"COMMENT", "WS",
-}
-
-var ruleNames = []string{
-	"columnName", "tableName", "typeName", "functionName", "alias", "join", 
-	"union", "decimalLiteral", "textLiteral", "bind_variables", "selectStatement", 
-	"selectElements", "selectElement", "expr", "value", "functionCall", "aggregateFunction", 
-	"commonFunction", "functionArg", "tableSources", "tableSource", "whereClause", 
-	"logicExpression", "comparisonOperator", "groupByClause", "groupByItem", 
-	"havingClause", "orderByClause", "orderByExpression", "limitClause",
-}
-var decisionToDFA = make([]*antlr.DFA, len(deserializedATN.DecisionToState))
-
-func init() {
-	for index, ds := range deserializedATN.DecisionToState {
-		decisionToDFA[index] = antlr.NewDFA(ds, index)
-	}
-}
+var _ = sync.Once{}
 
 type SqlParser struct {
 	*antlr.BaseParser
 }
 
+var sqlParserStaticData struct {
+	once                   sync.Once
+	serializedATN          []int32
+	literalNames           []string
+	symbolicNames          []string
+	ruleNames              []string
+	predictionContextCache *antlr.PredictionContextCache
+	atn                    *antlr.ATN
+	decisionToDFA          []*antlr.DFA
+}
+
+func sqlParserInit() {
+	staticData := &sqlParserStaticData
+	staticData.literalNames = []string{
+		"", "'*'", "','", "'/'", "'+'", "'-'", "'||'", "'('", "')'", "'='",
+		"'>'", "'<'", "'>='", "'<='", "'<>'", "'~'", "'!~'", "'?[]'", "'!?[]'",
+	}
+	staticData.symbolicNames = []string{
+		"", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "",
+		"", "", "AS", "SELECT", "FROM", "MAX", "SUM", "AVG", "MIN", "COUNT",
+		"DISTINCT", "WHERE", "GROUP", "BY", "ORDER", "NULLS", "FIRST", "LAST",
+		"HAVING", "NOT", "IS", "BETWEEN", "AND", "IN", "NULL", "OR", "ASC",
+		"DESC", "LIMIT", "OFFSET", "LIKE", "EXISTS", "CAST", "INNER", "LEFT",
+		"RIGHT", "JOIN", "ON", "UNION", "ALL", "DECIMAL_LITERAL", "ID", "TEXT_STRING",
+		"TEXT_ALIAS", "BIND_VARIABLE", "COMMENT", "WS",
+	}
+	staticData.ruleNames = []string{
+		"columnName", "tableName", "typeName", "functionName", "alias", "join",
+		"union", "decimalLiteral", "textLiteral", "bind_variables", "selectStatement",
+		"selectElements", "selectElement", "expr", "value", "functionCall",
+		"aggregateFunction", "commonFunction", "functionArg", "tableSources",
+		"tableSource", "whereClause", "logicExpression", "comparisonOperator",
+		"groupByClause", "groupByItem", "havingClause", "orderByClause", "orderByExpression",
+		"limitClause",
+	}
+	staticData.predictionContextCache = antlr.NewPredictionContextCache()
+	staticData.serializedATN = []int32{
+		4, 1, 63, 363, 2, 0, 7, 0, 2, 1, 7, 1, 2, 2, 7, 2, 2, 3, 7, 3, 2, 4, 7,
+		4, 2, 5, 7, 5, 2, 6, 7, 6, 2, 7, 7, 7, 2, 8, 7, 8, 2, 9, 7, 9, 2, 10, 7,
+		10, 2, 11, 7, 11, 2, 12, 7, 12, 2, 13, 7, 13, 2, 14, 7, 14, 2, 15, 7, 15,
+		2, 16, 7, 16, 2, 17, 7, 17, 2, 18, 7, 18, 2, 19, 7, 19, 2, 20, 7, 20, 2,
+		21, 7, 21, 2, 22, 7, 22, 2, 23, 7, 23, 2, 24, 7, 24, 2, 25, 7, 25, 2, 26,
+		7, 26, 2, 27, 7, 27, 2, 28, 7, 28, 2, 29, 7, 29, 1, 0, 1, 0, 1, 1, 1, 1,
+		1, 2, 1, 2, 1, 3, 1, 3, 1, 4, 1, 4, 1, 5, 1, 5, 1, 5, 1, 6, 1, 6, 3, 6,
+		76, 8, 6, 1, 7, 1, 7, 1, 8, 1, 8, 1, 9, 1, 9, 1, 10, 1, 10, 1, 10, 1, 10,
+		1, 10, 1, 10, 1, 10, 1, 10, 1, 10, 1, 10, 3, 10, 94, 8, 10, 1, 10, 3, 10,
+		97, 8, 10, 1, 10, 3, 10, 100, 8, 10, 1, 10, 3, 10, 103, 8, 10, 1, 10, 3,
+		10, 106, 8, 10, 1, 10, 3, 10, 109, 8, 10, 1, 10, 1, 10, 1, 10, 1, 10, 5,
+		10, 115, 8, 10, 10, 10, 12, 10, 118, 9, 10, 1, 11, 1, 11, 3, 11, 122, 8,
+		11, 1, 11, 1, 11, 5, 11, 126, 8, 11, 10, 11, 12, 11, 129, 9, 11, 1, 12,
+		1, 12, 3, 12, 133, 8, 12, 1, 12, 3, 12, 136, 8, 12, 1, 13, 1, 13, 1, 13,
+		1, 13, 1, 13, 1, 13, 1, 13, 1, 13, 3, 13, 146, 8, 13, 1, 13, 1, 13, 1,
+		13, 1, 13, 1, 13, 1, 13, 1, 13, 1, 13, 1, 13, 5, 13, 157, 8, 13, 10, 13,
+		12, 13, 160, 9, 13, 1, 14, 1, 14, 1, 14, 3, 14, 165, 8, 14, 1, 15, 1, 15,
+		3, 15, 169, 8, 15, 1, 16, 1, 16, 1, 16, 1, 16, 1, 16, 1, 16, 1, 16, 1,
+		16, 1, 16, 3, 16, 180, 8, 16, 1, 16, 3, 16, 183, 8, 16, 1, 17, 1, 17, 1,
+		17, 1, 17, 1, 17, 1, 17, 1, 17, 1, 17, 1, 17, 1, 17, 1, 17, 1, 17, 1, 17,
+		1, 17, 3, 17, 199, 8, 17, 1, 18, 1, 18, 1, 18, 5, 18, 204, 8, 18, 10, 18,
+		12, 18, 207, 9, 18, 1, 19, 1, 19, 3, 19, 211, 8, 19, 1, 19, 1, 19, 1, 19,
+		3, 19, 216, 8, 19, 5, 19, 218, 8, 19, 10, 19, 12, 19, 221, 9, 19, 1, 20,
+		1, 20, 1, 20, 1, 20, 1, 20, 3, 20, 228, 8, 20, 1, 21, 1, 21, 1, 21, 1,
+		22, 1, 22, 1, 22, 1, 22, 1, 22, 1, 22, 1, 22, 3, 22, 240, 8, 22, 1, 22,
+		1, 22, 1, 22, 1, 22, 1, 22, 1, 22, 1, 22, 3, 22, 249, 8, 22, 1, 22, 1,
+		22, 1, 22, 1, 22, 1, 22, 5, 22, 256, 8, 22, 10, 22, 12, 22, 259, 9, 22,
+		1, 22, 1, 22, 1, 22, 1, 22, 3, 22, 265, 8, 22, 1, 22, 1, 22, 1, 22, 1,
+		22, 1, 22, 1, 22, 1, 22, 3, 22, 274, 8, 22, 1, 22, 1, 22, 1, 22, 1, 22,
+		1, 22, 1, 22, 3, 22, 282, 8, 22, 1, 22, 1, 22, 1, 22, 1, 22, 1, 22, 1,
+		22, 1, 22, 1, 22, 3, 22, 292, 8, 22, 1, 22, 1, 22, 1, 22, 1, 22, 1, 22,
+		1, 22, 3, 22, 300, 8, 22, 1, 22, 1, 22, 1, 22, 1, 22, 1, 22, 1, 22, 5,
+		22, 308, 8, 22, 10, 22, 12, 22, 311, 9, 22, 1, 23, 1, 23, 1, 24, 1, 24,
+		1, 24, 1, 24, 1, 24, 5, 24, 320, 8, 24, 10, 24, 12, 24, 323, 9, 24, 1,
+		25, 1, 25, 1, 26, 1, 26, 1, 26, 1, 27, 1, 27, 1, 27, 1, 27, 1, 27, 5, 27,
+		335, 8, 27, 10, 27, 12, 27, 338, 9, 27, 1, 28, 1, 28, 3, 28, 342, 8, 28,
+		1, 28, 1, 28, 1, 28, 1, 28, 3, 28, 348, 8, 28, 1, 29, 1, 29, 1, 29, 1,
+		29, 3, 29, 354, 8, 29, 1, 29, 1, 29, 1, 29, 1, 29, 1, 29, 3, 29, 361, 8,
+		29, 1, 29, 0, 3, 20, 26, 44, 30, 0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20,
+		22, 24, 26, 28, 30, 32, 34, 36, 38, 40, 42, 44, 46, 48, 50, 52, 54, 56,
+		58, 0, 7, 2, 0, 58, 58, 60, 60, 1, 0, 50, 52, 2, 0, 1, 1, 3, 3, 1, 0, 4,
+		5, 1, 0, 22, 25, 1, 0, 9, 18, 1, 0, 43, 44, 386, 0, 60, 1, 0, 0, 0, 2,
+		62, 1, 0, 0, 0, 4, 64, 1, 0, 0, 0, 6, 66, 1, 0, 0, 0, 8, 68, 1, 0, 0, 0,
+		10, 70, 1, 0, 0, 0, 12, 73, 1, 0, 0, 0, 14, 77, 1, 0, 0, 0, 16, 79, 1,
+		0, 0, 0, 18, 81, 1, 0, 0, 0, 20, 83, 1, 0, 0, 0, 22, 121, 1, 0, 0, 0, 24,
+		130, 1, 0, 0, 0, 26, 145, 1, 0, 0, 0, 28, 164, 1, 0, 0, 0, 30, 168, 1,
+		0, 0, 0, 32, 182, 1, 0, 0, 0, 34, 198, 1, 0, 0, 0, 36, 200, 1, 0, 0, 0,
+		38, 208, 1, 0, 0, 0, 40, 227, 1, 0, 0, 0, 42, 229, 1, 0, 0, 0, 44, 299,
+		1, 0, 0, 0, 46, 312, 1, 0, 0, 0, 48, 314, 1, 0, 0, 0, 50, 324, 1, 0, 0,
+		0, 52, 326, 1, 0, 0, 0, 54, 329, 1, 0, 0, 0, 56, 339, 1, 0, 0, 0, 58, 349,
+		1, 0, 0, 0, 60, 61, 5, 58, 0, 0, 61, 1, 1, 0, 0, 0, 62, 63, 5, 58, 0, 0,
+		63, 3, 1, 0, 0, 0, 64, 65, 5, 58, 0, 0, 65, 5, 1, 0, 0, 0, 66, 67, 5, 58,
+		0, 0, 67, 7, 1, 0, 0, 0, 68, 69, 7, 0, 0, 0, 69, 9, 1, 0, 0, 0, 70, 71,
+		7, 1, 0, 0, 71, 72, 5, 53, 0, 0, 72, 11, 1, 0, 0, 0, 73, 75, 5, 55, 0,
+		0, 74, 76, 5, 56, 0, 0, 75, 74, 1, 0, 0, 0, 75, 76, 1, 0, 0, 0, 76, 13,
+		1, 0, 0, 0, 77, 78, 5, 57, 0, 0, 78, 15, 1, 0, 0, 0, 79, 80, 5, 59, 0,
+		0, 80, 17, 1, 0, 0, 0, 81, 82, 5, 61, 0, 0, 82, 19, 1, 0, 0, 0, 83, 84,
+		6, 10, -1, 0, 84, 85, 5, 20, 0, 0, 85, 86, 3, 22, 11, 0, 86, 87, 5, 21,
+		0, 0, 87, 93, 3, 38, 19, 0, 88, 89, 3, 10, 5, 0, 89, 90, 3, 38, 19, 0,
+		90, 91, 5, 54, 0, 0, 91, 92, 3, 44, 22, 0, 92, 94, 1, 0, 0, 0, 93, 88,
+		1, 0, 0, 0, 93, 94, 1, 0, 0, 0, 94, 96, 1, 0, 0, 0, 95, 97, 3, 42, 21,
+		0, 96, 95, 1, 0, 0, 0, 96, 97, 1, 0, 0, 0, 97, 99, 1, 0, 0, 0, 98, 100,
+		3, 48, 24, 0, 99, 98, 1, 0, 0, 0, 99, 100, 1, 0, 0, 0, 100, 102, 1, 0,
+		0, 0, 101, 103, 3, 52, 26, 0, 102, 101, 1, 0, 0, 0, 102, 103, 1, 0, 0,
+		0, 103, 105, 1, 0, 0, 0, 104, 106, 3, 54, 27, 0, 105, 104, 1, 0, 0, 0,
+		105, 106, 1, 0, 0, 0, 106, 108, 1, 0, 0, 0, 107, 109, 3, 58, 29, 0, 108,
+		107, 1, 0, 0, 0, 108, 109, 1, 0, 0, 0, 109, 116, 1, 0, 0, 0, 110, 111,
+		10, 1, 0, 0, 111, 112, 3, 12, 6, 0, 112, 113, 3, 20, 10, 2, 113, 115, 1,
+		0, 0, 0, 114, 110, 1, 0, 0, 0, 115, 118, 1, 0, 0, 0, 116, 114, 1, 0, 0,
+		0, 116, 117, 1, 0, 0, 0, 117, 21, 1, 0, 0, 0, 118, 116, 1, 0, 0, 0, 119,
+		122, 5, 1, 0, 0, 120, 122, 3, 24, 12, 0, 121, 119, 1, 0, 0, 0, 121, 120,
+		1, 0, 0, 0, 122, 127, 1, 0, 0, 0, 123, 124, 5, 2, 0, 0, 124, 126, 3, 24,
+		12, 0, 125, 123, 1, 0, 0, 0, 126, 129, 1, 0, 0, 0, 127, 125, 1, 0, 0, 0,
+		127, 128, 1, 0, 0, 0, 128, 23, 1, 0, 0, 0, 129, 127, 1, 0, 0, 0, 130, 135,
+		3, 26, 13, 0, 131, 133, 5, 19, 0, 0, 132, 131, 1, 0, 0, 0, 132, 133, 1,
+		0, 0, 0, 133, 134, 1, 0, 0, 0, 134, 136, 3, 8, 4, 0, 135, 132, 1, 0, 0,
+		0, 135, 136, 1, 0, 0, 0, 136, 25, 1, 0, 0, 0, 137, 138, 6, 13, -1, 0, 138,
+		146, 3, 0, 0, 0, 139, 146, 3, 30, 15, 0, 140, 146, 3, 28, 14, 0, 141, 142,
+		5, 7, 0, 0, 142, 143, 3, 26, 13, 0, 143, 144, 5, 8, 0, 0, 144, 146, 1,
+		0, 0, 0, 145, 137, 1, 0, 0, 0, 145, 139, 1, 0, 0, 0, 145, 140, 1, 0, 0,
+		0, 145, 141, 1, 0, 0, 0, 146, 158, 1, 0, 0, 0, 147, 148, 10, 4, 0, 0, 148,
+		149, 7, 2, 0, 0, 149, 157, 3, 26, 13, 5, 150, 151, 10, 3, 0, 0, 151, 152,
+		7, 3, 0, 0, 152, 157, 3, 26, 13, 4, 153, 154, 10, 2, 0, 0, 154, 155, 5,
+		6, 0, 0, 155, 157, 3, 26, 13, 3, 156, 147, 1, 0, 0, 0, 156, 150, 1, 0,
+		0, 0, 156, 153, 1, 0, 0, 0, 157, 160, 1, 0, 0, 0, 158, 156, 1, 0, 0, 0,
+		158, 159, 1, 0, 0, 0, 159, 27, 1, 0, 0, 0, 160, 158, 1, 0, 0, 0, 161, 165,
+		3, 14, 7, 0, 162, 165, 3, 16, 8, 0, 163, 165, 3, 18, 9, 0, 164, 161, 1,
+		0, 0, 0, 164, 162, 1, 0, 0, 0, 164, 163, 1, 0, 0, 0, 165, 29, 1, 0, 0,
+		0, 166, 169, 3, 32, 16, 0, 167, 169, 3, 34, 17, 0, 168, 166, 1, 0, 0, 0,
+		168, 167, 1, 0, 0, 0, 169, 31, 1, 0, 0, 0, 170, 171, 7, 4, 0, 0, 171, 172,
+		5, 7, 0, 0, 172, 173, 3, 36, 18, 0, 173, 174, 5, 8, 0, 0, 174, 183, 1,
+		0, 0, 0, 175, 176, 5, 26, 0, 0, 176, 179, 5, 7, 0, 0, 177, 180, 5, 1, 0,
+		0, 178, 180, 3, 36, 18, 0, 179, 177, 1, 0, 0, 0, 179, 178, 1, 0, 0, 0,
+		180, 181, 1, 0, 0, 0, 181, 183, 5, 8, 0, 0, 182, 170, 1, 0, 0, 0, 182,
+		175, 1, 0, 0, 0, 183, 33, 1, 0, 0, 0, 184, 185, 3, 6, 3, 0, 185, 186, 5,
+		7, 0, 0, 186, 187, 3, 36, 18, 0, 187, 188, 5, 8, 0, 0, 188, 199, 1, 0,
+		0, 0, 189, 190, 5, 27, 0, 0, 190, 199, 3, 36, 18, 0, 191, 192, 5, 49, 0,
+		0, 192, 193, 5, 7, 0, 0, 193, 194, 3, 36, 18, 0, 194, 195, 5, 19, 0, 0,
+		195, 196, 3, 4, 2, 0, 196, 197, 5, 8, 0, 0, 197, 199, 1, 0, 0, 0, 198,
+		184, 1, 0, 0, 0, 198, 189, 1, 0, 0, 0, 198, 191, 1, 0, 0, 0, 199, 35, 1,
+		0, 0, 0, 200, 205, 3, 26, 13, 0, 201, 202, 5, 2, 0, 0, 202, 204, 3, 26,
+		13, 0, 203, 201, 1, 0, 0, 0, 204, 207, 1, 0, 0, 0, 205, 203, 1, 0, 0, 0,
+		205, 206, 1, 0, 0, 0, 206, 37, 1, 0, 0, 0, 207, 205, 1, 0, 0, 0, 208, 210,
+		3, 40, 20, 0, 209, 211, 3, 8, 4, 0, 210, 209, 1, 0, 0, 0, 210, 211, 1,
+		0, 0, 0, 211, 219, 1, 0, 0, 0, 212, 213, 5, 2, 0, 0, 213, 215, 3, 40, 20,
+		0, 214, 216, 3, 8, 4, 0, 215, 214, 1, 0, 0, 0, 215, 216, 1, 0, 0, 0, 216,
+		218, 1, 0, 0, 0, 217, 212, 1, 0, 0, 0, 218, 221, 1, 0, 0, 0, 219, 217,
+		1, 0, 0, 0, 219, 220, 1, 0, 0, 0, 220, 39, 1, 0, 0, 0, 221, 219, 1, 0,
+		0, 0, 222, 228, 3, 2, 1, 0, 223, 224, 5, 7, 0, 0, 224, 225, 3, 20, 10,
+		0, 225, 226, 5, 8, 0, 0, 226, 228, 1, 0, 0, 0, 227, 222, 1, 0, 0, 0, 227,
+		223, 1, 0, 0, 0, 228, 41, 1, 0, 0, 0, 229, 230, 5, 28, 0, 0, 230, 231,
+		3, 44, 22, 0, 231, 43, 1, 0, 0, 0, 232, 233, 6, 22, -1, 0, 233, 234, 3,
+		26, 13, 0, 234, 235, 3, 46, 23, 0, 235, 236, 3, 26, 13, 0, 236, 300, 1,
+		0, 0, 0, 237, 239, 3, 26, 13, 0, 238, 240, 5, 36, 0, 0, 239, 238, 1, 0,
+		0, 0, 239, 240, 1, 0, 0, 0, 240, 241, 1, 0, 0, 0, 241, 242, 5, 38, 0, 0,
+		242, 243, 3, 26, 13, 0, 243, 244, 5, 39, 0, 0, 244, 245, 3, 26, 13, 0,
+		245, 300, 1, 0, 0, 0, 246, 248, 3, 26, 13, 0, 247, 249, 5, 36, 0, 0, 248,
+		247, 1, 0, 0, 0, 248, 249, 1, 0, 0, 0, 249, 250, 1, 0, 0, 0, 250, 251,
+		5, 40, 0, 0, 251, 252, 5, 7, 0, 0, 252, 257, 3, 26, 13, 0, 253, 254, 5,
+		2, 0, 0, 254, 256, 3, 26, 13, 0, 255, 253, 1, 0, 0, 0, 256, 259, 1, 0,
+		0, 0, 257, 255, 1, 0, 0, 0, 257, 258, 1, 0, 0, 0, 258, 260, 1, 0, 0, 0,
+		259, 257, 1, 0, 0, 0, 260, 261, 5, 8, 0, 0, 261, 300, 1, 0, 0, 0, 262,
+		264, 3, 26, 13, 0, 263, 265, 5, 36, 0, 0, 264, 263, 1, 0, 0, 0, 264, 265,
+		1, 0, 0, 0, 265, 266, 1, 0, 0, 0, 266, 267, 5, 40, 0, 0, 267, 268, 5, 7,
+		0, 0, 268, 269, 3, 20, 10, 0, 269, 270, 5, 8, 0, 0, 270, 300, 1, 0, 0,
+		0, 271, 273, 3, 26, 13, 0, 272, 274, 5, 36, 0, 0, 273, 272, 1, 0, 0, 0,
+		273, 274, 1, 0, 0, 0, 274, 275, 1, 0, 0, 0, 275, 276, 5, 47, 0, 0, 276,
+		277, 3, 26, 13, 0, 277, 300, 1, 0, 0, 0, 278, 279, 3, 26, 13, 0, 279, 281,
+		5, 37, 0, 0, 280, 282, 5, 36, 0, 0, 281, 280, 1, 0, 0, 0, 281, 282, 1,
+		0, 0, 0, 282, 283, 1, 0, 0, 0, 283, 284, 5, 41, 0, 0, 284, 300, 1, 0, 0,
+		0, 285, 286, 5, 48, 0, 0, 286, 287, 5, 7, 0, 0, 287, 288, 3, 20, 10, 0,
+		288, 289, 5, 8, 0, 0, 289, 300, 1, 0, 0, 0, 290, 292, 5, 62, 0, 0, 291,
+		290, 1, 0, 0, 0, 291, 292, 1, 0, 0, 0, 292, 293, 1, 0, 0, 0, 293, 294,
+		5, 7, 0, 0, 294, 295, 3, 44, 22, 0, 295, 296, 5, 8, 0, 0, 296, 300, 1,
+		0, 0, 0, 297, 298, 5, 36, 0, 0, 298, 300, 3, 44, 22, 3, 299, 232, 1, 0,
+		0, 0, 299, 237, 1, 0, 0, 0, 299, 246, 1, 0, 0, 0, 299, 262, 1, 0, 0, 0,
+		299, 271, 1, 0, 0, 0, 299, 278, 1, 0, 0, 0, 299, 285, 1, 0, 0, 0, 299,
+		291, 1, 0, 0, 0, 299, 297, 1, 0, 0, 0, 300, 309, 1, 0, 0, 0, 301, 302,
+		10, 2, 0, 0, 302, 303, 5, 39, 0, 0, 303, 308, 3, 44, 22, 3, 304, 305, 10,
+		1, 0, 0, 305, 306, 5, 42, 0, 0, 306, 308, 3, 44, 22, 2, 307, 301, 1, 0,
+		0, 0, 307, 304, 1, 0, 0, 0, 308, 311, 1, 0, 0, 0, 309, 307, 1, 0, 0, 0,
+		309, 310, 1, 0, 0, 0, 310, 45, 1, 0, 0, 0, 311, 309, 1, 0, 0, 0, 312, 313,
+		7, 5, 0, 0, 313, 47, 1, 0, 0, 0, 314, 315, 5, 29, 0, 0, 315, 316, 5, 30,
+		0, 0, 316, 321, 3, 50, 25, 0, 317, 318, 5, 2, 0, 0, 318, 320, 3, 50, 25,
+		0, 319, 317, 1, 0, 0, 0, 320, 323, 1, 0, 0, 0, 321, 319, 1, 0, 0, 0, 321,
+		322, 1, 0, 0, 0, 322, 49, 1, 0, 0, 0, 323, 321, 1, 0, 0, 0, 324, 325, 3,
+		26, 13, 0, 325, 51, 1, 0, 0, 0, 326, 327, 5, 35, 0, 0, 327, 328, 3, 44,
+		22, 0, 328, 53, 1, 0, 0, 0, 329, 330, 5, 31, 0, 0, 330, 331, 5, 30, 0,
+		0, 331, 336, 3, 56, 28, 0, 332, 333, 5, 2, 0, 0, 333, 335, 3, 56, 28, 0,
+		334, 332, 1, 0, 0, 0, 335, 338, 1, 0, 0, 0, 336, 334, 1, 0, 0, 0, 336,
+		337, 1, 0, 0, 0, 337, 55, 1, 0, 0, 0, 338, 336, 1, 0, 0, 0, 339, 341, 3,
+		26, 13, 0, 340, 342, 7, 6, 0, 0, 341, 340, 1, 0, 0, 0, 341, 342, 1, 0,
+		0, 0, 342, 347, 1, 0, 0, 0, 343, 344, 5, 32, 0, 0, 344, 348, 5, 33, 0,
+		0, 345, 346, 5, 32, 0, 0, 346, 348, 5, 34, 0, 0, 347, 343, 1, 0, 0, 0,
+		347, 345, 1, 0, 0, 0, 347, 348, 1, 0, 0, 0, 348, 57, 1, 0, 0, 0, 349, 360,
+		5, 45, 0, 0, 350, 351, 3, 14, 7, 0, 351, 352, 5, 2, 0, 0, 352, 354, 1,
+		0, 0, 0, 353, 350, 1, 0, 0, 0, 353, 354, 1, 0, 0, 0, 354, 355, 1, 0, 0,
+		0, 355, 361, 3, 14, 7, 0, 356, 357, 3, 14, 7, 0, 357, 358, 5, 46, 0, 0,
+		358, 359, 3, 14, 7, 0, 359, 361, 1, 0, 0, 0, 360, 353, 1, 0, 0, 0, 360,
+		356, 1, 0, 0, 0, 361, 59, 1, 0, 0, 0, 41, 75, 93, 96, 99, 102, 105, 108,
+		116, 121, 127, 132, 135, 145, 156, 158, 164, 168, 179, 182, 198, 205, 210,
+		215, 219, 227, 239, 248, 257, 264, 273, 281, 291, 299, 307, 309, 321, 336,
+		341, 347, 353, 360,
+	}
+	deserializer := antlr.NewATNDeserializer(nil)
+	staticData.atn = deserializer.Deserialize(staticData.serializedATN)
+	atn := staticData.atn
+	staticData.decisionToDFA = make([]*antlr.DFA, len(atn.DecisionToState))
+	decisionToDFA := staticData.decisionToDFA
+	for index, state := range atn.DecisionToState {
+		decisionToDFA[index] = antlr.NewDFA(state, index)
+	}
+}
+
+// SqlParserInit initializes any static state used to implement SqlParser. By default the
+// static state used to implement the parser is lazily initialized during the first call to
+// NewSqlParser(). You can call this function if you wish to initialize the static state ahead
+// of time.
+func SqlParserInit() {
+	staticData := &sqlParserStaticData
+	staticData.once.Do(sqlParserInit)
+}
+
+// NewSqlParser produces a new parser instance for the optional input antlr.TokenStream.
 func NewSqlParser(input antlr.TokenStream) *SqlParser {
+	SqlParserInit()
 	this := new(SqlParser)
-
 	this.BaseParser = antlr.NewBaseParser(input)
-
-	this.Interpreter = antlr.NewParserATNSimulator(this, deserializedATN, decisionToDFA, antlr.NewPredictionContextCache())
-	this.RuleNames = ruleNames
-	this.LiteralNames = literalNames
-	this.SymbolicNames = symbolicNames
+	staticData := &sqlParserStaticData
+	this.Interpreter = antlr.NewParserATNSimulator(this, staticData.atn, staticData.decisionToDFA, staticData.predictionContextCache)
+	this.RuleNames = staticData.ruleNames
+	this.LiteralNames = staticData.literalNames
+	this.SymbolicNames = staticData.symbolicNames
 	this.GrammarFileName = "Sql.g4"
 
 	return this
@@ -235,102 +256,104 @@ func NewSqlParser(input antlr.TokenStream) *SqlParser {
 
 // SqlParser tokens.
 const (
-	SqlParserEOF = antlr.TokenEOF
-	SqlParserT__0 = 1
-	SqlParserT__1 = 2
-	SqlParserT__2 = 3
-	SqlParserT__3 = 4
-	SqlParserT__4 = 5
-	SqlParserT__5 = 6
-	SqlParserT__6 = 7
-	SqlParserT__7 = 8
-	SqlParserT__8 = 9
-	SqlParserT__9 = 10
-	SqlParserT__10 = 11
-	SqlParserT__11 = 12
-	SqlParserT__12 = 13
-	SqlParserT__13 = 14
-	SqlParserT__14 = 15
-	SqlParserT__15 = 16
-	SqlParserAS = 17
-	SqlParserSELECT = 18
-	SqlParserFROM = 19
-	SqlParserMAX = 20
-	SqlParserSUM = 21
-	SqlParserAVG = 22
-	SqlParserMIN = 23
-	SqlParserCOUNT = 24
-	SqlParserDISTINCT = 25
-	SqlParserWHERE = 26
-	SqlParserGROUP = 27
-	SqlParserBY = 28
-	SqlParserORDER = 29
-	SqlParserNULLS = 30
-	SqlParserFIRST = 31
-	SqlParserLAST = 32
-	SqlParserHAVING = 33
-	SqlParserNOT = 34
-	SqlParserIS = 35
-	SqlParserBETWEEN = 36
-	SqlParserAND = 37
-	SqlParserIN = 38
-	SqlParserNULL = 39
-	SqlParserOR = 40
-	SqlParserASC = 41
-	SqlParserDESC = 42
-	SqlParserLIMIT = 43
-	SqlParserOFFSET = 44
-	SqlParserLIKE = 45
-	SqlParserEXISTS = 46
-	SqlParserCAST = 47
-	SqlParserINNER = 48
-	SqlParserLEFT = 49
-	SqlParserRIGHT = 50
-	SqlParserJOIN = 51
-	SqlParserON = 52
-	SqlParserUNION = 53
-	SqlParserALL = 54
-	SqlParserDECIMAL_LITERAL = 55
-	SqlParserID = 56
-	SqlParserTEXT_STRING = 57
-	SqlParserTEXT_ALIAS = 58
-	SqlParserBIND_VARIABLE = 59
-	SqlParserCOMMENT = 60
-	SqlParserWS = 61
+	SqlParserEOF             = antlr.TokenEOF
+	SqlParserT__0            = 1
+	SqlParserT__1            = 2
+	SqlParserT__2            = 3
+	SqlParserT__3            = 4
+	SqlParserT__4            = 5
+	SqlParserT__5            = 6
+	SqlParserT__6            = 7
+	SqlParserT__7            = 8
+	SqlParserT__8            = 9
+	SqlParserT__9            = 10
+	SqlParserT__10           = 11
+	SqlParserT__11           = 12
+	SqlParserT__12           = 13
+	SqlParserT__13           = 14
+	SqlParserT__14           = 15
+	SqlParserT__15           = 16
+	SqlParserT__16           = 17
+	SqlParserT__17           = 18
+	SqlParserAS              = 19
+	SqlParserSELECT          = 20
+	SqlParserFROM            = 21
+	SqlParserMAX             = 22
+	SqlParserSUM             = 23
+	SqlParserAVG             = 24
+	SqlParserMIN             = 25
+	SqlParserCOUNT           = 26
+	SqlParserDISTINCT        = 27
+	SqlParserWHERE           = 28
+	SqlParserGROUP           = 29
+	SqlParserBY              = 30
+	SqlParserORDER           = 31
+	SqlParserNULLS           = 32
+	SqlParserFIRST           = 33
+	SqlParserLAST            = 34
+	SqlParserHAVING          = 35
+	SqlParserNOT             = 36
+	SqlParserIS              = 37
+	SqlParserBETWEEN         = 38
+	SqlParserAND             = 39
+	SqlParserIN              = 40
+	SqlParserNULL            = 41
+	SqlParserOR              = 42
+	SqlParserASC             = 43
+	SqlParserDESC            = 44
+	SqlParserLIMIT           = 45
+	SqlParserOFFSET          = 46
+	SqlParserLIKE            = 47
+	SqlParserEXISTS          = 48
+	SqlParserCAST            = 49
+	SqlParserINNER           = 50
+	SqlParserLEFT            = 51
+	SqlParserRIGHT           = 52
+	SqlParserJOIN            = 53
+	SqlParserON              = 54
+	SqlParserUNION           = 55
+	SqlParserALL             = 56
+	SqlParserDECIMAL_LITERAL = 57
+	SqlParserID              = 58
+	SqlParserTEXT_STRING     = 59
+	SqlParserTEXT_ALIAS      = 60
+	SqlParserBIND_VARIABLE   = 61
+	SqlParserCOMMENT         = 62
+	SqlParserWS              = 63
 )
 
 // SqlParser rules.
 const (
-	SqlParserRULE_columnName = 0
-	SqlParserRULE_tableName = 1
-	SqlParserRULE_typeName = 2
-	SqlParserRULE_functionName = 3
-	SqlParserRULE_alias = 4
-	SqlParserRULE_join = 5
-	SqlParserRULE_union = 6
-	SqlParserRULE_decimalLiteral = 7
-	SqlParserRULE_textLiteral = 8
-	SqlParserRULE_bind_variables = 9
-	SqlParserRULE_selectStatement = 10
-	SqlParserRULE_selectElements = 11
-	SqlParserRULE_selectElement = 12
-	SqlParserRULE_expr = 13
-	SqlParserRULE_value = 14
-	SqlParserRULE_functionCall = 15
-	SqlParserRULE_aggregateFunction = 16
-	SqlParserRULE_commonFunction = 17
-	SqlParserRULE_functionArg = 18
-	SqlParserRULE_tableSources = 19
-	SqlParserRULE_tableSource = 20
-	SqlParserRULE_whereClause = 21
-	SqlParserRULE_logicExpression = 22
+	SqlParserRULE_columnName         = 0
+	SqlParserRULE_tableName          = 1
+	SqlParserRULE_typeName           = 2
+	SqlParserRULE_functionName       = 3
+	SqlParserRULE_alias              = 4
+	SqlParserRULE_join               = 5
+	SqlParserRULE_union              = 6
+	SqlParserRULE_decimalLiteral     = 7
+	SqlParserRULE_textLiteral        = 8
+	SqlParserRULE_bind_variables     = 9
+	SqlParserRULE_selectStatement    = 10
+	SqlParserRULE_selectElements     = 11
+	SqlParserRULE_selectElement      = 12
+	SqlParserRULE_expr               = 13
+	SqlParserRULE_value              = 14
+	SqlParserRULE_functionCall       = 15
+	SqlParserRULE_aggregateFunction  = 16
+	SqlParserRULE_commonFunction     = 17
+	SqlParserRULE_functionArg        = 18
+	SqlParserRULE_tableSources       = 19
+	SqlParserRULE_tableSource        = 20
+	SqlParserRULE_whereClause        = 21
+	SqlParserRULE_logicExpression    = 22
 	SqlParserRULE_comparisonOperator = 23
-	SqlParserRULE_groupByClause = 24
-	SqlParserRULE_groupByItem = 25
-	SqlParserRULE_havingClause = 26
-	SqlParserRULE_orderByClause = 27
-	SqlParserRULE_orderByExpression = 28
-	SqlParserRULE_limitClause = 29
+	SqlParserRULE_groupByClause      = 24
+	SqlParserRULE_groupByItem        = 25
+	SqlParserRULE_havingClause       = 26
+	SqlParserRULE_orderByClause      = 27
+	SqlParserRULE_orderByExpression  = 28
+	SqlParserRULE_limitClause        = 29
 )
 
 // IColumnNameContext is an interface to support dynamic dispatch.
@@ -339,6 +362,9 @@ type IColumnNameContext interface {
 
 	// GetParser returns the parser.
 	GetParser() antlr.Parser
+
+	// Getter signatures
+	ID() antlr.TerminalNode
 
 	// IsColumnNameContext differentiates from other interfaces.
 	IsColumnNameContext()
@@ -383,7 +409,6 @@ func (s *ColumnNameContext) ToStringTree(ruleNames []string, recog antlr.Recogni
 	return antlr.TreesStringTree(s, ruleNames, recog)
 }
 
-
 func (s *ColumnNameContext) EnterRule(listener antlr.ParseTreeListener) {
 	if listenerT, ok := listener.(SqlListener); ok {
 		listenerT.EnterColumnName(s)
@@ -396,20 +421,10 @@ func (s *ColumnNameContext) ExitRule(listener antlr.ParseTreeListener) {
 	}
 }
 
-func (s *ColumnNameContext) Accept(visitor antlr.ParseTreeVisitor) interface{} {
-	switch t := visitor.(type) {
-	case SqlVisitor:
-		return t.VisitColumnName(s)
-
-	default:
-		return t.VisitChildren(s)
-	}
-}
-
-
-
-
 func (p *SqlParser) ColumnName() (localctx IColumnNameContext) {
+	this := p
+	_ = this
+
 	localctx = NewColumnNameContext(p, p.GetParserRuleContext(), p.GetState())
 	p.EnterRule(localctx, 0, SqlParserRULE_columnName)
 
@@ -435,11 +450,8 @@ func (p *SqlParser) ColumnName() (localctx IColumnNameContext) {
 		p.Match(SqlParserID)
 	}
 
-
-
 	return localctx
 }
-
 
 // ITableNameContext is an interface to support dynamic dispatch.
 type ITableNameContext interface {
@@ -447,6 +459,9 @@ type ITableNameContext interface {
 
 	// GetParser returns the parser.
 	GetParser() antlr.Parser
+
+	// Getter signatures
+	ID() antlr.TerminalNode
 
 	// IsTableNameContext differentiates from other interfaces.
 	IsTableNameContext()
@@ -491,7 +506,6 @@ func (s *TableNameContext) ToStringTree(ruleNames []string, recog antlr.Recogniz
 	return antlr.TreesStringTree(s, ruleNames, recog)
 }
 
-
 func (s *TableNameContext) EnterRule(listener antlr.ParseTreeListener) {
 	if listenerT, ok := listener.(SqlListener); ok {
 		listenerT.EnterTableName(s)
@@ -504,20 +518,10 @@ func (s *TableNameContext) ExitRule(listener antlr.ParseTreeListener) {
 	}
 }
 
-func (s *TableNameContext) Accept(visitor antlr.ParseTreeVisitor) interface{} {
-	switch t := visitor.(type) {
-	case SqlVisitor:
-		return t.VisitTableName(s)
-
-	default:
-		return t.VisitChildren(s)
-	}
-}
-
-
-
-
 func (p *SqlParser) TableName() (localctx ITableNameContext) {
+	this := p
+	_ = this
+
 	localctx = NewTableNameContext(p, p.GetParserRuleContext(), p.GetState())
 	p.EnterRule(localctx, 2, SqlParserRULE_tableName)
 
@@ -543,11 +547,8 @@ func (p *SqlParser) TableName() (localctx ITableNameContext) {
 		p.Match(SqlParserID)
 	}
 
-
-
 	return localctx
 }
-
 
 // ITypeNameContext is an interface to support dynamic dispatch.
 type ITypeNameContext interface {
@@ -555,6 +556,9 @@ type ITypeNameContext interface {
 
 	// GetParser returns the parser.
 	GetParser() antlr.Parser
+
+	// Getter signatures
+	ID() antlr.TerminalNode
 
 	// IsTypeNameContext differentiates from other interfaces.
 	IsTypeNameContext()
@@ -599,7 +603,6 @@ func (s *TypeNameContext) ToStringTree(ruleNames []string, recog antlr.Recognize
 	return antlr.TreesStringTree(s, ruleNames, recog)
 }
 
-
 func (s *TypeNameContext) EnterRule(listener antlr.ParseTreeListener) {
 	if listenerT, ok := listener.(SqlListener); ok {
 		listenerT.EnterTypeName(s)
@@ -612,20 +615,10 @@ func (s *TypeNameContext) ExitRule(listener antlr.ParseTreeListener) {
 	}
 }
 
-func (s *TypeNameContext) Accept(visitor antlr.ParseTreeVisitor) interface{} {
-	switch t := visitor.(type) {
-	case SqlVisitor:
-		return t.VisitTypeName(s)
-
-	default:
-		return t.VisitChildren(s)
-	}
-}
-
-
-
-
 func (p *SqlParser) TypeName() (localctx ITypeNameContext) {
+	this := p
+	_ = this
+
 	localctx = NewTypeNameContext(p, p.GetParserRuleContext(), p.GetState())
 	p.EnterRule(localctx, 4, SqlParserRULE_typeName)
 
@@ -651,11 +644,8 @@ func (p *SqlParser) TypeName() (localctx ITypeNameContext) {
 		p.Match(SqlParserID)
 	}
 
-
-
 	return localctx
 }
-
 
 // IFunctionNameContext is an interface to support dynamic dispatch.
 type IFunctionNameContext interface {
@@ -663,6 +653,9 @@ type IFunctionNameContext interface {
 
 	// GetParser returns the parser.
 	GetParser() antlr.Parser
+
+	// Getter signatures
+	ID() antlr.TerminalNode
 
 	// IsFunctionNameContext differentiates from other interfaces.
 	IsFunctionNameContext()
@@ -707,7 +700,6 @@ func (s *FunctionNameContext) ToStringTree(ruleNames []string, recog antlr.Recog
 	return antlr.TreesStringTree(s, ruleNames, recog)
 }
 
-
 func (s *FunctionNameContext) EnterRule(listener antlr.ParseTreeListener) {
 	if listenerT, ok := listener.(SqlListener); ok {
 		listenerT.EnterFunctionName(s)
@@ -720,20 +712,10 @@ func (s *FunctionNameContext) ExitRule(listener antlr.ParseTreeListener) {
 	}
 }
 
-func (s *FunctionNameContext) Accept(visitor antlr.ParseTreeVisitor) interface{} {
-	switch t := visitor.(type) {
-	case SqlVisitor:
-		return t.VisitFunctionName(s)
-
-	default:
-		return t.VisitChildren(s)
-	}
-}
-
-
-
-
 func (p *SqlParser) FunctionName() (localctx IFunctionNameContext) {
+	this := p
+	_ = this
+
 	localctx = NewFunctionNameContext(p, p.GetParserRuleContext(), p.GetState())
 	p.EnterRule(localctx, 6, SqlParserRULE_functionName)
 
@@ -759,11 +741,8 @@ func (p *SqlParser) FunctionName() (localctx IFunctionNameContext) {
 		p.Match(SqlParserID)
 	}
 
-
-
 	return localctx
 }
-
 
 // IAliasContext is an interface to support dynamic dispatch.
 type IAliasContext interface {
@@ -771,6 +750,10 @@ type IAliasContext interface {
 
 	// GetParser returns the parser.
 	GetParser() antlr.Parser
+
+	// Getter signatures
+	ID() antlr.TerminalNode
+	TEXT_ALIAS() antlr.TerminalNode
 
 	// IsAliasContext differentiates from other interfaces.
 	IsAliasContext()
@@ -819,7 +802,6 @@ func (s *AliasContext) ToStringTree(ruleNames []string, recog antlr.Recognizer) 
 	return antlr.TreesStringTree(s, ruleNames, recog)
 }
 
-
 func (s *AliasContext) EnterRule(listener antlr.ParseTreeListener) {
 	if listenerT, ok := listener.(SqlListener); ok {
 		listenerT.EnterAlias(s)
@@ -832,24 +814,13 @@ func (s *AliasContext) ExitRule(listener antlr.ParseTreeListener) {
 	}
 }
 
-func (s *AliasContext) Accept(visitor antlr.ParseTreeVisitor) interface{} {
-	switch t := visitor.(type) {
-	case SqlVisitor:
-		return t.VisitAlias(s)
-
-	default:
-		return t.VisitChildren(s)
-	}
-}
-
-
-
-
 func (p *SqlParser) Alias() (localctx IAliasContext) {
+	this := p
+	_ = this
+
 	localctx = NewAliasContext(p, p.GetParserRuleContext(), p.GetState())
 	p.EnterRule(localctx, 8, SqlParserRULE_alias)
 	var _la int
-
 
 	defer func() {
 		p.ExitRule()
@@ -880,11 +851,8 @@ func (p *SqlParser) Alias() (localctx IAliasContext) {
 		}
 	}
 
-
-
 	return localctx
 }
-
 
 // IJoinContext is an interface to support dynamic dispatch.
 type IJoinContext interface {
@@ -892,6 +860,12 @@ type IJoinContext interface {
 
 	// GetParser returns the parser.
 	GetParser() antlr.Parser
+
+	// Getter signatures
+	JOIN() antlr.TerminalNode
+	INNER() antlr.TerminalNode
+	LEFT() antlr.TerminalNode
+	RIGHT() antlr.TerminalNode
 
 	// IsJoinContext differentiates from other interfaces.
 	IsJoinContext()
@@ -948,7 +922,6 @@ func (s *JoinContext) ToStringTree(ruleNames []string, recog antlr.Recognizer) s
 	return antlr.TreesStringTree(s, ruleNames, recog)
 }
 
-
 func (s *JoinContext) EnterRule(listener antlr.ParseTreeListener) {
 	if listenerT, ok := listener.(SqlListener); ok {
 		listenerT.EnterJoin(s)
@@ -961,24 +934,13 @@ func (s *JoinContext) ExitRule(listener antlr.ParseTreeListener) {
 	}
 }
 
-func (s *JoinContext) Accept(visitor antlr.ParseTreeVisitor) interface{} {
-	switch t := visitor.(type) {
-	case SqlVisitor:
-		return t.VisitJoin(s)
-
-	default:
-		return t.VisitChildren(s)
-	}
-}
-
-
-
-
 func (p *SqlParser) Join() (localctx IJoinContext) {
+	this := p
+	_ = this
+
 	localctx = NewJoinContext(p, p.GetParserRuleContext(), p.GetState())
 	p.EnterRule(localctx, 10, SqlParserRULE_join)
 	var _la int
-
 
 	defer func() {
 		p.ExitRule()
@@ -1001,7 +963,7 @@ func (p *SqlParser) Join() (localctx IJoinContext) {
 		p.SetState(70)
 		_la = p.GetTokenStream().LA(1)
 
-		if !(((((_la - 48)) & -(0x1f+1)) == 0 && ((1 << uint((_la - 48))) & ((1 << (SqlParserINNER - 48)) | (1 << (SqlParserLEFT - 48)) | (1 << (SqlParserRIGHT - 48)))) != 0)) {
+		if !((int64(_la) & ^0x3f) == 0 && ((int64(1)<<_la)&7881299347898368) != 0) {
 			p.GetErrorHandler().RecoverInline(p)
 		} else {
 			p.GetErrorHandler().ReportMatch(p)
@@ -1013,11 +975,8 @@ func (p *SqlParser) Join() (localctx IJoinContext) {
 		p.Match(SqlParserJOIN)
 	}
 
-
-
 	return localctx
 }
-
 
 // IUnionContext is an interface to support dynamic dispatch.
 type IUnionContext interface {
@@ -1025,6 +984,10 @@ type IUnionContext interface {
 
 	// GetParser returns the parser.
 	GetParser() antlr.Parser
+
+	// Getter signatures
+	UNION() antlr.TerminalNode
+	ALL() antlr.TerminalNode
 
 	// IsUnionContext differentiates from other interfaces.
 	IsUnionContext()
@@ -1073,7 +1036,6 @@ func (s *UnionContext) ToStringTree(ruleNames []string, recog antlr.Recognizer) 
 	return antlr.TreesStringTree(s, ruleNames, recog)
 }
 
-
 func (s *UnionContext) EnterRule(listener antlr.ParseTreeListener) {
 	if listenerT, ok := listener.(SqlListener); ok {
 		listenerT.EnterUnion(s)
@@ -1086,24 +1048,13 @@ func (s *UnionContext) ExitRule(listener antlr.ParseTreeListener) {
 	}
 }
 
-func (s *UnionContext) Accept(visitor antlr.ParseTreeVisitor) interface{} {
-	switch t := visitor.(type) {
-	case SqlVisitor:
-		return t.VisitUnion(s)
-
-	default:
-		return t.VisitChildren(s)
-	}
-}
-
-
-
-
 func (p *SqlParser) Union() (localctx IUnionContext) {
+	this := p
+	_ = this
+
 	localctx = NewUnionContext(p, p.GetParserRuleContext(), p.GetState())
 	p.EnterRule(localctx, 12, SqlParserRULE_union)
 	var _la int
-
 
 	defer func() {
 		p.ExitRule()
@@ -1130,7 +1081,6 @@ func (p *SqlParser) Union() (localctx IUnionContext) {
 	p.GetErrorHandler().Sync(p)
 	_la = p.GetTokenStream().LA(1)
 
-
 	if _la == SqlParserALL {
 		{
 			p.SetState(74)
@@ -1139,11 +1089,8 @@ func (p *SqlParser) Union() (localctx IUnionContext) {
 
 	}
 
-
-
 	return localctx
 }
-
 
 // IDecimalLiteralContext is an interface to support dynamic dispatch.
 type IDecimalLiteralContext interface {
@@ -1151,6 +1098,9 @@ type IDecimalLiteralContext interface {
 
 	// GetParser returns the parser.
 	GetParser() antlr.Parser
+
+	// Getter signatures
+	DECIMAL_LITERAL() antlr.TerminalNode
 
 	// IsDecimalLiteralContext differentiates from other interfaces.
 	IsDecimalLiteralContext()
@@ -1195,7 +1145,6 @@ func (s *DecimalLiteralContext) ToStringTree(ruleNames []string, recog antlr.Rec
 	return antlr.TreesStringTree(s, ruleNames, recog)
 }
 
-
 func (s *DecimalLiteralContext) EnterRule(listener antlr.ParseTreeListener) {
 	if listenerT, ok := listener.(SqlListener); ok {
 		listenerT.EnterDecimalLiteral(s)
@@ -1208,20 +1157,10 @@ func (s *DecimalLiteralContext) ExitRule(listener antlr.ParseTreeListener) {
 	}
 }
 
-func (s *DecimalLiteralContext) Accept(visitor antlr.ParseTreeVisitor) interface{} {
-	switch t := visitor.(type) {
-	case SqlVisitor:
-		return t.VisitDecimalLiteral(s)
-
-	default:
-		return t.VisitChildren(s)
-	}
-}
-
-
-
-
 func (p *SqlParser) DecimalLiteral() (localctx IDecimalLiteralContext) {
+	this := p
+	_ = this
+
 	localctx = NewDecimalLiteralContext(p, p.GetParserRuleContext(), p.GetState())
 	p.EnterRule(localctx, 14, SqlParserRULE_decimalLiteral)
 
@@ -1247,11 +1186,8 @@ func (p *SqlParser) DecimalLiteral() (localctx IDecimalLiteralContext) {
 		p.Match(SqlParserDECIMAL_LITERAL)
 	}
 
-
-
 	return localctx
 }
-
 
 // ITextLiteralContext is an interface to support dynamic dispatch.
 type ITextLiteralContext interface {
@@ -1259,6 +1195,9 @@ type ITextLiteralContext interface {
 
 	// GetParser returns the parser.
 	GetParser() antlr.Parser
+
+	// Getter signatures
+	TEXT_STRING() antlr.TerminalNode
 
 	// IsTextLiteralContext differentiates from other interfaces.
 	IsTextLiteralContext()
@@ -1303,7 +1242,6 @@ func (s *TextLiteralContext) ToStringTree(ruleNames []string, recog antlr.Recogn
 	return antlr.TreesStringTree(s, ruleNames, recog)
 }
 
-
 func (s *TextLiteralContext) EnterRule(listener antlr.ParseTreeListener) {
 	if listenerT, ok := listener.(SqlListener); ok {
 		listenerT.EnterTextLiteral(s)
@@ -1316,20 +1254,10 @@ func (s *TextLiteralContext) ExitRule(listener antlr.ParseTreeListener) {
 	}
 }
 
-func (s *TextLiteralContext) Accept(visitor antlr.ParseTreeVisitor) interface{} {
-	switch t := visitor.(type) {
-	case SqlVisitor:
-		return t.VisitTextLiteral(s)
-
-	default:
-		return t.VisitChildren(s)
-	}
-}
-
-
-
-
 func (p *SqlParser) TextLiteral() (localctx ITextLiteralContext) {
+	this := p
+	_ = this
+
 	localctx = NewTextLiteralContext(p, p.GetParserRuleContext(), p.GetState())
 	p.EnterRule(localctx, 16, SqlParserRULE_textLiteral)
 
@@ -1355,11 +1283,8 @@ func (p *SqlParser) TextLiteral() (localctx ITextLiteralContext) {
 		p.Match(SqlParserTEXT_STRING)
 	}
 
-
-
 	return localctx
 }
-
 
 // IBind_variablesContext is an interface to support dynamic dispatch.
 type IBind_variablesContext interface {
@@ -1367,6 +1292,9 @@ type IBind_variablesContext interface {
 
 	// GetParser returns the parser.
 	GetParser() antlr.Parser
+
+	// Getter signatures
+	BIND_VARIABLE() antlr.TerminalNode
 
 	// IsBind_variablesContext differentiates from other interfaces.
 	IsBind_variablesContext()
@@ -1411,7 +1339,6 @@ func (s *Bind_variablesContext) ToStringTree(ruleNames []string, recog antlr.Rec
 	return antlr.TreesStringTree(s, ruleNames, recog)
 }
 
-
 func (s *Bind_variablesContext) EnterRule(listener antlr.ParseTreeListener) {
 	if listenerT, ok := listener.(SqlListener); ok {
 		listenerT.EnterBind_variables(s)
@@ -1424,20 +1351,10 @@ func (s *Bind_variablesContext) ExitRule(listener antlr.ParseTreeListener) {
 	}
 }
 
-func (s *Bind_variablesContext) Accept(visitor antlr.ParseTreeVisitor) interface{} {
-	switch t := visitor.(type) {
-	case SqlVisitor:
-		return t.VisitBind_variables(s)
-
-	default:
-		return t.VisitChildren(s)
-	}
-}
-
-
-
-
 func (p *SqlParser) Bind_variables() (localctx IBind_variablesContext) {
+	this := p
+	_ = this
+
 	localctx = NewBind_variablesContext(p, p.GetParserRuleContext(), p.GetState())
 	p.EnterRule(localctx, 18, SqlParserRULE_bind_variables)
 
@@ -1463,11 +1380,8 @@ func (p *SqlParser) Bind_variables() (localctx IBind_variablesContext) {
 		p.Match(SqlParserBIND_VARIABLE)
 	}
 
-
-
 	return localctx
 }
-
 
 // ISelectStatementContext is an interface to support dynamic dispatch.
 type ISelectStatementContext interface {
@@ -1475,6 +1389,24 @@ type ISelectStatementContext interface {
 
 	// GetParser returns the parser.
 	GetParser() antlr.Parser
+
+	// Getter signatures
+	SELECT() antlr.TerminalNode
+	SelectElements() ISelectElementsContext
+	FROM() antlr.TerminalNode
+	AllTableSources() []ITableSourcesContext
+	TableSources(i int) ITableSourcesContext
+	Join() IJoinContext
+	ON() antlr.TerminalNode
+	LogicExpression() ILogicExpressionContext
+	WhereClause() IWhereClauseContext
+	GroupByClause() IGroupByClauseContext
+	HavingClause() IHavingClauseContext
+	OrderByClause() IOrderByClauseContext
+	LimitClause() ILimitClauseContext
+	AllSelectStatement() []ISelectStatementContext
+	SelectStatement(i int) ISelectStatementContext
+	Union() IUnionContext
 
 	// IsSelectStatementContext differentiates from other interfaces.
 	IsSelectStatementContext()
@@ -1512,7 +1444,13 @@ func (s *SelectStatementContext) SELECT() antlr.TerminalNode {
 }
 
 func (s *SelectStatementContext) SelectElements() ISelectElementsContext {
-	var t = s.GetTypedRuleContext(reflect.TypeOf((*ISelectElementsContext)(nil)).Elem(), 0)
+	var t antlr.RuleContext
+	for _, ctx := range s.GetChildren() {
+		if _, ok := ctx.(ISelectElementsContext); ok {
+			t = ctx.(antlr.RuleContext)
+			break
+		}
+	}
 
 	if t == nil {
 		return nil
@@ -1526,12 +1464,20 @@ func (s *SelectStatementContext) FROM() antlr.TerminalNode {
 }
 
 func (s *SelectStatementContext) AllTableSources() []ITableSourcesContext {
-	var ts = s.GetTypedRuleContexts(reflect.TypeOf((*ITableSourcesContext)(nil)).Elem())
-	var tst = make([]ITableSourcesContext, len(ts))
+	children := s.GetChildren()
+	len := 0
+	for _, ctx := range children {
+		if _, ok := ctx.(ITableSourcesContext); ok {
+			len++
+		}
+	}
 
-	for i, t := range ts {
-		if t != nil {
+	tst := make([]ITableSourcesContext, len)
+	i := 0
+	for _, ctx := range children {
+		if t, ok := ctx.(ITableSourcesContext); ok {
 			tst[i] = t.(ITableSourcesContext)
+			i++
 		}
 	}
 
@@ -1539,7 +1485,17 @@ func (s *SelectStatementContext) AllTableSources() []ITableSourcesContext {
 }
 
 func (s *SelectStatementContext) TableSources(i int) ITableSourcesContext {
-	var t = s.GetTypedRuleContext(reflect.TypeOf((*ITableSourcesContext)(nil)).Elem(), i)
+	var t antlr.RuleContext
+	j := 0
+	for _, ctx := range s.GetChildren() {
+		if _, ok := ctx.(ITableSourcesContext); ok {
+			if j == i {
+				t = ctx.(antlr.RuleContext)
+				break
+			}
+			j++
+		}
+	}
 
 	if t == nil {
 		return nil
@@ -1549,7 +1505,13 @@ func (s *SelectStatementContext) TableSources(i int) ITableSourcesContext {
 }
 
 func (s *SelectStatementContext) Join() IJoinContext {
-	var t = s.GetTypedRuleContext(reflect.TypeOf((*IJoinContext)(nil)).Elem(), 0)
+	var t antlr.RuleContext
+	for _, ctx := range s.GetChildren() {
+		if _, ok := ctx.(IJoinContext); ok {
+			t = ctx.(antlr.RuleContext)
+			break
+		}
+	}
 
 	if t == nil {
 		return nil
@@ -1563,7 +1525,13 @@ func (s *SelectStatementContext) ON() antlr.TerminalNode {
 }
 
 func (s *SelectStatementContext) LogicExpression() ILogicExpressionContext {
-	var t = s.GetTypedRuleContext(reflect.TypeOf((*ILogicExpressionContext)(nil)).Elem(), 0)
+	var t antlr.RuleContext
+	for _, ctx := range s.GetChildren() {
+		if _, ok := ctx.(ILogicExpressionContext); ok {
+			t = ctx.(antlr.RuleContext)
+			break
+		}
+	}
 
 	if t == nil {
 		return nil
@@ -1573,7 +1541,13 @@ func (s *SelectStatementContext) LogicExpression() ILogicExpressionContext {
 }
 
 func (s *SelectStatementContext) WhereClause() IWhereClauseContext {
-	var t = s.GetTypedRuleContext(reflect.TypeOf((*IWhereClauseContext)(nil)).Elem(), 0)
+	var t antlr.RuleContext
+	for _, ctx := range s.GetChildren() {
+		if _, ok := ctx.(IWhereClauseContext); ok {
+			t = ctx.(antlr.RuleContext)
+			break
+		}
+	}
 
 	if t == nil {
 		return nil
@@ -1583,7 +1557,13 @@ func (s *SelectStatementContext) WhereClause() IWhereClauseContext {
 }
 
 func (s *SelectStatementContext) GroupByClause() IGroupByClauseContext {
-	var t = s.GetTypedRuleContext(reflect.TypeOf((*IGroupByClauseContext)(nil)).Elem(), 0)
+	var t antlr.RuleContext
+	for _, ctx := range s.GetChildren() {
+		if _, ok := ctx.(IGroupByClauseContext); ok {
+			t = ctx.(antlr.RuleContext)
+			break
+		}
+	}
 
 	if t == nil {
 		return nil
@@ -1593,7 +1573,13 @@ func (s *SelectStatementContext) GroupByClause() IGroupByClauseContext {
 }
 
 func (s *SelectStatementContext) HavingClause() IHavingClauseContext {
-	var t = s.GetTypedRuleContext(reflect.TypeOf((*IHavingClauseContext)(nil)).Elem(), 0)
+	var t antlr.RuleContext
+	for _, ctx := range s.GetChildren() {
+		if _, ok := ctx.(IHavingClauseContext); ok {
+			t = ctx.(antlr.RuleContext)
+			break
+		}
+	}
 
 	if t == nil {
 		return nil
@@ -1603,7 +1589,13 @@ func (s *SelectStatementContext) HavingClause() IHavingClauseContext {
 }
 
 func (s *SelectStatementContext) OrderByClause() IOrderByClauseContext {
-	var t = s.GetTypedRuleContext(reflect.TypeOf((*IOrderByClauseContext)(nil)).Elem(), 0)
+	var t antlr.RuleContext
+	for _, ctx := range s.GetChildren() {
+		if _, ok := ctx.(IOrderByClauseContext); ok {
+			t = ctx.(antlr.RuleContext)
+			break
+		}
+	}
 
 	if t == nil {
 		return nil
@@ -1613,7 +1605,13 @@ func (s *SelectStatementContext) OrderByClause() IOrderByClauseContext {
 }
 
 func (s *SelectStatementContext) LimitClause() ILimitClauseContext {
-	var t = s.GetTypedRuleContext(reflect.TypeOf((*ILimitClauseContext)(nil)).Elem(), 0)
+	var t antlr.RuleContext
+	for _, ctx := range s.GetChildren() {
+		if _, ok := ctx.(ILimitClauseContext); ok {
+			t = ctx.(antlr.RuleContext)
+			break
+		}
+	}
 
 	if t == nil {
 		return nil
@@ -1623,12 +1621,20 @@ func (s *SelectStatementContext) LimitClause() ILimitClauseContext {
 }
 
 func (s *SelectStatementContext) AllSelectStatement() []ISelectStatementContext {
-	var ts = s.GetTypedRuleContexts(reflect.TypeOf((*ISelectStatementContext)(nil)).Elem())
-	var tst = make([]ISelectStatementContext, len(ts))
+	children := s.GetChildren()
+	len := 0
+	for _, ctx := range children {
+		if _, ok := ctx.(ISelectStatementContext); ok {
+			len++
+		}
+	}
 
-	for i, t := range ts {
-		if t != nil {
+	tst := make([]ISelectStatementContext, len)
+	i := 0
+	for _, ctx := range children {
+		if t, ok := ctx.(ISelectStatementContext); ok {
 			tst[i] = t.(ISelectStatementContext)
+			i++
 		}
 	}
 
@@ -1636,7 +1642,17 @@ func (s *SelectStatementContext) AllSelectStatement() []ISelectStatementContext 
 }
 
 func (s *SelectStatementContext) SelectStatement(i int) ISelectStatementContext {
-	var t = s.GetTypedRuleContext(reflect.TypeOf((*ISelectStatementContext)(nil)).Elem(), i)
+	var t antlr.RuleContext
+	j := 0
+	for _, ctx := range s.GetChildren() {
+		if _, ok := ctx.(ISelectStatementContext); ok {
+			if j == i {
+				t = ctx.(antlr.RuleContext)
+				break
+			}
+			j++
+		}
+	}
 
 	if t == nil {
 		return nil
@@ -1646,7 +1662,13 @@ func (s *SelectStatementContext) SelectStatement(i int) ISelectStatementContext 
 }
 
 func (s *SelectStatementContext) Union() IUnionContext {
-	var t = s.GetTypedRuleContext(reflect.TypeOf((*IUnionContext)(nil)).Elem(), 0)
+	var t antlr.RuleContext
+	for _, ctx := range s.GetChildren() {
+		if _, ok := ctx.(IUnionContext); ok {
+			t = ctx.(antlr.RuleContext)
+			break
+		}
+	}
 
 	if t == nil {
 		return nil
@@ -1663,7 +1685,6 @@ func (s *SelectStatementContext) ToStringTree(ruleNames []string, recog antlr.Re
 	return antlr.TreesStringTree(s, ruleNames, recog)
 }
 
-
 func (s *SelectStatementContext) EnterRule(listener antlr.ParseTreeListener) {
 	if listenerT, ok := listener.(SqlListener); ok {
 		listenerT.EnterSelectStatement(s)
@@ -1676,25 +1697,14 @@ func (s *SelectStatementContext) ExitRule(listener antlr.ParseTreeListener) {
 	}
 }
 
-func (s *SelectStatementContext) Accept(visitor antlr.ParseTreeVisitor) interface{} {
-	switch t := visitor.(type) {
-	case SqlVisitor:
-		return t.VisitSelectStatement(s)
-
-	default:
-		return t.VisitChildren(s)
-	}
-}
-
-
-
-
-
 func (p *SqlParser) SelectStatement() (localctx ISelectStatementContext) {
 	return p.selectStatement(0)
 }
 
 func (p *SqlParser) selectStatement(_p int) (localctx ISelectStatementContext) {
+	this := p
+	_ = this
+
 	var _parentctx antlr.ParserRuleContext = p.GetParserRuleContext()
 	_parentState := p.GetState()
 	localctx = NewSelectStatementContext(p, p.GetParserRuleContext(), _parentState)
@@ -1741,7 +1751,6 @@ func (p *SqlParser) selectStatement(_p int) (localctx ISelectStatementContext) {
 	p.SetState(93)
 	p.GetErrorHandler().Sync(p)
 
-
 	if p.GetInterpreter().AdaptivePredict(p.GetTokenStream(), 1, p.GetParserRuleContext()) == 1 {
 		{
 			p.SetState(88)
@@ -1760,11 +1769,9 @@ func (p *SqlParser) selectStatement(_p int) (localctx ISelectStatementContext) {
 			p.logicExpression(0)
 		}
 
-
 	}
 	p.SetState(96)
 	p.GetErrorHandler().Sync(p)
-
 
 	if p.GetInterpreter().AdaptivePredict(p.GetTokenStream(), 2, p.GetParserRuleContext()) == 1 {
 		{
@@ -1772,11 +1779,9 @@ func (p *SqlParser) selectStatement(_p int) (localctx ISelectStatementContext) {
 			p.WhereClause()
 		}
 
-
 	}
 	p.SetState(99)
 	p.GetErrorHandler().Sync(p)
-
 
 	if p.GetInterpreter().AdaptivePredict(p.GetTokenStream(), 3, p.GetParserRuleContext()) == 1 {
 		{
@@ -1784,11 +1789,9 @@ func (p *SqlParser) selectStatement(_p int) (localctx ISelectStatementContext) {
 			p.GroupByClause()
 		}
 
-
 	}
 	p.SetState(102)
 	p.GetErrorHandler().Sync(p)
-
 
 	if p.GetInterpreter().AdaptivePredict(p.GetTokenStream(), 4, p.GetParserRuleContext()) == 1 {
 		{
@@ -1796,11 +1799,9 @@ func (p *SqlParser) selectStatement(_p int) (localctx ISelectStatementContext) {
 			p.HavingClause()
 		}
 
-
 	}
 	p.SetState(105)
 	p.GetErrorHandler().Sync(p)
-
 
 	if p.GetInterpreter().AdaptivePredict(p.GetTokenStream(), 5, p.GetParserRuleContext()) == 1 {
 		{
@@ -1808,18 +1809,15 @@ func (p *SqlParser) selectStatement(_p int) (localctx ISelectStatementContext) {
 			p.OrderByClause()
 		}
 
-
 	}
 	p.SetState(108)
 	p.GetErrorHandler().Sync(p)
-
 
 	if p.GetInterpreter().AdaptivePredict(p.GetTokenStream(), 6, p.GetParserRuleContext()) == 1 {
 		{
 			p.SetState(107)
 			p.LimitClause()
 		}
-
 
 	}
 
@@ -1850,18 +1848,14 @@ func (p *SqlParser) selectStatement(_p int) (localctx ISelectStatementContext) {
 				p.selectStatement(2)
 			}
 
-
 		}
 		p.SetState(118)
 		p.GetErrorHandler().Sync(p)
 		_alt = p.GetInterpreter().AdaptivePredict(p.GetTokenStream(), 7, p.GetParserRuleContext())
 	}
 
-
-
 	return localctx
 }
-
 
 // ISelectElementsContext is an interface to support dynamic dispatch.
 type ISelectElementsContext interface {
@@ -1871,12 +1865,14 @@ type ISelectElementsContext interface {
 	GetParser() antlr.Parser
 
 	// GetStar returns the star token.
-	GetStar() antlr.Token 
-
+	GetStar() antlr.Token
 
 	// SetStar sets the star token.
-	SetStar(antlr.Token) 
+	SetStar(antlr.Token)
 
+	// Getter signatures
+	AllSelectElement() []ISelectElementContext
+	SelectElement(i int) ISelectElementContext
 
 	// IsSelectElementsContext differentiates from other interfaces.
 	IsSelectElementsContext()
@@ -1885,7 +1881,7 @@ type ISelectElementsContext interface {
 type SelectElementsContext struct {
 	*antlr.BaseParserRuleContext
 	parser antlr.Parser
-	star antlr.Token
+	star   antlr.Token
 }
 
 func NewEmptySelectElementsContext() *SelectElementsContext {
@@ -1912,17 +1908,23 @@ func (s *SelectElementsContext) GetParser() antlr.Parser { return s.parser }
 
 func (s *SelectElementsContext) GetStar() antlr.Token { return s.star }
 
-
 func (s *SelectElementsContext) SetStar(v antlr.Token) { s.star = v }
 
-
 func (s *SelectElementsContext) AllSelectElement() []ISelectElementContext {
-	var ts = s.GetTypedRuleContexts(reflect.TypeOf((*ISelectElementContext)(nil)).Elem())
-	var tst = make([]ISelectElementContext, len(ts))
+	children := s.GetChildren()
+	len := 0
+	for _, ctx := range children {
+		if _, ok := ctx.(ISelectElementContext); ok {
+			len++
+		}
+	}
 
-	for i, t := range ts {
-		if t != nil {
+	tst := make([]ISelectElementContext, len)
+	i := 0
+	for _, ctx := range children {
+		if t, ok := ctx.(ISelectElementContext); ok {
 			tst[i] = t.(ISelectElementContext)
+			i++
 		}
 	}
 
@@ -1930,7 +1932,17 @@ func (s *SelectElementsContext) AllSelectElement() []ISelectElementContext {
 }
 
 func (s *SelectElementsContext) SelectElement(i int) ISelectElementContext {
-	var t = s.GetTypedRuleContext(reflect.TypeOf((*ISelectElementContext)(nil)).Elem(), i)
+	var t antlr.RuleContext
+	j := 0
+	for _, ctx := range s.GetChildren() {
+		if _, ok := ctx.(ISelectElementContext); ok {
+			if j == i {
+				t = ctx.(antlr.RuleContext)
+				break
+			}
+			j++
+		}
+	}
 
 	if t == nil {
 		return nil
@@ -1947,7 +1959,6 @@ func (s *SelectElementsContext) ToStringTree(ruleNames []string, recog antlr.Rec
 	return antlr.TreesStringTree(s, ruleNames, recog)
 }
 
-
 func (s *SelectElementsContext) EnterRule(listener antlr.ParseTreeListener) {
 	if listenerT, ok := listener.(SqlListener); ok {
 		listenerT.EnterSelectElements(s)
@@ -1960,24 +1971,13 @@ func (s *SelectElementsContext) ExitRule(listener antlr.ParseTreeListener) {
 	}
 }
 
-func (s *SelectElementsContext) Accept(visitor antlr.ParseTreeVisitor) interface{} {
-	switch t := visitor.(type) {
-	case SqlVisitor:
-		return t.VisitSelectElements(s)
-
-	default:
-		return t.VisitChildren(s)
-	}
-}
-
-
-
-
 func (p *SqlParser) SelectElements() (localctx ISelectElementsContext) {
+	this := p
+	_ = this
+
 	localctx = NewSelectElementsContext(p, p.GetParserRuleContext(), p.GetState())
 	p.EnterRule(localctx, 22, SqlParserRULE_selectElements)
 	var _la int
-
 
 	defer func() {
 		p.ExitRule()
@@ -2009,14 +2009,11 @@ func (p *SqlParser) SelectElements() (localctx ISelectElementsContext) {
 			localctx.(*SelectElementsContext).star = _m
 		}
 
-
 	case SqlParserT__6, SqlParserMAX, SqlParserSUM, SqlParserAVG, SqlParserMIN, SqlParserCOUNT, SqlParserDISTINCT, SqlParserCAST, SqlParserDECIMAL_LITERAL, SqlParserID, SqlParserTEXT_STRING, SqlParserBIND_VARIABLE:
 		{
 			p.SetState(120)
 			p.SelectElement()
 		}
-
-
 
 	default:
 		panic(antlr.NewNoViableAltException(p, nil, nil, nil, nil, nil))
@@ -2024,7 +2021,6 @@ func (p *SqlParser) SelectElements() (localctx ISelectElementsContext) {
 	p.SetState(127)
 	p.GetErrorHandler().Sync(p)
 	_la = p.GetTokenStream().LA(1)
-
 
 	for _la == SqlParserT__1 {
 		{
@@ -2036,17 +2032,13 @@ func (p *SqlParser) SelectElements() (localctx ISelectElementsContext) {
 			p.SelectElement()
 		}
 
-
 		p.SetState(129)
 		p.GetErrorHandler().Sync(p)
 		_la = p.GetTokenStream().LA(1)
 	}
 
-
-
 	return localctx
 }
-
 
 // ISelectElementContext is an interface to support dynamic dispatch.
 type ISelectElementContext interface {
@@ -2054,6 +2046,11 @@ type ISelectElementContext interface {
 
 	// GetParser returns the parser.
 	GetParser() antlr.Parser
+
+	// Getter signatures
+	Expr() IExprContext
+	Alias() IAliasContext
+	AS() antlr.TerminalNode
 
 	// IsSelectElementContext differentiates from other interfaces.
 	IsSelectElementContext()
@@ -2087,7 +2084,13 @@ func NewSelectElementContext(parser antlr.Parser, parent antlr.ParserRuleContext
 func (s *SelectElementContext) GetParser() antlr.Parser { return s.parser }
 
 func (s *SelectElementContext) Expr() IExprContext {
-	var t = s.GetTypedRuleContext(reflect.TypeOf((*IExprContext)(nil)).Elem(), 0)
+	var t antlr.RuleContext
+	for _, ctx := range s.GetChildren() {
+		if _, ok := ctx.(IExprContext); ok {
+			t = ctx.(antlr.RuleContext)
+			break
+		}
+	}
 
 	if t == nil {
 		return nil
@@ -2097,7 +2100,13 @@ func (s *SelectElementContext) Expr() IExprContext {
 }
 
 func (s *SelectElementContext) Alias() IAliasContext {
-	var t = s.GetTypedRuleContext(reflect.TypeOf((*IAliasContext)(nil)).Elem(), 0)
+	var t antlr.RuleContext
+	for _, ctx := range s.GetChildren() {
+		if _, ok := ctx.(IAliasContext); ok {
+			t = ctx.(antlr.RuleContext)
+			break
+		}
+	}
 
 	if t == nil {
 		return nil
@@ -2118,7 +2127,6 @@ func (s *SelectElementContext) ToStringTree(ruleNames []string, recog antlr.Reco
 	return antlr.TreesStringTree(s, ruleNames, recog)
 }
 
-
 func (s *SelectElementContext) EnterRule(listener antlr.ParseTreeListener) {
 	if listenerT, ok := listener.(SqlListener); ok {
 		listenerT.EnterSelectElement(s)
@@ -2131,24 +2139,13 @@ func (s *SelectElementContext) ExitRule(listener antlr.ParseTreeListener) {
 	}
 }
 
-func (s *SelectElementContext) Accept(visitor antlr.ParseTreeVisitor) interface{} {
-	switch t := visitor.(type) {
-	case SqlVisitor:
-		return t.VisitSelectElement(s)
-
-	default:
-		return t.VisitChildren(s)
-	}
-}
-
-
-
-
 func (p *SqlParser) SelectElement() (localctx ISelectElementContext) {
+	this := p
+	_ = this
+
 	localctx = NewSelectElementContext(p, p.GetParserRuleContext(), p.GetState())
 	p.EnterRule(localctx, 24, SqlParserRULE_selectElement)
 	var _la int
-
 
 	defer func() {
 		p.ExitRule()
@@ -2175,12 +2172,10 @@ func (p *SqlParser) SelectElement() (localctx ISelectElementContext) {
 	p.GetErrorHandler().Sync(p)
 	_la = p.GetTokenStream().LA(1)
 
-
-	if _la == SqlParserAS || _la == SqlParserID || _la == SqlParserTEXT_ALIAS {
+	if (int64(_la) & ^0x3f) == 0 && ((int64(1)<<_la)&1441151880759083008) != 0 {
 		p.SetState(132)
 		p.GetErrorHandler().Sync(p)
 		_la = p.GetTokenStream().LA(1)
-
 
 		if _la == SqlParserAS {
 			{
@@ -2196,11 +2191,8 @@ func (p *SqlParser) SelectElement() (localctx ISelectElementContext) {
 
 	}
 
-
-
 	return localctx
 }
-
 
 // IExprContext is an interface to support dynamic dispatch.
 type IExprContext interface {
@@ -2208,6 +2200,13 @@ type IExprContext interface {
 
 	// GetParser returns the parser.
 	GetParser() antlr.Parser
+
+	// Getter signatures
+	ColumnName() IColumnNameContext
+	FunctionCall() IFunctionCallContext
+	Value() IValueContext
+	AllExpr() []IExprContext
+	Expr(i int) IExprContext
 
 	// IsExprContext differentiates from other interfaces.
 	IsExprContext()
@@ -2241,7 +2240,13 @@ func NewExprContext(parser antlr.Parser, parent antlr.ParserRuleContext, invokin
 func (s *ExprContext) GetParser() antlr.Parser { return s.parser }
 
 func (s *ExprContext) ColumnName() IColumnNameContext {
-	var t = s.GetTypedRuleContext(reflect.TypeOf((*IColumnNameContext)(nil)).Elem(), 0)
+	var t antlr.RuleContext
+	for _, ctx := range s.GetChildren() {
+		if _, ok := ctx.(IColumnNameContext); ok {
+			t = ctx.(antlr.RuleContext)
+			break
+		}
+	}
 
 	if t == nil {
 		return nil
@@ -2251,7 +2256,13 @@ func (s *ExprContext) ColumnName() IColumnNameContext {
 }
 
 func (s *ExprContext) FunctionCall() IFunctionCallContext {
-	var t = s.GetTypedRuleContext(reflect.TypeOf((*IFunctionCallContext)(nil)).Elem(), 0)
+	var t antlr.RuleContext
+	for _, ctx := range s.GetChildren() {
+		if _, ok := ctx.(IFunctionCallContext); ok {
+			t = ctx.(antlr.RuleContext)
+			break
+		}
+	}
 
 	if t == nil {
 		return nil
@@ -2261,7 +2272,13 @@ func (s *ExprContext) FunctionCall() IFunctionCallContext {
 }
 
 func (s *ExprContext) Value() IValueContext {
-	var t = s.GetTypedRuleContext(reflect.TypeOf((*IValueContext)(nil)).Elem(), 0)
+	var t antlr.RuleContext
+	for _, ctx := range s.GetChildren() {
+		if _, ok := ctx.(IValueContext); ok {
+			t = ctx.(antlr.RuleContext)
+			break
+		}
+	}
 
 	if t == nil {
 		return nil
@@ -2271,12 +2288,20 @@ func (s *ExprContext) Value() IValueContext {
 }
 
 func (s *ExprContext) AllExpr() []IExprContext {
-	var ts = s.GetTypedRuleContexts(reflect.TypeOf((*IExprContext)(nil)).Elem())
-	var tst = make([]IExprContext, len(ts))
+	children := s.GetChildren()
+	len := 0
+	for _, ctx := range children {
+		if _, ok := ctx.(IExprContext); ok {
+			len++
+		}
+	}
 
-	for i, t := range ts {
-		if t != nil {
+	tst := make([]IExprContext, len)
+	i := 0
+	for _, ctx := range children {
+		if t, ok := ctx.(IExprContext); ok {
 			tst[i] = t.(IExprContext)
+			i++
 		}
 	}
 
@@ -2284,7 +2309,17 @@ func (s *ExprContext) AllExpr() []IExprContext {
 }
 
 func (s *ExprContext) Expr(i int) IExprContext {
-	var t = s.GetTypedRuleContext(reflect.TypeOf((*IExprContext)(nil)).Elem(), i)
+	var t antlr.RuleContext
+	j := 0
+	for _, ctx := range s.GetChildren() {
+		if _, ok := ctx.(IExprContext); ok {
+			if j == i {
+				t = ctx.(antlr.RuleContext)
+				break
+			}
+			j++
+		}
+	}
 
 	if t == nil {
 		return nil
@@ -2301,7 +2336,6 @@ func (s *ExprContext) ToStringTree(ruleNames []string, recog antlr.Recognizer) s
 	return antlr.TreesStringTree(s, ruleNames, recog)
 }
 
-
 func (s *ExprContext) EnterRule(listener antlr.ParseTreeListener) {
 	if listenerT, ok := listener.(SqlListener); ok {
 		listenerT.EnterExpr(s)
@@ -2314,25 +2348,14 @@ func (s *ExprContext) ExitRule(listener antlr.ParseTreeListener) {
 	}
 }
 
-func (s *ExprContext) Accept(visitor antlr.ParseTreeVisitor) interface{} {
-	switch t := visitor.(type) {
-	case SqlVisitor:
-		return t.VisitExpr(s)
-
-	default:
-		return t.VisitChildren(s)
-	}
-}
-
-
-
-
-
 func (p *SqlParser) Expr() (localctx IExprContext) {
 	return p.expr(0)
 }
 
 func (p *SqlParser) expr(_p int) (localctx IExprContext) {
+	this := p
+	_ = this
+
 	var _parentctx antlr.ParserRuleContext = p.GetParserRuleContext()
 	_parentState := p.GetState()
 	localctx = NewExprContext(p, p.GetParserRuleContext(), _parentState)
@@ -2341,7 +2364,6 @@ func (p *SqlParser) expr(_p int) (localctx IExprContext) {
 	_startState := 26
 	p.EnterRecursionRule(localctx, 26, SqlParserRULE_expr, _p)
 	var _la int
-
 
 	defer func() {
 		p.UnrollRecursionContexts(_parentctx)
@@ -2371,20 +2393,17 @@ func (p *SqlParser) expr(_p int) (localctx IExprContext) {
 			p.ColumnName()
 		}
 
-
 	case 2:
 		{
 			p.SetState(139)
 			p.FunctionCall()
 		}
 
-
 	case 3:
 		{
 			p.SetState(140)
 			p.Value()
 		}
-
 
 	case 4:
 		{
@@ -2439,7 +2458,6 @@ func (p *SqlParser) expr(_p int) (localctx IExprContext) {
 					p.expr(5)
 				}
 
-
 			case 2:
 				localctx = NewExprContext(p, _parentctx, _parentState)
 				p.PushNewRecursionContext(localctx, _startState, SqlParserRULE_expr)
@@ -2463,7 +2481,6 @@ func (p *SqlParser) expr(_p int) (localctx IExprContext) {
 					p.SetState(152)
 					p.expr(4)
 				}
-
 
 			case 3:
 				localctx = NewExprContext(p, _parentctx, _parentState)
@@ -2492,11 +2509,8 @@ func (p *SqlParser) expr(_p int) (localctx IExprContext) {
 		_alt = p.GetInterpreter().AdaptivePredict(p.GetTokenStream(), 14, p.GetParserRuleContext())
 	}
 
-
-
 	return localctx
 }
-
 
 // IValueContext is an interface to support dynamic dispatch.
 type IValueContext interface {
@@ -2504,6 +2518,11 @@ type IValueContext interface {
 
 	// GetParser returns the parser.
 	GetParser() antlr.Parser
+
+	// Getter signatures
+	DecimalLiteral() IDecimalLiteralContext
+	TextLiteral() ITextLiteralContext
+	Bind_variables() IBind_variablesContext
 
 	// IsValueContext differentiates from other interfaces.
 	IsValueContext()
@@ -2537,7 +2556,13 @@ func NewValueContext(parser antlr.Parser, parent antlr.ParserRuleContext, invoki
 func (s *ValueContext) GetParser() antlr.Parser { return s.parser }
 
 func (s *ValueContext) DecimalLiteral() IDecimalLiteralContext {
-	var t = s.GetTypedRuleContext(reflect.TypeOf((*IDecimalLiteralContext)(nil)).Elem(), 0)
+	var t antlr.RuleContext
+	for _, ctx := range s.GetChildren() {
+		if _, ok := ctx.(IDecimalLiteralContext); ok {
+			t = ctx.(antlr.RuleContext)
+			break
+		}
+	}
 
 	if t == nil {
 		return nil
@@ -2547,7 +2572,13 @@ func (s *ValueContext) DecimalLiteral() IDecimalLiteralContext {
 }
 
 func (s *ValueContext) TextLiteral() ITextLiteralContext {
-	var t = s.GetTypedRuleContext(reflect.TypeOf((*ITextLiteralContext)(nil)).Elem(), 0)
+	var t antlr.RuleContext
+	for _, ctx := range s.GetChildren() {
+		if _, ok := ctx.(ITextLiteralContext); ok {
+			t = ctx.(antlr.RuleContext)
+			break
+		}
+	}
 
 	if t == nil {
 		return nil
@@ -2557,7 +2588,13 @@ func (s *ValueContext) TextLiteral() ITextLiteralContext {
 }
 
 func (s *ValueContext) Bind_variables() IBind_variablesContext {
-	var t = s.GetTypedRuleContext(reflect.TypeOf((*IBind_variablesContext)(nil)).Elem(), 0)
+	var t antlr.RuleContext
+	for _, ctx := range s.GetChildren() {
+		if _, ok := ctx.(IBind_variablesContext); ok {
+			t = ctx.(antlr.RuleContext)
+			break
+		}
+	}
 
 	if t == nil {
 		return nil
@@ -2574,7 +2611,6 @@ func (s *ValueContext) ToStringTree(ruleNames []string, recog antlr.Recognizer) 
 	return antlr.TreesStringTree(s, ruleNames, recog)
 }
 
-
 func (s *ValueContext) EnterRule(listener antlr.ParseTreeListener) {
 	if listenerT, ok := listener.(SqlListener); ok {
 		listenerT.EnterValue(s)
@@ -2587,20 +2623,10 @@ func (s *ValueContext) ExitRule(listener antlr.ParseTreeListener) {
 	}
 }
 
-func (s *ValueContext) Accept(visitor antlr.ParseTreeVisitor) interface{} {
-	switch t := visitor.(type) {
-	case SqlVisitor:
-		return t.VisitValue(s)
-
-	default:
-		return t.VisitChildren(s)
-	}
-}
-
-
-
-
 func (p *SqlParser) Value() (localctx IValueContext) {
+	this := p
+	_ = this
+
 	localctx = NewValueContext(p, p.GetParserRuleContext(), p.GetState())
 	p.EnterRule(localctx, 28, SqlParserRULE_value)
 
@@ -2631,14 +2657,12 @@ func (p *SqlParser) Value() (localctx IValueContext) {
 			p.DecimalLiteral()
 		}
 
-
 	case SqlParserTEXT_STRING:
 		p.EnterOuterAlt(localctx, 2)
 		{
 			p.SetState(162)
 			p.TextLiteral()
 		}
-
 
 	case SqlParserBIND_VARIABLE:
 		p.EnterOuterAlt(localctx, 3)
@@ -2647,16 +2671,12 @@ func (p *SqlParser) Value() (localctx IValueContext) {
 			p.Bind_variables()
 		}
 
-
-
 	default:
 		panic(antlr.NewNoViableAltException(p, nil, nil, nil, nil, nil))
 	}
 
-
 	return localctx
 }
-
 
 // IFunctionCallContext is an interface to support dynamic dispatch.
 type IFunctionCallContext interface {
@@ -2664,6 +2684,10 @@ type IFunctionCallContext interface {
 
 	// GetParser returns the parser.
 	GetParser() antlr.Parser
+
+	// Getter signatures
+	AggregateFunction() IAggregateFunctionContext
+	CommonFunction() ICommonFunctionContext
 
 	// IsFunctionCallContext differentiates from other interfaces.
 	IsFunctionCallContext()
@@ -2697,7 +2721,13 @@ func NewFunctionCallContext(parser antlr.Parser, parent antlr.ParserRuleContext,
 func (s *FunctionCallContext) GetParser() antlr.Parser { return s.parser }
 
 func (s *FunctionCallContext) AggregateFunction() IAggregateFunctionContext {
-	var t = s.GetTypedRuleContext(reflect.TypeOf((*IAggregateFunctionContext)(nil)).Elem(), 0)
+	var t antlr.RuleContext
+	for _, ctx := range s.GetChildren() {
+		if _, ok := ctx.(IAggregateFunctionContext); ok {
+			t = ctx.(antlr.RuleContext)
+			break
+		}
+	}
 
 	if t == nil {
 		return nil
@@ -2707,7 +2737,13 @@ func (s *FunctionCallContext) AggregateFunction() IAggregateFunctionContext {
 }
 
 func (s *FunctionCallContext) CommonFunction() ICommonFunctionContext {
-	var t = s.GetTypedRuleContext(reflect.TypeOf((*ICommonFunctionContext)(nil)).Elem(), 0)
+	var t antlr.RuleContext
+	for _, ctx := range s.GetChildren() {
+		if _, ok := ctx.(ICommonFunctionContext); ok {
+			t = ctx.(antlr.RuleContext)
+			break
+		}
+	}
 
 	if t == nil {
 		return nil
@@ -2724,7 +2760,6 @@ func (s *FunctionCallContext) ToStringTree(ruleNames []string, recog antlr.Recog
 	return antlr.TreesStringTree(s, ruleNames, recog)
 }
 
-
 func (s *FunctionCallContext) EnterRule(listener antlr.ParseTreeListener) {
 	if listenerT, ok := listener.(SqlListener); ok {
 		listenerT.EnterFunctionCall(s)
@@ -2737,20 +2772,10 @@ func (s *FunctionCallContext) ExitRule(listener antlr.ParseTreeListener) {
 	}
 }
 
-func (s *FunctionCallContext) Accept(visitor antlr.ParseTreeVisitor) interface{} {
-	switch t := visitor.(type) {
-	case SqlVisitor:
-		return t.VisitFunctionCall(s)
-
-	default:
-		return t.VisitChildren(s)
-	}
-}
-
-
-
-
 func (p *SqlParser) FunctionCall() (localctx IFunctionCallContext) {
+	this := p
+	_ = this
+
 	localctx = NewFunctionCallContext(p, p.GetParserRuleContext(), p.GetState())
 	p.EnterRule(localctx, 30, SqlParserRULE_functionCall)
 
@@ -2781,7 +2806,6 @@ func (p *SqlParser) FunctionCall() (localctx IFunctionCallContext) {
 			p.AggregateFunction()
 		}
 
-
 	case SqlParserDISTINCT, SqlParserCAST, SqlParserID:
 		p.EnterOuterAlt(localctx, 2)
 		{
@@ -2789,16 +2813,12 @@ func (p *SqlParser) FunctionCall() (localctx IFunctionCallContext) {
 			p.CommonFunction()
 		}
 
-
-
 	default:
 		panic(antlr.NewNoViableAltException(p, nil, nil, nil, nil, nil))
 	}
 
-
 	return localctx
 }
-
 
 // IAggregateFunctionContext is an interface to support dynamic dispatch.
 type IAggregateFunctionContext interface {
@@ -2808,12 +2828,18 @@ type IAggregateFunctionContext interface {
 	GetParser() antlr.Parser
 
 	// GetStarArg returns the starArg token.
-	GetStarArg() antlr.Token 
-
+	GetStarArg() antlr.Token
 
 	// SetStarArg sets the starArg token.
-	SetStarArg(antlr.Token) 
+	SetStarArg(antlr.Token)
 
+	// Getter signatures
+	FunctionArg() IFunctionArgContext
+	AVG() antlr.TerminalNode
+	MAX() antlr.TerminalNode
+	MIN() antlr.TerminalNode
+	SUM() antlr.TerminalNode
+	COUNT() antlr.TerminalNode
 
 	// IsAggregateFunctionContext differentiates from other interfaces.
 	IsAggregateFunctionContext()
@@ -2821,7 +2847,7 @@ type IAggregateFunctionContext interface {
 
 type AggregateFunctionContext struct {
 	*antlr.BaseParserRuleContext
-	parser antlr.Parser
+	parser  antlr.Parser
 	starArg antlr.Token
 }
 
@@ -2849,12 +2875,16 @@ func (s *AggregateFunctionContext) GetParser() antlr.Parser { return s.parser }
 
 func (s *AggregateFunctionContext) GetStarArg() antlr.Token { return s.starArg }
 
-
 func (s *AggregateFunctionContext) SetStarArg(v antlr.Token) { s.starArg = v }
 
-
 func (s *AggregateFunctionContext) FunctionArg() IFunctionArgContext {
-	var t = s.GetTypedRuleContext(reflect.TypeOf((*IFunctionArgContext)(nil)).Elem(), 0)
+	var t antlr.RuleContext
+	for _, ctx := range s.GetChildren() {
+		if _, ok := ctx.(IFunctionArgContext); ok {
+			t = ctx.(antlr.RuleContext)
+			break
+		}
+	}
 
 	if t == nil {
 		return nil
@@ -2891,7 +2921,6 @@ func (s *AggregateFunctionContext) ToStringTree(ruleNames []string, recog antlr.
 	return antlr.TreesStringTree(s, ruleNames, recog)
 }
 
-
 func (s *AggregateFunctionContext) EnterRule(listener antlr.ParseTreeListener) {
 	if listenerT, ok := listener.(SqlListener); ok {
 		listenerT.EnterAggregateFunction(s)
@@ -2904,24 +2933,13 @@ func (s *AggregateFunctionContext) ExitRule(listener antlr.ParseTreeListener) {
 	}
 }
 
-func (s *AggregateFunctionContext) Accept(visitor antlr.ParseTreeVisitor) interface{} {
-	switch t := visitor.(type) {
-	case SqlVisitor:
-		return t.VisitAggregateFunction(s)
-
-	default:
-		return t.VisitChildren(s)
-	}
-}
-
-
-
-
 func (p *SqlParser) AggregateFunction() (localctx IAggregateFunctionContext) {
+	this := p
+	_ = this
+
 	localctx = NewAggregateFunctionContext(p, p.GetParserRuleContext(), p.GetState())
 	p.EnterRule(localctx, 32, SqlParserRULE_aggregateFunction)
 	var _la int
-
 
 	defer func() {
 		p.ExitRule()
@@ -2949,7 +2967,7 @@ func (p *SqlParser) AggregateFunction() (localctx IAggregateFunctionContext) {
 			p.SetState(170)
 			_la = p.GetTokenStream().LA(1)
 
-			if !((((_la) & -(0x1f+1)) == 0 && ((1 << uint(_la)) & ((1 << SqlParserMAX) | (1 << SqlParserSUM) | (1 << SqlParserAVG) | (1 << SqlParserMIN))) != 0)) {
+			if !((int64(_la) & ^0x3f) == 0 && ((int64(1)<<_la)&62914560) != 0) {
 				p.GetErrorHandler().RecoverInline(p)
 			} else {
 				p.GetErrorHandler().ReportMatch(p)
@@ -2968,7 +2986,6 @@ func (p *SqlParser) AggregateFunction() (localctx IAggregateFunctionContext) {
 			p.SetState(173)
 			p.Match(SqlParserT__7)
 		}
-
 
 	case SqlParserCOUNT:
 		p.EnterOuterAlt(localctx, 2)
@@ -2993,14 +3010,11 @@ func (p *SqlParser) AggregateFunction() (localctx IAggregateFunctionContext) {
 				localctx.(*AggregateFunctionContext).starArg = _m
 			}
 
-
 		case SqlParserT__6, SqlParserMAX, SqlParserSUM, SqlParserAVG, SqlParserMIN, SqlParserCOUNT, SqlParserDISTINCT, SqlParserCAST, SqlParserDECIMAL_LITERAL, SqlParserID, SqlParserTEXT_STRING, SqlParserBIND_VARIABLE:
 			{
 				p.SetState(178)
 				p.FunctionArg()
 			}
-
-
 
 		default:
 			panic(antlr.NewNoViableAltException(p, nil, nil, nil, nil, nil))
@@ -3010,16 +3024,12 @@ func (p *SqlParser) AggregateFunction() (localctx IAggregateFunctionContext) {
 			p.Match(SqlParserT__7)
 		}
 
-
-
 	default:
 		panic(antlr.NewNoViableAltException(p, nil, nil, nil, nil, nil))
 	}
 
-
 	return localctx
 }
-
 
 // ICommonFunctionContext is an interface to support dynamic dispatch.
 type ICommonFunctionContext interface {
@@ -3027,6 +3037,14 @@ type ICommonFunctionContext interface {
 
 	// GetParser returns the parser.
 	GetParser() antlr.Parser
+
+	// Getter signatures
+	FunctionName() IFunctionNameContext
+	FunctionArg() IFunctionArgContext
+	DISTINCT() antlr.TerminalNode
+	CAST() antlr.TerminalNode
+	AS() antlr.TerminalNode
+	TypeName() ITypeNameContext
 
 	// IsCommonFunctionContext differentiates from other interfaces.
 	IsCommonFunctionContext()
@@ -3060,7 +3078,13 @@ func NewCommonFunctionContext(parser antlr.Parser, parent antlr.ParserRuleContex
 func (s *CommonFunctionContext) GetParser() antlr.Parser { return s.parser }
 
 func (s *CommonFunctionContext) FunctionName() IFunctionNameContext {
-	var t = s.GetTypedRuleContext(reflect.TypeOf((*IFunctionNameContext)(nil)).Elem(), 0)
+	var t antlr.RuleContext
+	for _, ctx := range s.GetChildren() {
+		if _, ok := ctx.(IFunctionNameContext); ok {
+			t = ctx.(antlr.RuleContext)
+			break
+		}
+	}
 
 	if t == nil {
 		return nil
@@ -3070,7 +3094,13 @@ func (s *CommonFunctionContext) FunctionName() IFunctionNameContext {
 }
 
 func (s *CommonFunctionContext) FunctionArg() IFunctionArgContext {
-	var t = s.GetTypedRuleContext(reflect.TypeOf((*IFunctionArgContext)(nil)).Elem(), 0)
+	var t antlr.RuleContext
+	for _, ctx := range s.GetChildren() {
+		if _, ok := ctx.(IFunctionArgContext); ok {
+			t = ctx.(antlr.RuleContext)
+			break
+		}
+	}
 
 	if t == nil {
 		return nil
@@ -3092,7 +3122,13 @@ func (s *CommonFunctionContext) AS() antlr.TerminalNode {
 }
 
 func (s *CommonFunctionContext) TypeName() ITypeNameContext {
-	var t = s.GetTypedRuleContext(reflect.TypeOf((*ITypeNameContext)(nil)).Elem(), 0)
+	var t antlr.RuleContext
+	for _, ctx := range s.GetChildren() {
+		if _, ok := ctx.(ITypeNameContext); ok {
+			t = ctx.(antlr.RuleContext)
+			break
+		}
+	}
 
 	if t == nil {
 		return nil
@@ -3109,7 +3145,6 @@ func (s *CommonFunctionContext) ToStringTree(ruleNames []string, recog antlr.Rec
 	return antlr.TreesStringTree(s, ruleNames, recog)
 }
 
-
 func (s *CommonFunctionContext) EnterRule(listener antlr.ParseTreeListener) {
 	if listenerT, ok := listener.(SqlListener); ok {
 		listenerT.EnterCommonFunction(s)
@@ -3122,20 +3157,10 @@ func (s *CommonFunctionContext) ExitRule(listener antlr.ParseTreeListener) {
 	}
 }
 
-func (s *CommonFunctionContext) Accept(visitor antlr.ParseTreeVisitor) interface{} {
-	switch t := visitor.(type) {
-	case SqlVisitor:
-		return t.VisitCommonFunction(s)
-
-	default:
-		return t.VisitChildren(s)
-	}
-}
-
-
-
-
 func (p *SqlParser) CommonFunction() (localctx ICommonFunctionContext) {
+	this := p
+	_ = this
+
 	localctx = NewCommonFunctionContext(p, p.GetParserRuleContext(), p.GetState())
 	p.EnterRule(localctx, 34, SqlParserRULE_commonFunction)
 
@@ -3178,7 +3203,6 @@ func (p *SqlParser) CommonFunction() (localctx ICommonFunctionContext) {
 			p.Match(SqlParserT__7)
 		}
 
-
 	case SqlParserDISTINCT:
 		p.EnterOuterAlt(localctx, 2)
 		{
@@ -3189,7 +3213,6 @@ func (p *SqlParser) CommonFunction() (localctx ICommonFunctionContext) {
 			p.SetState(190)
 			p.FunctionArg()
 		}
-
 
 	case SqlParserCAST:
 		p.EnterOuterAlt(localctx, 3)
@@ -3218,16 +3241,12 @@ func (p *SqlParser) CommonFunction() (localctx ICommonFunctionContext) {
 			p.Match(SqlParserT__7)
 		}
 
-
-
 	default:
 		panic(antlr.NewNoViableAltException(p, nil, nil, nil, nil, nil))
 	}
 
-
 	return localctx
 }
-
 
 // IFunctionArgContext is an interface to support dynamic dispatch.
 type IFunctionArgContext interface {
@@ -3235,6 +3254,10 @@ type IFunctionArgContext interface {
 
 	// GetParser returns the parser.
 	GetParser() antlr.Parser
+
+	// Getter signatures
+	AllExpr() []IExprContext
+	Expr(i int) IExprContext
 
 	// IsFunctionArgContext differentiates from other interfaces.
 	IsFunctionArgContext()
@@ -3268,12 +3291,20 @@ func NewFunctionArgContext(parser antlr.Parser, parent antlr.ParserRuleContext, 
 func (s *FunctionArgContext) GetParser() antlr.Parser { return s.parser }
 
 func (s *FunctionArgContext) AllExpr() []IExprContext {
-	var ts = s.GetTypedRuleContexts(reflect.TypeOf((*IExprContext)(nil)).Elem())
-	var tst = make([]IExprContext, len(ts))
+	children := s.GetChildren()
+	len := 0
+	for _, ctx := range children {
+		if _, ok := ctx.(IExprContext); ok {
+			len++
+		}
+	}
 
-	for i, t := range ts {
-		if t != nil {
+	tst := make([]IExprContext, len)
+	i := 0
+	for _, ctx := range children {
+		if t, ok := ctx.(IExprContext); ok {
 			tst[i] = t.(IExprContext)
+			i++
 		}
 	}
 
@@ -3281,7 +3312,17 @@ func (s *FunctionArgContext) AllExpr() []IExprContext {
 }
 
 func (s *FunctionArgContext) Expr(i int) IExprContext {
-	var t = s.GetTypedRuleContext(reflect.TypeOf((*IExprContext)(nil)).Elem(), i)
+	var t antlr.RuleContext
+	j := 0
+	for _, ctx := range s.GetChildren() {
+		if _, ok := ctx.(IExprContext); ok {
+			if j == i {
+				t = ctx.(antlr.RuleContext)
+				break
+			}
+			j++
+		}
+	}
 
 	if t == nil {
 		return nil
@@ -3298,7 +3339,6 @@ func (s *FunctionArgContext) ToStringTree(ruleNames []string, recog antlr.Recogn
 	return antlr.TreesStringTree(s, ruleNames, recog)
 }
 
-
 func (s *FunctionArgContext) EnterRule(listener antlr.ParseTreeListener) {
 	if listenerT, ok := listener.(SqlListener); ok {
 		listenerT.EnterFunctionArg(s)
@@ -3311,20 +3351,10 @@ func (s *FunctionArgContext) ExitRule(listener antlr.ParseTreeListener) {
 	}
 }
 
-func (s *FunctionArgContext) Accept(visitor antlr.ParseTreeVisitor) interface{} {
-	switch t := visitor.(type) {
-	case SqlVisitor:
-		return t.VisitFunctionArg(s)
-
-	default:
-		return t.VisitChildren(s)
-	}
-}
-
-
-
-
 func (p *SqlParser) FunctionArg() (localctx IFunctionArgContext) {
+	this := p
+	_ = this
+
 	localctx = NewFunctionArgContext(p, p.GetParserRuleContext(), p.GetState())
 	p.EnterRule(localctx, 36, SqlParserRULE_functionArg)
 
@@ -3366,18 +3396,14 @@ func (p *SqlParser) FunctionArg() (localctx IFunctionArgContext) {
 				p.expr(0)
 			}
 
-
 		}
 		p.SetState(207)
 		p.GetErrorHandler().Sync(p)
 		_alt = p.GetInterpreter().AdaptivePredict(p.GetTokenStream(), 20, p.GetParserRuleContext())
 	}
 
-
-
 	return localctx
 }
-
 
 // ITableSourcesContext is an interface to support dynamic dispatch.
 type ITableSourcesContext interface {
@@ -3385,6 +3411,12 @@ type ITableSourcesContext interface {
 
 	// GetParser returns the parser.
 	GetParser() antlr.Parser
+
+	// Getter signatures
+	AllTableSource() []ITableSourceContext
+	TableSource(i int) ITableSourceContext
+	AllAlias() []IAliasContext
+	Alias(i int) IAliasContext
 
 	// IsTableSourcesContext differentiates from other interfaces.
 	IsTableSourcesContext()
@@ -3418,12 +3450,20 @@ func NewTableSourcesContext(parser antlr.Parser, parent antlr.ParserRuleContext,
 func (s *TableSourcesContext) GetParser() antlr.Parser { return s.parser }
 
 func (s *TableSourcesContext) AllTableSource() []ITableSourceContext {
-	var ts = s.GetTypedRuleContexts(reflect.TypeOf((*ITableSourceContext)(nil)).Elem())
-	var tst = make([]ITableSourceContext, len(ts))
+	children := s.GetChildren()
+	len := 0
+	for _, ctx := range children {
+		if _, ok := ctx.(ITableSourceContext); ok {
+			len++
+		}
+	}
 
-	for i, t := range ts {
-		if t != nil {
+	tst := make([]ITableSourceContext, len)
+	i := 0
+	for _, ctx := range children {
+		if t, ok := ctx.(ITableSourceContext); ok {
 			tst[i] = t.(ITableSourceContext)
+			i++
 		}
 	}
 
@@ -3431,7 +3471,17 @@ func (s *TableSourcesContext) AllTableSource() []ITableSourceContext {
 }
 
 func (s *TableSourcesContext) TableSource(i int) ITableSourceContext {
-	var t = s.GetTypedRuleContext(reflect.TypeOf((*ITableSourceContext)(nil)).Elem(), i)
+	var t antlr.RuleContext
+	j := 0
+	for _, ctx := range s.GetChildren() {
+		if _, ok := ctx.(ITableSourceContext); ok {
+			if j == i {
+				t = ctx.(antlr.RuleContext)
+				break
+			}
+			j++
+		}
+	}
 
 	if t == nil {
 		return nil
@@ -3441,12 +3491,20 @@ func (s *TableSourcesContext) TableSource(i int) ITableSourceContext {
 }
 
 func (s *TableSourcesContext) AllAlias() []IAliasContext {
-	var ts = s.GetTypedRuleContexts(reflect.TypeOf((*IAliasContext)(nil)).Elem())
-	var tst = make([]IAliasContext, len(ts))
+	children := s.GetChildren()
+	len := 0
+	for _, ctx := range children {
+		if _, ok := ctx.(IAliasContext); ok {
+			len++
+		}
+	}
 
-	for i, t := range ts {
-		if t != nil {
+	tst := make([]IAliasContext, len)
+	i := 0
+	for _, ctx := range children {
+		if t, ok := ctx.(IAliasContext); ok {
 			tst[i] = t.(IAliasContext)
+			i++
 		}
 	}
 
@@ -3454,7 +3512,17 @@ func (s *TableSourcesContext) AllAlias() []IAliasContext {
 }
 
 func (s *TableSourcesContext) Alias(i int) IAliasContext {
-	var t = s.GetTypedRuleContext(reflect.TypeOf((*IAliasContext)(nil)).Elem(), i)
+	var t antlr.RuleContext
+	j := 0
+	for _, ctx := range s.GetChildren() {
+		if _, ok := ctx.(IAliasContext); ok {
+			if j == i {
+				t = ctx.(antlr.RuleContext)
+				break
+			}
+			j++
+		}
+	}
 
 	if t == nil {
 		return nil
@@ -3471,7 +3539,6 @@ func (s *TableSourcesContext) ToStringTree(ruleNames []string, recog antlr.Recog
 	return antlr.TreesStringTree(s, ruleNames, recog)
 }
 
-
 func (s *TableSourcesContext) EnterRule(listener antlr.ParseTreeListener) {
 	if listenerT, ok := listener.(SqlListener); ok {
 		listenerT.EnterTableSources(s)
@@ -3484,20 +3551,10 @@ func (s *TableSourcesContext) ExitRule(listener antlr.ParseTreeListener) {
 	}
 }
 
-func (s *TableSourcesContext) Accept(visitor antlr.ParseTreeVisitor) interface{} {
-	switch t := visitor.(type) {
-	case SqlVisitor:
-		return t.VisitTableSources(s)
-
-	default:
-		return t.VisitChildren(s)
-	}
-}
-
-
-
-
 func (p *SqlParser) TableSources() (localctx ITableSourcesContext) {
+	this := p
+	_ = this
+
 	localctx = NewTableSourcesContext(p, p.GetParserRuleContext(), p.GetState())
 	p.EnterRule(localctx, 38, SqlParserRULE_tableSources)
 
@@ -3527,13 +3584,11 @@ func (p *SqlParser) TableSources() (localctx ITableSourcesContext) {
 	p.SetState(210)
 	p.GetErrorHandler().Sync(p)
 
-
 	if p.GetInterpreter().AdaptivePredict(p.GetTokenStream(), 21, p.GetParserRuleContext()) == 1 {
 		{
 			p.SetState(209)
 			p.Alias()
 		}
-
 
 	}
 	p.SetState(219)
@@ -3553,16 +3608,13 @@ func (p *SqlParser) TableSources() (localctx ITableSourcesContext) {
 			p.SetState(215)
 			p.GetErrorHandler().Sync(p)
 
-
 			if p.GetInterpreter().AdaptivePredict(p.GetTokenStream(), 22, p.GetParserRuleContext()) == 1 {
 				{
 					p.SetState(214)
 					p.Alias()
 				}
 
-
 			}
-
 
 		}
 		p.SetState(221)
@@ -3570,11 +3622,8 @@ func (p *SqlParser) TableSources() (localctx ITableSourcesContext) {
 		_alt = p.GetInterpreter().AdaptivePredict(p.GetTokenStream(), 23, p.GetParserRuleContext())
 	}
 
-
-
 	return localctx
 }
-
 
 // ITableSourceContext is an interface to support dynamic dispatch.
 type ITableSourceContext interface {
@@ -3582,6 +3631,10 @@ type ITableSourceContext interface {
 
 	// GetParser returns the parser.
 	GetParser() antlr.Parser
+
+	// Getter signatures
+	TableName() ITableNameContext
+	SelectStatement() ISelectStatementContext
 
 	// IsTableSourceContext differentiates from other interfaces.
 	IsTableSourceContext()
@@ -3615,7 +3668,13 @@ func NewTableSourceContext(parser antlr.Parser, parent antlr.ParserRuleContext, 
 func (s *TableSourceContext) GetParser() antlr.Parser { return s.parser }
 
 func (s *TableSourceContext) TableName() ITableNameContext {
-	var t = s.GetTypedRuleContext(reflect.TypeOf((*ITableNameContext)(nil)).Elem(), 0)
+	var t antlr.RuleContext
+	for _, ctx := range s.GetChildren() {
+		if _, ok := ctx.(ITableNameContext); ok {
+			t = ctx.(antlr.RuleContext)
+			break
+		}
+	}
 
 	if t == nil {
 		return nil
@@ -3625,7 +3684,13 @@ func (s *TableSourceContext) TableName() ITableNameContext {
 }
 
 func (s *TableSourceContext) SelectStatement() ISelectStatementContext {
-	var t = s.GetTypedRuleContext(reflect.TypeOf((*ISelectStatementContext)(nil)).Elem(), 0)
+	var t antlr.RuleContext
+	for _, ctx := range s.GetChildren() {
+		if _, ok := ctx.(ISelectStatementContext); ok {
+			t = ctx.(antlr.RuleContext)
+			break
+		}
+	}
 
 	if t == nil {
 		return nil
@@ -3642,7 +3707,6 @@ func (s *TableSourceContext) ToStringTree(ruleNames []string, recog antlr.Recogn
 	return antlr.TreesStringTree(s, ruleNames, recog)
 }
 
-
 func (s *TableSourceContext) EnterRule(listener antlr.ParseTreeListener) {
 	if listenerT, ok := listener.(SqlListener); ok {
 		listenerT.EnterTableSource(s)
@@ -3655,20 +3719,10 @@ func (s *TableSourceContext) ExitRule(listener antlr.ParseTreeListener) {
 	}
 }
 
-func (s *TableSourceContext) Accept(visitor antlr.ParseTreeVisitor) interface{} {
-	switch t := visitor.(type) {
-	case SqlVisitor:
-		return t.VisitTableSource(s)
-
-	default:
-		return t.VisitChildren(s)
-	}
-}
-
-
-
-
 func (p *SqlParser) TableSource() (localctx ITableSourceContext) {
+	this := p
+	_ = this
+
 	localctx = NewTableSourceContext(p, p.GetParserRuleContext(), p.GetState())
 	p.EnterRule(localctx, 40, SqlParserRULE_tableSource)
 
@@ -3699,7 +3753,6 @@ func (p *SqlParser) TableSource() (localctx ITableSourceContext) {
 			p.TableName()
 		}
 
-
 	case SqlParserT__6:
 		p.EnterOuterAlt(localctx, 2)
 		{
@@ -3715,16 +3768,12 @@ func (p *SqlParser) TableSource() (localctx ITableSourceContext) {
 			p.Match(SqlParserT__7)
 		}
 
-
-
 	default:
 		panic(antlr.NewNoViableAltException(p, nil, nil, nil, nil, nil))
 	}
 
-
 	return localctx
 }
-
 
 // IWhereClauseContext is an interface to support dynamic dispatch.
 type IWhereClauseContext interface {
@@ -3732,6 +3781,10 @@ type IWhereClauseContext interface {
 
 	// GetParser returns the parser.
 	GetParser() antlr.Parser
+
+	// Getter signatures
+	WHERE() antlr.TerminalNode
+	LogicExpression() ILogicExpressionContext
 
 	// IsWhereClauseContext differentiates from other interfaces.
 	IsWhereClauseContext()
@@ -3769,7 +3822,13 @@ func (s *WhereClauseContext) WHERE() antlr.TerminalNode {
 }
 
 func (s *WhereClauseContext) LogicExpression() ILogicExpressionContext {
-	var t = s.GetTypedRuleContext(reflect.TypeOf((*ILogicExpressionContext)(nil)).Elem(), 0)
+	var t antlr.RuleContext
+	for _, ctx := range s.GetChildren() {
+		if _, ok := ctx.(ILogicExpressionContext); ok {
+			t = ctx.(antlr.RuleContext)
+			break
+		}
+	}
 
 	if t == nil {
 		return nil
@@ -3786,7 +3845,6 @@ func (s *WhereClauseContext) ToStringTree(ruleNames []string, recog antlr.Recogn
 	return antlr.TreesStringTree(s, ruleNames, recog)
 }
 
-
 func (s *WhereClauseContext) EnterRule(listener antlr.ParseTreeListener) {
 	if listenerT, ok := listener.(SqlListener); ok {
 		listenerT.EnterWhereClause(s)
@@ -3799,20 +3857,10 @@ func (s *WhereClauseContext) ExitRule(listener antlr.ParseTreeListener) {
 	}
 }
 
-func (s *WhereClauseContext) Accept(visitor antlr.ParseTreeVisitor) interface{} {
-	switch t := visitor.(type) {
-	case SqlVisitor:
-		return t.VisitWhereClause(s)
-
-	default:
-		return t.VisitChildren(s)
-	}
-}
-
-
-
-
 func (p *SqlParser) WhereClause() (localctx IWhereClauseContext) {
+	this := p
+	_ = this
+
 	localctx = NewWhereClauseContext(p, p.GetParserRuleContext(), p.GetState())
 	p.EnterRule(localctx, 42, SqlParserRULE_whereClause)
 
@@ -3842,11 +3890,8 @@ func (p *SqlParser) WhereClause() (localctx IWhereClauseContext) {
 		p.logicExpression(0)
 	}
 
-
-
 	return localctx
 }
-
 
 // ILogicExpressionContext is an interface to support dynamic dispatch.
 type ILogicExpressionContext interface {
@@ -3856,24 +3901,40 @@ type ILogicExpressionContext interface {
 	GetParser() antlr.Parser
 
 	// GetLeftBracket returns the leftBracket token.
-	GetLeftBracket() antlr.Token 
+	GetLeftBracket() antlr.Token
 
 	// GetRightBracket returns the rightBracket token.
-	GetRightBracket() antlr.Token 
+	GetRightBracket() antlr.Token
 
 	// GetLogicalOperator returns the logicalOperator token.
-	GetLogicalOperator() antlr.Token 
-
+	GetLogicalOperator() antlr.Token
 
 	// SetLeftBracket sets the leftBracket token.
-	SetLeftBracket(antlr.Token) 
+	SetLeftBracket(antlr.Token)
 
 	// SetRightBracket sets the rightBracket token.
-	SetRightBracket(antlr.Token) 
+	SetRightBracket(antlr.Token)
 
 	// SetLogicalOperator sets the logicalOperator token.
-	SetLogicalOperator(antlr.Token) 
+	SetLogicalOperator(antlr.Token)
 
+	// Getter signatures
+	AllExpr() []IExprContext
+	Expr(i int) IExprContext
+	ComparisonOperator() IComparisonOperatorContext
+	BETWEEN() antlr.TerminalNode
+	AND() antlr.TerminalNode
+	NOT() antlr.TerminalNode
+	IN() antlr.TerminalNode
+	SelectStatement() ISelectStatementContext
+	LIKE() antlr.TerminalNode
+	IS() antlr.TerminalNode
+	NULL() antlr.TerminalNode
+	EXISTS() antlr.TerminalNode
+	AllLogicExpression() []ILogicExpressionContext
+	LogicExpression(i int) ILogicExpressionContext
+	COMMENT() antlr.TerminalNode
+	OR() antlr.TerminalNode
 
 	// IsLogicExpressionContext differentiates from other interfaces.
 	IsLogicExpressionContext()
@@ -3881,9 +3942,9 @@ type ILogicExpressionContext interface {
 
 type LogicExpressionContext struct {
 	*antlr.BaseParserRuleContext
-	parser antlr.Parser
-	leftBracket antlr.Token
-	rightBracket antlr.Token
+	parser          antlr.Parser
+	leftBracket     antlr.Token
+	rightBracket    antlr.Token
 	logicalOperator antlr.Token
 }
 
@@ -3915,21 +3976,27 @@ func (s *LogicExpressionContext) GetRightBracket() antlr.Token { return s.rightB
 
 func (s *LogicExpressionContext) GetLogicalOperator() antlr.Token { return s.logicalOperator }
 
-
 func (s *LogicExpressionContext) SetLeftBracket(v antlr.Token) { s.leftBracket = v }
 
 func (s *LogicExpressionContext) SetRightBracket(v antlr.Token) { s.rightBracket = v }
 
 func (s *LogicExpressionContext) SetLogicalOperator(v antlr.Token) { s.logicalOperator = v }
 
-
 func (s *LogicExpressionContext) AllExpr() []IExprContext {
-	var ts = s.GetTypedRuleContexts(reflect.TypeOf((*IExprContext)(nil)).Elem())
-	var tst = make([]IExprContext, len(ts))
+	children := s.GetChildren()
+	len := 0
+	for _, ctx := range children {
+		if _, ok := ctx.(IExprContext); ok {
+			len++
+		}
+	}
 
-	for i, t := range ts {
-		if t != nil {
+	tst := make([]IExprContext, len)
+	i := 0
+	for _, ctx := range children {
+		if t, ok := ctx.(IExprContext); ok {
 			tst[i] = t.(IExprContext)
+			i++
 		}
 	}
 
@@ -3937,7 +4004,17 @@ func (s *LogicExpressionContext) AllExpr() []IExprContext {
 }
 
 func (s *LogicExpressionContext) Expr(i int) IExprContext {
-	var t = s.GetTypedRuleContext(reflect.TypeOf((*IExprContext)(nil)).Elem(), i)
+	var t antlr.RuleContext
+	j := 0
+	for _, ctx := range s.GetChildren() {
+		if _, ok := ctx.(IExprContext); ok {
+			if j == i {
+				t = ctx.(antlr.RuleContext)
+				break
+			}
+			j++
+		}
+	}
 
 	if t == nil {
 		return nil
@@ -3947,7 +4024,13 @@ func (s *LogicExpressionContext) Expr(i int) IExprContext {
 }
 
 func (s *LogicExpressionContext) ComparisonOperator() IComparisonOperatorContext {
-	var t = s.GetTypedRuleContext(reflect.TypeOf((*IComparisonOperatorContext)(nil)).Elem(), 0)
+	var t antlr.RuleContext
+	for _, ctx := range s.GetChildren() {
+		if _, ok := ctx.(IComparisonOperatorContext); ok {
+			t = ctx.(antlr.RuleContext)
+			break
+		}
+	}
 
 	if t == nil {
 		return nil
@@ -3973,7 +4056,13 @@ func (s *LogicExpressionContext) IN() antlr.TerminalNode {
 }
 
 func (s *LogicExpressionContext) SelectStatement() ISelectStatementContext {
-	var t = s.GetTypedRuleContext(reflect.TypeOf((*ISelectStatementContext)(nil)).Elem(), 0)
+	var t antlr.RuleContext
+	for _, ctx := range s.GetChildren() {
+		if _, ok := ctx.(ISelectStatementContext); ok {
+			t = ctx.(antlr.RuleContext)
+			break
+		}
+	}
 
 	if t == nil {
 		return nil
@@ -3999,12 +4088,20 @@ func (s *LogicExpressionContext) EXISTS() antlr.TerminalNode {
 }
 
 func (s *LogicExpressionContext) AllLogicExpression() []ILogicExpressionContext {
-	var ts = s.GetTypedRuleContexts(reflect.TypeOf((*ILogicExpressionContext)(nil)).Elem())
-	var tst = make([]ILogicExpressionContext, len(ts))
+	children := s.GetChildren()
+	len := 0
+	for _, ctx := range children {
+		if _, ok := ctx.(ILogicExpressionContext); ok {
+			len++
+		}
+	}
 
-	for i, t := range ts {
-		if t != nil {
+	tst := make([]ILogicExpressionContext, len)
+	i := 0
+	for _, ctx := range children {
+		if t, ok := ctx.(ILogicExpressionContext); ok {
 			tst[i] = t.(ILogicExpressionContext)
+			i++
 		}
 	}
 
@@ -4012,7 +4109,17 @@ func (s *LogicExpressionContext) AllLogicExpression() []ILogicExpressionContext 
 }
 
 func (s *LogicExpressionContext) LogicExpression(i int) ILogicExpressionContext {
-	var t = s.GetTypedRuleContext(reflect.TypeOf((*ILogicExpressionContext)(nil)).Elem(), i)
+	var t antlr.RuleContext
+	j := 0
+	for _, ctx := range s.GetChildren() {
+		if _, ok := ctx.(ILogicExpressionContext); ok {
+			if j == i {
+				t = ctx.(antlr.RuleContext)
+				break
+			}
+			j++
+		}
+	}
 
 	if t == nil {
 		return nil
@@ -4037,7 +4144,6 @@ func (s *LogicExpressionContext) ToStringTree(ruleNames []string, recog antlr.Re
 	return antlr.TreesStringTree(s, ruleNames, recog)
 }
 
-
 func (s *LogicExpressionContext) EnterRule(listener antlr.ParseTreeListener) {
 	if listenerT, ok := listener.(SqlListener); ok {
 		listenerT.EnterLogicExpression(s)
@@ -4050,25 +4156,14 @@ func (s *LogicExpressionContext) ExitRule(listener antlr.ParseTreeListener) {
 	}
 }
 
-func (s *LogicExpressionContext) Accept(visitor antlr.ParseTreeVisitor) interface{} {
-	switch t := visitor.(type) {
-	case SqlVisitor:
-		return t.VisitLogicExpression(s)
-
-	default:
-		return t.VisitChildren(s)
-	}
-}
-
-
-
-
-
 func (p *SqlParser) LogicExpression() (localctx ILogicExpressionContext) {
 	return p.logicExpression(0)
 }
 
 func (p *SqlParser) logicExpression(_p int) (localctx ILogicExpressionContext) {
+	this := p
+	_ = this
+
 	var _parentctx antlr.ParserRuleContext = p.GetParserRuleContext()
 	_parentState := p.GetState()
 	localctx = NewLogicExpressionContext(p, p.GetParserRuleContext(), _parentState)
@@ -4077,7 +4172,6 @@ func (p *SqlParser) logicExpression(_p int) (localctx ILogicExpressionContext) {
 	_startState := 44
 	p.EnterRecursionRule(localctx, 44, SqlParserRULE_logicExpression, _p)
 	var _la int
-
 
 	defer func() {
 		p.UnrollRecursionContexts(_parentctx)
@@ -4115,7 +4209,6 @@ func (p *SqlParser) logicExpression(_p int) (localctx ILogicExpressionContext) {
 			p.expr(0)
 		}
 
-
 	case 2:
 		{
 			p.SetState(237)
@@ -4124,7 +4217,6 @@ func (p *SqlParser) logicExpression(_p int) (localctx ILogicExpressionContext) {
 		p.SetState(239)
 		p.GetErrorHandler().Sync(p)
 		_la = p.GetTokenStream().LA(1)
-
 
 		if _la == SqlParserNOT {
 			{
@@ -4150,7 +4242,6 @@ func (p *SqlParser) logicExpression(_p int) (localctx ILogicExpressionContext) {
 			p.expr(0)
 		}
 
-
 	case 3:
 		{
 			p.SetState(246)
@@ -4159,7 +4250,6 @@ func (p *SqlParser) logicExpression(_p int) (localctx ILogicExpressionContext) {
 		p.SetState(248)
 		p.GetErrorHandler().Sync(p)
 		_la = p.GetTokenStream().LA(1)
-
 
 		if _la == SqlParserNOT {
 			{
@@ -4184,7 +4274,6 @@ func (p *SqlParser) logicExpression(_p int) (localctx ILogicExpressionContext) {
 		p.GetErrorHandler().Sync(p)
 		_la = p.GetTokenStream().LA(1)
 
-
 		for _la == SqlParserT__1 {
 			{
 				p.SetState(253)
@@ -4195,7 +4284,6 @@ func (p *SqlParser) logicExpression(_p int) (localctx ILogicExpressionContext) {
 				p.expr(0)
 			}
 
-
 			p.SetState(259)
 			p.GetErrorHandler().Sync(p)
 			_la = p.GetTokenStream().LA(1)
@@ -4205,7 +4293,6 @@ func (p *SqlParser) logicExpression(_p int) (localctx ILogicExpressionContext) {
 			p.Match(SqlParserT__7)
 		}
 
-
 	case 4:
 		{
 			p.SetState(262)
@@ -4214,7 +4301,6 @@ func (p *SqlParser) logicExpression(_p int) (localctx ILogicExpressionContext) {
 		p.SetState(264)
 		p.GetErrorHandler().Sync(p)
 		_la = p.GetTokenStream().LA(1)
-
 
 		if _la == SqlParserNOT {
 			{
@@ -4240,7 +4326,6 @@ func (p *SqlParser) logicExpression(_p int) (localctx ILogicExpressionContext) {
 			p.Match(SqlParserT__7)
 		}
 
-
 	case 5:
 		{
 			p.SetState(271)
@@ -4249,7 +4334,6 @@ func (p *SqlParser) logicExpression(_p int) (localctx ILogicExpressionContext) {
 		p.SetState(273)
 		p.GetErrorHandler().Sync(p)
 		_la = p.GetTokenStream().LA(1)
-
 
 		if _la == SqlParserNOT {
 			{
@@ -4267,7 +4351,6 @@ func (p *SqlParser) logicExpression(_p int) (localctx ILogicExpressionContext) {
 			p.expr(0)
 		}
 
-
 	case 6:
 		{
 			p.SetState(278)
@@ -4281,7 +4364,6 @@ func (p *SqlParser) logicExpression(_p int) (localctx ILogicExpressionContext) {
 		p.GetErrorHandler().Sync(p)
 		_la = p.GetTokenStream().LA(1)
 
-
 		if _la == SqlParserNOT {
 			{
 				p.SetState(280)
@@ -4293,7 +4375,6 @@ func (p *SqlParser) logicExpression(_p int) (localctx ILogicExpressionContext) {
 			p.SetState(283)
 			p.Match(SqlParserNULL)
 		}
-
 
 	case 7:
 		{
@@ -4319,12 +4400,10 @@ func (p *SqlParser) logicExpression(_p int) (localctx ILogicExpressionContext) {
 			localctx.(*LogicExpressionContext).rightBracket = _m
 		}
 
-
 	case 8:
 		p.SetState(291)
 		p.GetErrorHandler().Sync(p)
 		_la = p.GetTokenStream().LA(1)
-
 
 		if _la == SqlParserCOMMENT {
 			{
@@ -4351,7 +4430,6 @@ func (p *SqlParser) logicExpression(_p int) (localctx ILogicExpressionContext) {
 
 			localctx.(*LogicExpressionContext).rightBracket = _m
 		}
-
 
 	case 9:
 		{
@@ -4398,7 +4476,6 @@ func (p *SqlParser) logicExpression(_p int) (localctx ILogicExpressionContext) {
 					p.logicExpression(3)
 				}
 
-
 			case 2:
 				localctx = NewLogicExpressionContext(p, _parentctx, _parentState)
 				p.PushNewRecursionContext(localctx, _startState, SqlParserRULE_logicExpression)
@@ -4427,11 +4504,8 @@ func (p *SqlParser) logicExpression(_p int) (localctx ILogicExpressionContext) {
 		_alt = p.GetInterpreter().AdaptivePredict(p.GetTokenStream(), 34, p.GetParserRuleContext())
 	}
 
-
-
 	return localctx
 }
-
 
 // IComparisonOperatorContext is an interface to support dynamic dispatch.
 type IComparisonOperatorContext interface {
@@ -4439,7 +4513,6 @@ type IComparisonOperatorContext interface {
 
 	// GetParser returns the parser.
 	GetParser() antlr.Parser
-
 	// IsComparisonOperatorContext differentiates from other interfaces.
 	IsComparisonOperatorContext()
 }
@@ -4478,7 +4551,6 @@ func (s *ComparisonOperatorContext) ToStringTree(ruleNames []string, recog antlr
 	return antlr.TreesStringTree(s, ruleNames, recog)
 }
 
-
 func (s *ComparisonOperatorContext) EnterRule(listener antlr.ParseTreeListener) {
 	if listenerT, ok := listener.(SqlListener); ok {
 		listenerT.EnterComparisonOperator(s)
@@ -4491,24 +4563,13 @@ func (s *ComparisonOperatorContext) ExitRule(listener antlr.ParseTreeListener) {
 	}
 }
 
-func (s *ComparisonOperatorContext) Accept(visitor antlr.ParseTreeVisitor) interface{} {
-	switch t := visitor.(type) {
-	case SqlVisitor:
-		return t.VisitComparisonOperator(s)
-
-	default:
-		return t.VisitChildren(s)
-	}
-}
-
-
-
-
 func (p *SqlParser) ComparisonOperator() (localctx IComparisonOperatorContext) {
+	this := p
+	_ = this
+
 	localctx = NewComparisonOperatorContext(p, p.GetParserRuleContext(), p.GetState())
 	p.EnterRule(localctx, 46, SqlParserRULE_comparisonOperator)
 	var _la int
-
 
 	defer func() {
 		p.ExitRule()
@@ -4531,7 +4592,7 @@ func (p *SqlParser) ComparisonOperator() (localctx IComparisonOperatorContext) {
 		p.SetState(312)
 		_la = p.GetTokenStream().LA(1)
 
-		if !((((_la) & -(0x1f+1)) == 0 && ((1 << uint(_la)) & ((1 << SqlParserT__8) | (1 << SqlParserT__9) | (1 << SqlParserT__10) | (1 << SqlParserT__11) | (1 << SqlParserT__12) | (1 << SqlParserT__13) | (1 << SqlParserT__14) | (1 << SqlParserT__15))) != 0)) {
+		if !((int64(_la) & ^0x3f) == 0 && ((int64(1)<<_la)&523776) != 0) {
 			p.GetErrorHandler().RecoverInline(p)
 		} else {
 			p.GetErrorHandler().ReportMatch(p)
@@ -4539,11 +4600,8 @@ func (p *SqlParser) ComparisonOperator() (localctx IComparisonOperatorContext) {
 		}
 	}
 
-
-
 	return localctx
 }
-
 
 // IGroupByClauseContext is an interface to support dynamic dispatch.
 type IGroupByClauseContext interface {
@@ -4551,6 +4609,12 @@ type IGroupByClauseContext interface {
 
 	// GetParser returns the parser.
 	GetParser() antlr.Parser
+
+	// Getter signatures
+	GROUP() antlr.TerminalNode
+	BY() antlr.TerminalNode
+	AllGroupByItem() []IGroupByItemContext
+	GroupByItem(i int) IGroupByItemContext
 
 	// IsGroupByClauseContext differentiates from other interfaces.
 	IsGroupByClauseContext()
@@ -4592,12 +4656,20 @@ func (s *GroupByClauseContext) BY() antlr.TerminalNode {
 }
 
 func (s *GroupByClauseContext) AllGroupByItem() []IGroupByItemContext {
-	var ts = s.GetTypedRuleContexts(reflect.TypeOf((*IGroupByItemContext)(nil)).Elem())
-	var tst = make([]IGroupByItemContext, len(ts))
+	children := s.GetChildren()
+	len := 0
+	for _, ctx := range children {
+		if _, ok := ctx.(IGroupByItemContext); ok {
+			len++
+		}
+	}
 
-	for i, t := range ts {
-		if t != nil {
+	tst := make([]IGroupByItemContext, len)
+	i := 0
+	for _, ctx := range children {
+		if t, ok := ctx.(IGroupByItemContext); ok {
 			tst[i] = t.(IGroupByItemContext)
+			i++
 		}
 	}
 
@@ -4605,7 +4677,17 @@ func (s *GroupByClauseContext) AllGroupByItem() []IGroupByItemContext {
 }
 
 func (s *GroupByClauseContext) GroupByItem(i int) IGroupByItemContext {
-	var t = s.GetTypedRuleContext(reflect.TypeOf((*IGroupByItemContext)(nil)).Elem(), i)
+	var t antlr.RuleContext
+	j := 0
+	for _, ctx := range s.GetChildren() {
+		if _, ok := ctx.(IGroupByItemContext); ok {
+			if j == i {
+				t = ctx.(antlr.RuleContext)
+				break
+			}
+			j++
+		}
+	}
 
 	if t == nil {
 		return nil
@@ -4622,7 +4704,6 @@ func (s *GroupByClauseContext) ToStringTree(ruleNames []string, recog antlr.Reco
 	return antlr.TreesStringTree(s, ruleNames, recog)
 }
 
-
 func (s *GroupByClauseContext) EnterRule(listener antlr.ParseTreeListener) {
 	if listenerT, ok := listener.(SqlListener); ok {
 		listenerT.EnterGroupByClause(s)
@@ -4635,20 +4716,10 @@ func (s *GroupByClauseContext) ExitRule(listener antlr.ParseTreeListener) {
 	}
 }
 
-func (s *GroupByClauseContext) Accept(visitor antlr.ParseTreeVisitor) interface{} {
-	switch t := visitor.(type) {
-	case SqlVisitor:
-		return t.VisitGroupByClause(s)
-
-	default:
-		return t.VisitChildren(s)
-	}
-}
-
-
-
-
 func (p *SqlParser) GroupByClause() (localctx IGroupByClauseContext) {
+	this := p
+	_ = this
+
 	localctx = NewGroupByClauseContext(p, p.GetParserRuleContext(), p.GetState())
 	p.EnterRule(localctx, 48, SqlParserRULE_groupByClause)
 
@@ -4698,18 +4769,14 @@ func (p *SqlParser) GroupByClause() (localctx IGroupByClauseContext) {
 				p.GroupByItem()
 			}
 
-
 		}
 		p.SetState(323)
 		p.GetErrorHandler().Sync(p)
 		_alt = p.GetInterpreter().AdaptivePredict(p.GetTokenStream(), 35, p.GetParserRuleContext())
 	}
 
-
-
 	return localctx
 }
-
 
 // IGroupByItemContext is an interface to support dynamic dispatch.
 type IGroupByItemContext interface {
@@ -4717,6 +4784,9 @@ type IGroupByItemContext interface {
 
 	// GetParser returns the parser.
 	GetParser() antlr.Parser
+
+	// Getter signatures
+	Expr() IExprContext
 
 	// IsGroupByItemContext differentiates from other interfaces.
 	IsGroupByItemContext()
@@ -4750,7 +4820,13 @@ func NewGroupByItemContext(parser antlr.Parser, parent antlr.ParserRuleContext, 
 func (s *GroupByItemContext) GetParser() antlr.Parser { return s.parser }
 
 func (s *GroupByItemContext) Expr() IExprContext {
-	var t = s.GetTypedRuleContext(reflect.TypeOf((*IExprContext)(nil)).Elem(), 0)
+	var t antlr.RuleContext
+	for _, ctx := range s.GetChildren() {
+		if _, ok := ctx.(IExprContext); ok {
+			t = ctx.(antlr.RuleContext)
+			break
+		}
+	}
 
 	if t == nil {
 		return nil
@@ -4767,7 +4843,6 @@ func (s *GroupByItemContext) ToStringTree(ruleNames []string, recog antlr.Recogn
 	return antlr.TreesStringTree(s, ruleNames, recog)
 }
 
-
 func (s *GroupByItemContext) EnterRule(listener antlr.ParseTreeListener) {
 	if listenerT, ok := listener.(SqlListener); ok {
 		listenerT.EnterGroupByItem(s)
@@ -4780,20 +4855,10 @@ func (s *GroupByItemContext) ExitRule(listener antlr.ParseTreeListener) {
 	}
 }
 
-func (s *GroupByItemContext) Accept(visitor antlr.ParseTreeVisitor) interface{} {
-	switch t := visitor.(type) {
-	case SqlVisitor:
-		return t.VisitGroupByItem(s)
-
-	default:
-		return t.VisitChildren(s)
-	}
-}
-
-
-
-
 func (p *SqlParser) GroupByItem() (localctx IGroupByItemContext) {
+	this := p
+	_ = this
+
 	localctx = NewGroupByItemContext(p, p.GetParserRuleContext(), p.GetState())
 	p.EnterRule(localctx, 50, SqlParserRULE_groupByItem)
 
@@ -4819,11 +4884,8 @@ func (p *SqlParser) GroupByItem() (localctx IGroupByItemContext) {
 		p.expr(0)
 	}
 
-
-
 	return localctx
 }
-
 
 // IHavingClauseContext is an interface to support dynamic dispatch.
 type IHavingClauseContext interface {
@@ -4831,6 +4893,10 @@ type IHavingClauseContext interface {
 
 	// GetParser returns the parser.
 	GetParser() antlr.Parser
+
+	// Getter signatures
+	HAVING() antlr.TerminalNode
+	LogicExpression() ILogicExpressionContext
 
 	// IsHavingClauseContext differentiates from other interfaces.
 	IsHavingClauseContext()
@@ -4868,7 +4934,13 @@ func (s *HavingClauseContext) HAVING() antlr.TerminalNode {
 }
 
 func (s *HavingClauseContext) LogicExpression() ILogicExpressionContext {
-	var t = s.GetTypedRuleContext(reflect.TypeOf((*ILogicExpressionContext)(nil)).Elem(), 0)
+	var t antlr.RuleContext
+	for _, ctx := range s.GetChildren() {
+		if _, ok := ctx.(ILogicExpressionContext); ok {
+			t = ctx.(antlr.RuleContext)
+			break
+		}
+	}
 
 	if t == nil {
 		return nil
@@ -4885,7 +4957,6 @@ func (s *HavingClauseContext) ToStringTree(ruleNames []string, recog antlr.Recog
 	return antlr.TreesStringTree(s, ruleNames, recog)
 }
 
-
 func (s *HavingClauseContext) EnterRule(listener antlr.ParseTreeListener) {
 	if listenerT, ok := listener.(SqlListener); ok {
 		listenerT.EnterHavingClause(s)
@@ -4898,20 +4969,10 @@ func (s *HavingClauseContext) ExitRule(listener antlr.ParseTreeListener) {
 	}
 }
 
-func (s *HavingClauseContext) Accept(visitor antlr.ParseTreeVisitor) interface{} {
-	switch t := visitor.(type) {
-	case SqlVisitor:
-		return t.VisitHavingClause(s)
-
-	default:
-		return t.VisitChildren(s)
-	}
-}
-
-
-
-
 func (p *SqlParser) HavingClause() (localctx IHavingClauseContext) {
+	this := p
+	_ = this
+
 	localctx = NewHavingClauseContext(p, p.GetParserRuleContext(), p.GetState())
 	p.EnterRule(localctx, 52, SqlParserRULE_havingClause)
 
@@ -4941,11 +5002,8 @@ func (p *SqlParser) HavingClause() (localctx IHavingClauseContext) {
 		p.logicExpression(0)
 	}
 
-
-
 	return localctx
 }
-
 
 // IOrderByClauseContext is an interface to support dynamic dispatch.
 type IOrderByClauseContext interface {
@@ -4953,6 +5011,12 @@ type IOrderByClauseContext interface {
 
 	// GetParser returns the parser.
 	GetParser() antlr.Parser
+
+	// Getter signatures
+	ORDER() antlr.TerminalNode
+	BY() antlr.TerminalNode
+	AllOrderByExpression() []IOrderByExpressionContext
+	OrderByExpression(i int) IOrderByExpressionContext
 
 	// IsOrderByClauseContext differentiates from other interfaces.
 	IsOrderByClauseContext()
@@ -4994,12 +5058,20 @@ func (s *OrderByClauseContext) BY() antlr.TerminalNode {
 }
 
 func (s *OrderByClauseContext) AllOrderByExpression() []IOrderByExpressionContext {
-	var ts = s.GetTypedRuleContexts(reflect.TypeOf((*IOrderByExpressionContext)(nil)).Elem())
-	var tst = make([]IOrderByExpressionContext, len(ts))
+	children := s.GetChildren()
+	len := 0
+	for _, ctx := range children {
+		if _, ok := ctx.(IOrderByExpressionContext); ok {
+			len++
+		}
+	}
 
-	for i, t := range ts {
-		if t != nil {
+	tst := make([]IOrderByExpressionContext, len)
+	i := 0
+	for _, ctx := range children {
+		if t, ok := ctx.(IOrderByExpressionContext); ok {
 			tst[i] = t.(IOrderByExpressionContext)
+			i++
 		}
 	}
 
@@ -5007,7 +5079,17 @@ func (s *OrderByClauseContext) AllOrderByExpression() []IOrderByExpressionContex
 }
 
 func (s *OrderByClauseContext) OrderByExpression(i int) IOrderByExpressionContext {
-	var t = s.GetTypedRuleContext(reflect.TypeOf((*IOrderByExpressionContext)(nil)).Elem(), i)
+	var t antlr.RuleContext
+	j := 0
+	for _, ctx := range s.GetChildren() {
+		if _, ok := ctx.(IOrderByExpressionContext); ok {
+			if j == i {
+				t = ctx.(antlr.RuleContext)
+				break
+			}
+			j++
+		}
+	}
 
 	if t == nil {
 		return nil
@@ -5024,7 +5106,6 @@ func (s *OrderByClauseContext) ToStringTree(ruleNames []string, recog antlr.Reco
 	return antlr.TreesStringTree(s, ruleNames, recog)
 }
 
-
 func (s *OrderByClauseContext) EnterRule(listener antlr.ParseTreeListener) {
 	if listenerT, ok := listener.(SqlListener); ok {
 		listenerT.EnterOrderByClause(s)
@@ -5037,20 +5118,10 @@ func (s *OrderByClauseContext) ExitRule(listener antlr.ParseTreeListener) {
 	}
 }
 
-func (s *OrderByClauseContext) Accept(visitor antlr.ParseTreeVisitor) interface{} {
-	switch t := visitor.(type) {
-	case SqlVisitor:
-		return t.VisitOrderByClause(s)
-
-	default:
-		return t.VisitChildren(s)
-	}
-}
-
-
-
-
 func (p *SqlParser) OrderByClause() (localctx IOrderByClauseContext) {
+	this := p
+	_ = this
+
 	localctx = NewOrderByClauseContext(p, p.GetParserRuleContext(), p.GetState())
 	p.EnterRule(localctx, 54, SqlParserRULE_orderByClause)
 
@@ -5100,18 +5171,14 @@ func (p *SqlParser) OrderByClause() (localctx IOrderByClauseContext) {
 				p.OrderByExpression()
 			}
 
-
 		}
 		p.SetState(338)
 		p.GetErrorHandler().Sync(p)
 		_alt = p.GetInterpreter().AdaptivePredict(p.GetTokenStream(), 36, p.GetParserRuleContext())
 	}
 
-
-
 	return localctx
 }
-
 
 // IOrderByExpressionContext is an interface to support dynamic dispatch.
 type IOrderByExpressionContext interface {
@@ -5121,12 +5188,18 @@ type IOrderByExpressionContext interface {
 	GetParser() antlr.Parser
 
 	// GetOrder returns the order token.
-	GetOrder() antlr.Token 
-
+	GetOrder() antlr.Token
 
 	// SetOrder sets the order token.
-	SetOrder(antlr.Token) 
+	SetOrder(antlr.Token)
 
+	// Getter signatures
+	Expr() IExprContext
+	ASC() antlr.TerminalNode
+	DESC() antlr.TerminalNode
+	NULLS() antlr.TerminalNode
+	FIRST() antlr.TerminalNode
+	LAST() antlr.TerminalNode
 
 	// IsOrderByExpressionContext differentiates from other interfaces.
 	IsOrderByExpressionContext()
@@ -5135,7 +5208,7 @@ type IOrderByExpressionContext interface {
 type OrderByExpressionContext struct {
 	*antlr.BaseParserRuleContext
 	parser antlr.Parser
-	order antlr.Token
+	order  antlr.Token
 }
 
 func NewEmptyOrderByExpressionContext() *OrderByExpressionContext {
@@ -5162,12 +5235,16 @@ func (s *OrderByExpressionContext) GetParser() antlr.Parser { return s.parser }
 
 func (s *OrderByExpressionContext) GetOrder() antlr.Token { return s.order }
 
-
 func (s *OrderByExpressionContext) SetOrder(v antlr.Token) { s.order = v }
 
-
 func (s *OrderByExpressionContext) Expr() IExprContext {
-	var t = s.GetTypedRuleContext(reflect.TypeOf((*IExprContext)(nil)).Elem(), 0)
+	var t antlr.RuleContext
+	for _, ctx := range s.GetChildren() {
+		if _, ok := ctx.(IExprContext); ok {
+			t = ctx.(antlr.RuleContext)
+			break
+		}
+	}
 
 	if t == nil {
 		return nil
@@ -5204,7 +5281,6 @@ func (s *OrderByExpressionContext) ToStringTree(ruleNames []string, recog antlr.
 	return antlr.TreesStringTree(s, ruleNames, recog)
 }
 
-
 func (s *OrderByExpressionContext) EnterRule(listener antlr.ParseTreeListener) {
 	if listenerT, ok := listener.(SqlListener); ok {
 		listenerT.EnterOrderByExpression(s)
@@ -5217,24 +5293,13 @@ func (s *OrderByExpressionContext) ExitRule(listener antlr.ParseTreeListener) {
 	}
 }
 
-func (s *OrderByExpressionContext) Accept(visitor antlr.ParseTreeVisitor) interface{} {
-	switch t := visitor.(type) {
-	case SqlVisitor:
-		return t.VisitOrderByExpression(s)
-
-	default:
-		return t.VisitChildren(s)
-	}
-}
-
-
-
-
 func (p *SqlParser) OrderByExpression() (localctx IOrderByExpressionContext) {
+	this := p
+	_ = this
+
 	localctx = NewOrderByExpressionContext(p, p.GetParserRuleContext(), p.GetState())
 	p.EnterRule(localctx, 56, SqlParserRULE_orderByExpression)
 	var _la int
-
 
 	defer func() {
 		p.ExitRule()
@@ -5260,7 +5325,6 @@ func (p *SqlParser) OrderByExpression() (localctx IOrderByExpressionContext) {
 	p.SetState(341)
 	p.GetErrorHandler().Sync(p)
 
-
 	if p.GetInterpreter().AdaptivePredict(p.GetTokenStream(), 37, p.GetParserRuleContext()) == 1 {
 		{
 			p.SetState(340)
@@ -5281,11 +5345,9 @@ func (p *SqlParser) OrderByExpression() (localctx IOrderByExpressionContext) {
 			}
 		}
 
-
 	}
 	p.SetState(347)
 	p.GetErrorHandler().Sync(p)
-
 
 	if p.GetInterpreter().AdaptivePredict(p.GetTokenStream(), 38, p.GetParserRuleContext()) == 1 {
 		{
@@ -5297,7 +5359,6 @@ func (p *SqlParser) OrderByExpression() (localctx IOrderByExpressionContext) {
 			p.Match(SqlParserFIRST)
 		}
 
-
 	} else if p.GetInterpreter().AdaptivePredict(p.GetTokenStream(), 38, p.GetParserRuleContext()) == 2 {
 		{
 			p.SetState(345)
@@ -5308,15 +5369,10 @@ func (p *SqlParser) OrderByExpression() (localctx IOrderByExpressionContext) {
 			p.Match(SqlParserLAST)
 		}
 
-
-
 	}
-
-
 
 	return localctx
 }
-
 
 // ILimitClauseContext is an interface to support dynamic dispatch.
 type ILimitClauseContext interface {
@@ -5331,13 +5387,17 @@ type ILimitClauseContext interface {
 	// GetLimit returns the limit rule contexts.
 	GetLimit() IDecimalLiteralContext
 
-
 	// SetOffset sets the offset rule contexts.
 	SetOffset(IDecimalLiteralContext)
 
 	// SetLimit sets the limit rule contexts.
 	SetLimit(IDecimalLiteralContext)
 
+	// Getter signatures
+	LIMIT() antlr.TerminalNode
+	OFFSET() antlr.TerminalNode
+	AllDecimalLiteral() []IDecimalLiteralContext
+	DecimalLiteral(i int) IDecimalLiteralContext
 
 	// IsLimitClauseContext differentiates from other interfaces.
 	IsLimitClauseContext()
@@ -5346,8 +5406,8 @@ type ILimitClauseContext interface {
 type LimitClauseContext struct {
 	*antlr.BaseParserRuleContext
 	parser antlr.Parser
-	offset IDecimalLiteralContext 
-	limit IDecimalLiteralContext 
+	offset IDecimalLiteralContext
+	limit  IDecimalLiteralContext
 }
 
 func NewEmptyLimitClauseContext() *LimitClauseContext {
@@ -5376,11 +5436,9 @@ func (s *LimitClauseContext) GetOffset() IDecimalLiteralContext { return s.offse
 
 func (s *LimitClauseContext) GetLimit() IDecimalLiteralContext { return s.limit }
 
-
 func (s *LimitClauseContext) SetOffset(v IDecimalLiteralContext) { s.offset = v }
 
 func (s *LimitClauseContext) SetLimit(v IDecimalLiteralContext) { s.limit = v }
-
 
 func (s *LimitClauseContext) LIMIT() antlr.TerminalNode {
 	return s.GetToken(SqlParserLIMIT, 0)
@@ -5391,12 +5449,20 @@ func (s *LimitClauseContext) OFFSET() antlr.TerminalNode {
 }
 
 func (s *LimitClauseContext) AllDecimalLiteral() []IDecimalLiteralContext {
-	var ts = s.GetTypedRuleContexts(reflect.TypeOf((*IDecimalLiteralContext)(nil)).Elem())
-	var tst = make([]IDecimalLiteralContext, len(ts))
+	children := s.GetChildren()
+	len := 0
+	for _, ctx := range children {
+		if _, ok := ctx.(IDecimalLiteralContext); ok {
+			len++
+		}
+	}
 
-	for i, t := range ts {
-		if t != nil {
+	tst := make([]IDecimalLiteralContext, len)
+	i := 0
+	for _, ctx := range children {
+		if t, ok := ctx.(IDecimalLiteralContext); ok {
 			tst[i] = t.(IDecimalLiteralContext)
+			i++
 		}
 	}
 
@@ -5404,7 +5470,17 @@ func (s *LimitClauseContext) AllDecimalLiteral() []IDecimalLiteralContext {
 }
 
 func (s *LimitClauseContext) DecimalLiteral(i int) IDecimalLiteralContext {
-	var t = s.GetTypedRuleContext(reflect.TypeOf((*IDecimalLiteralContext)(nil)).Elem(), i)
+	var t antlr.RuleContext
+	j := 0
+	for _, ctx := range s.GetChildren() {
+		if _, ok := ctx.(IDecimalLiteralContext); ok {
+			if j == i {
+				t = ctx.(antlr.RuleContext)
+				break
+			}
+			j++
+		}
+	}
 
 	if t == nil {
 		return nil
@@ -5421,7 +5497,6 @@ func (s *LimitClauseContext) ToStringTree(ruleNames []string, recog antlr.Recogn
 	return antlr.TreesStringTree(s, ruleNames, recog)
 }
 
-
 func (s *LimitClauseContext) EnterRule(listener antlr.ParseTreeListener) {
 	if listenerT, ok := listener.(SqlListener); ok {
 		listenerT.EnterLimitClause(s)
@@ -5434,20 +5509,10 @@ func (s *LimitClauseContext) ExitRule(listener antlr.ParseTreeListener) {
 	}
 }
 
-func (s *LimitClauseContext) Accept(visitor antlr.ParseTreeVisitor) interface{} {
-	switch t := visitor.(type) {
-	case SqlVisitor:
-		return t.VisitLimitClause(s)
-
-	default:
-		return t.VisitChildren(s)
-	}
-}
-
-
-
-
 func (p *SqlParser) LimitClause() (localctx ILimitClauseContext) {
+	this := p
+	_ = this
+
 	localctx = NewLimitClauseContext(p, p.GetParserRuleContext(), p.GetState())
 	p.EnterRule(localctx, 58, SqlParserRULE_limitClause)
 
@@ -5479,13 +5544,11 @@ func (p *SqlParser) LimitClause() (localctx ILimitClauseContext) {
 		p.SetState(353)
 		p.GetErrorHandler().Sync(p)
 
-
 		if p.GetInterpreter().AdaptivePredict(p.GetTokenStream(), 39, p.GetParserRuleContext()) == 1 {
 			{
 				p.SetState(350)
 
 				var _x = p.DecimalLiteral()
-
 
 				localctx.(*LimitClauseContext).offset = _x
 			}
@@ -5494,24 +5557,20 @@ func (p *SqlParser) LimitClause() (localctx ILimitClauseContext) {
 				p.Match(SqlParserT__1)
 			}
 
-
 		}
 		{
 			p.SetState(355)
 
 			var _x = p.DecimalLiteral()
 
-
 			localctx.(*LimitClauseContext).limit = _x
 		}
-
 
 	case 2:
 		{
 			p.SetState(356)
 
 			var _x = p.DecimalLiteral()
-
 
 			localctx.(*LimitClauseContext).limit = _x
 		}
@@ -5524,35 +5583,36 @@ func (p *SqlParser) LimitClause() (localctx ILimitClauseContext) {
 
 			var _x = p.DecimalLiteral()
 
-
 			localctx.(*LimitClauseContext).offset = _x
 		}
 
 	}
 
-
-
 	return localctx
 }
-
 
 func (p *SqlParser) Sempred(localctx antlr.RuleContext, ruleIndex, predIndex int) bool {
 	switch ruleIndex {
 	case 10:
-			var t *SelectStatementContext = nil
-			if localctx != nil { t = localctx.(*SelectStatementContext) }
-			return p.SelectStatement_Sempred(t, predIndex)
+		var t *SelectStatementContext = nil
+		if localctx != nil {
+			t = localctx.(*SelectStatementContext)
+		}
+		return p.SelectStatement_Sempred(t, predIndex)
 
 	case 13:
-			var t *ExprContext = nil
-			if localctx != nil { t = localctx.(*ExprContext) }
-			return p.Expr_Sempred(t, predIndex)
+		var t *ExprContext = nil
+		if localctx != nil {
+			t = localctx.(*ExprContext)
+		}
+		return p.Expr_Sempred(t, predIndex)
 
 	case 22:
-			var t *LogicExpressionContext = nil
-			if localctx != nil { t = localctx.(*LogicExpressionContext) }
-			return p.LogicExpression_Sempred(t, predIndex)
-
+		var t *LogicExpressionContext = nil
+		if localctx != nil {
+			t = localctx.(*LogicExpressionContext)
+		}
+		return p.LogicExpression_Sempred(t, predIndex)
 
 	default:
 		panic("No predicate with index: " + fmt.Sprint(ruleIndex))
@@ -5560,9 +5620,12 @@ func (p *SqlParser) Sempred(localctx antlr.RuleContext, ruleIndex, predIndex int
 }
 
 func (p *SqlParser) SelectStatement_Sempred(localctx antlr.RuleContext, predIndex int) bool {
+	this := p
+	_ = this
+
 	switch predIndex {
 	case 0:
-			return p.Precpred(p.GetParserRuleContext(), 1)
+		return p.Precpred(p.GetParserRuleContext(), 1)
 
 	default:
 		panic("No predicate with index: " + fmt.Sprint(predIndex))
@@ -5570,15 +5633,18 @@ func (p *SqlParser) SelectStatement_Sempred(localctx antlr.RuleContext, predInde
 }
 
 func (p *SqlParser) Expr_Sempred(localctx antlr.RuleContext, predIndex int) bool {
+	this := p
+	_ = this
+
 	switch predIndex {
 	case 1:
-			return p.Precpred(p.GetParserRuleContext(), 4)
+		return p.Precpred(p.GetParserRuleContext(), 4)
 
 	case 2:
-			return p.Precpred(p.GetParserRuleContext(), 3)
+		return p.Precpred(p.GetParserRuleContext(), 3)
 
 	case 3:
-			return p.Precpred(p.GetParserRuleContext(), 2)
+		return p.Precpred(p.GetParserRuleContext(), 2)
 
 	default:
 		panic("No predicate with index: " + fmt.Sprint(predIndex))
@@ -5586,15 +5652,17 @@ func (p *SqlParser) Expr_Sempred(localctx antlr.RuleContext, predIndex int) bool
 }
 
 func (p *SqlParser) LogicExpression_Sempred(localctx antlr.RuleContext, predIndex int) bool {
+	this := p
+	_ = this
+
 	switch predIndex {
 	case 4:
-			return p.Precpred(p.GetParserRuleContext(), 2)
+		return p.Precpred(p.GetParserRuleContext(), 2)
 
 	case 5:
-			return p.Precpred(p.GetParserRuleContext(), 1)
+		return p.Precpred(p.GetParserRuleContext(), 1)
 
 	default:
 		panic("No predicate with index: " + fmt.Sprint(predIndex))
 	}
 }
-

@@ -4,6 +4,7 @@ go 1.18
 
 require (
 	github.com/antlr/antlr4 v0.0.0-20200801005519-2ba38605b949
+	github.com/antlr/antlr4/runtime/Go/antlr/v4 v4.0.0-20230219212500-1f9a474cc2dc
 	github.com/davecgh/go-spew v1.1.1
 	github.com/go-sql-driver/mysql v1.5.0
 	github.com/jmoiron/sqlx v1.2.0
@@ -20,5 +21,6 @@ require (
 	github.com/konsorten/go-windows-terminal-sequences v1.0.3 // indirect
 	github.com/mattn/go-sqlite3 v1.14.0 // indirect
 	github.com/stretchr/testify v1.6.1 // indirect
-	golang.org/x/sys v0.0.0-20200817155316-9781c653f443 // indirect
+	golang.org/x/exp v0.0.0-20220722155223-a9213eeb770e // indirect
+	golang.org/x/sys v0.0.0-20211019181941-9d821ace8654 // indirect
 )

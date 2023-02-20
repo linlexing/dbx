@@ -150,7 +150,7 @@ commonFunction
 functionArg : expr (',' expr)* ;
 
 tableSources : tableSource alias? (',' tableSource alias?)* ;
- 
+
 tableSource
  : tableName
  | '(' selectStatement ')'
@@ -175,7 +175,8 @@ logicExpression
 comparisonOperator
  : '=' | '>' | '<'
  | '>=' | '<=' | '<>'
- | '~' | '!~'
+ | '~' | '!~' | '?[]'
+ | '!?[]'
  ;
 //'~' => regexp
 
