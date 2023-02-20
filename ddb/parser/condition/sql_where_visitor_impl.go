@@ -4,7 +4,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/antlr/antlr4/runtime/Go/antlr"
+	"github.com/antlr/antlr4/runtime/Go/antlr/v4"
 	"github.com/linlexing/dbx/ddb/parser"
 	"github.com/linlexing/dbx/pageselect"
 )
@@ -227,6 +227,10 @@ func (s *SqlWhereVisitorImpl) VisitLogicExpression(ctx *parser.LogicExpressionCo
 			ope = pageselect.OperatorRegexp
 		case "!~":
 			ope = pageselect.OperatorNotRegexp
+		case "?[]":
+			ope = pageselect.OperatorLikeArray
+		case "!?[]":
+			ope = pageselect.OperatorNotLikeArray
 		default:
 			panic("invalid opereate " + operate.GetText())
 		}

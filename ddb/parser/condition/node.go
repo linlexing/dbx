@@ -7,7 +7,7 @@ import (
 	"log"
 	"strings"
 
-	"github.com/antlr/antlr4/runtime/Go/antlr"
+	"github.com/antlr/antlr4/runtime/Go/antlr/v4"
 	"github.com/linlexing/dbx/ddb/parser"
 	"github.com/linlexing/dbx/pageselect"
 	"github.com/linlexing/dbx/schema"
@@ -386,7 +386,8 @@ func (node *Node) string(prev string, fields map[string]schema.DataType,
 		case pageselect.OperatorEqu, pageselect.OperatorGreaterThan,
 			pageselect.OperatorGreaterThanOrEqu, pageselect.OperatorLessThan,
 			pageselect.OperatorLessThanOrEqu, pageselect.OperatorRegexp,
-			pageselect.OperatorNotRegexp, pageselect.OperatorNotEqu:
+			pageselect.OperatorNotRegexp, pageselect.OperatorNotEqu,
+			pageselect.OperatorLikeArray, pageselect.OperatorNotLikeArray:
 			v := node.Value
 			if ifExpr(v) {
 				v = v[1 : len(v)-1]
@@ -464,21 +465,7 @@ func (node *Node) string(prev string, fields map[string]schema.DataType,
 			}
 			return prev +
 				fmt.Sprintf("%s NOT IN (%s)", node.fieldName(), encodeCSV(list))
-			//OperatorLikeArray 包含列表	//OperatorLikeArray 不包含列表
-		case pageselect.OperatorLikeArray, pageselect.OperatorNotLikeArray:
-			list := []string{}
-			for _, one := range decodeCSV(node.Value) {
-				var v string
-				if node.isNumberField(fields[node.Field]) {
-					v = one
-				} else {
-					v = strings.ReplaceAll(one, "'", "''")
-				}
-				list = append(list, v)
-			}
-			return prev +
-				fmt.Sprintf("%s %s '%s'", node.fieldName(), op.String(), strings.Join(list, "|"))
-			//OperatorIsNull 为空
+		//OperatorIsNull 为空
 		case pageselect.OperatorIsNull:
 			return prev +
 				fmt.Sprintf("%s IS NULL", node.fieldName())

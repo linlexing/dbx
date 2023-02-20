@@ -1,8 +1,9 @@
-// Code generated from Sql.g4 by ANTLR 4.7.2. DO NOT EDIT.
+// Code generated from Sql.g4 by ANTLR 4.12.0. DO NOT EDIT.
 
 package parser // Sql
 
-import "github.com/antlr/antlr4/runtime/Go/antlr"
+import "github.com/antlr/antlr4/runtime/Go/antlr/v4"
+
 // A complete Visitor for a parse tree produced by SqlParser.
 type SqlVisitor interface {
 	antlr.ParseTreeVisitor
@@ -96,5 +97,4 @@ type SqlVisitor interface {
 
 	// Visit a parse tree produced by SqlParser#limitClause.
 	VisitLimitClause(ctx *LimitClauseContext) interface{}
-
 }
