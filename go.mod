@@ -3,7 +3,6 @@ module github.com/linlexing/dbx
 go 1.18
 
 require (
-	github.com/antlr/antlr4 v0.0.0-20200801005519-2ba38605b949
 	github.com/antlr/antlr4/runtime/Go/antlr/v4 v4.0.0-20230219212500-1f9a474cc2dc
 	github.com/davecgh/go-spew v1.1.1
 	github.com/go-sql-driver/mysql v1.5.0
@@ -22,5 +21,5 @@ require (
 	github.com/mattn/go-sqlite3 v1.14.0 // indirect
 	github.com/stretchr/testify v1.6.1 // indirect
 	golang.org/x/exp v0.0.0-20220722155223-a9213eeb770e // indirect
-	golang.org/x/sys v0.0.0-20211019181941-9d821ace8654 // indirect
+	golang.org/x/sys v0.1.0 // indirect
 )
