@@ -20,8 +20,8 @@ func (m *meta) Concat(vals ...string) string {
 	return fmt.Sprintf("CONCAT(%s)", strings.Join(vals, ","))
 }
 
-//Merge 将另一个表中的数据合并进本表，要求两个表的主键相同,相同主键的被覆盖
-//columns指定字段清单,不在清单内的字段不会被update
+// Merge 将另一个表中的数据合并进本表，要求两个表的主键相同,相同主键的被覆盖
+// columns指定字段清单,不在清单内的字段不会被update
 func (m *meta) Merge(destTable, srcDataSQL string, pks, columns []string) string {
 	join := []string{}
 	updateSet := []string{}
@@ -79,4 +79,17 @@ func (m *meta) Minus(table1, where1, table2, where2 string, primaryKeys, cols []
 		where2)
 
 	return strSql
+}
+func (m *meta) Concat_ws(separator string, vals ...string) string {
+	list := make([]string, len(vals))
+	for i, v := range vals {
+		list[i] = fmt.Sprintf("nullif(%s,'')", v)
+	}
+	return fmt.Sprintf("concat_ws(%s,%s)", signString(separator), strings.Join(list, ","))
+}
+
+// 返回单引号包括的字符串
+func signString(str string) string {
+
+	return "'" + strings.Replace(str, "'", "''", -1) + "'"
 }

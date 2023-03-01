@@ -65,3 +65,16 @@ func (m *meta) Minus(table1, where1, table2, where2 string, primaryKeys, cols []
 
 	return strSql
 }
+func (m *meta) Concat_ws(separator string, vals ...string) string {
+	list := make([]string, len(vals))
+	for i, v := range vals {
+		list[i] = fmt.Sprintf("nullif(%s,'')", v)
+	}
+	return fmt.Sprintf("concat_ws(%s,%s)", signString(separator), strings.Join(list, ","))
+}
+
+// 返回单引号包括的字符串
+func signString(str string) string {
+
+	return "'" + strings.Replace(str, "'", "''", -1) + "'"
+}

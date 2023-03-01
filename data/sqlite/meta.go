@@ -65,3 +65,23 @@ func (m *meta) Minus(table1, where1, table2, where2 string, primaryKeys, cols []
 
 	return strSQL
 }
+func (m *meta) Concat_ws(separator string, vals ...string) string {
+	// 	SELECT LTRIM(dx89||iif(nullif(dx90,'') is null,'',';'||dx90)||
+	//                     iif(nullif(dx91,'') is null,'',';'||dx91)||
+	//                     iif(nullif(dx92,'') is null,'',';'||dx92),';')
+	//   FROM t
+	if len(vals) == 0 {
+		return "null"
+	}
+	secList := []string{vals[0]}
+	for i := 1; i < len(vals); i++ {
+		secList = append(secList, fmt.Sprintf("iif(nullif(%s,'') is null,'',%s||%[1]s)", vals[i], signString(separator)))
+	}
+	return fmt.Sprintf("LTRIM(%s, %s)", strings.Join(secList, "||"), signString(separator))
+}
+
+// 返回单引号包括的字符串
+func signString(str string) string {
+
+	return "'" + strings.Replace(str, "'", "''", -1) + "'"
+}

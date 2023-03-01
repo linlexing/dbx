@@ -18,8 +18,8 @@ func (m *meta) Concat(vals ...string) string {
 	return strings.Join(vals, "||")
 }
 
-//Merge 将另一个表中的数据合并进本表，要求两个表的主键相同,相同主键的被覆盖
-//columns指定字段清单,不在清单内的字段不会被update
+// Merge 将另一个表中的数据合并进本表，要求两个表的主键相同,相同主键的被覆盖
+// columns指定字段清单,不在清单内的字段不会被update
 func (m *meta) Merge(destTable, srcDataSQL string, pks, columns []string) string {
 	join := []string{}
 	updateSet := []string{}
@@ -77,4 +77,25 @@ func (m *meta) Minus(table1, where1, table2, where2 string, primaryKeys, cols []
 		where2)
 
 	return strSQL
+}
+func (m *meta) Concat_ws(separator string, vals ...string) string {
+	// 	SELECT TRIM(LEADING ';'
+	//                FROM dx89||NVL2(dx90,';'||dx90,dx90)||
+	//                           NVL2(dx91,';'||dx91,dx91)||
+	//                           NVL2(dx92,';'||dx92,dx92)) AS "Concatenated String"
+	//   FROM t
+	if len(vals) == 0 {
+		return "null"
+	}
+	secList := []string{vals[0]}
+	for i := 1; i < len(vals); i++ {
+		secList = append(secList, fmt.Sprintf("NVL2(%s,%s||%[1]s,%[1]s)", vals[i], signString(separator)))
+	}
+	return fmt.Sprintf("TRIM(LEADING %s FROM %s)", signString(separator), strings.Join(secList, "||"))
+}
+
+// 返回单引号包括的字符串
+func signString(str string) string {
+
+	return "'" + strings.Replace(str, "'", "''", -1) + "'"
 }
