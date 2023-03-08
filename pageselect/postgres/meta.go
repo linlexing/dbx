@@ -227,7 +227,7 @@ func (m *meta) GetOperatorExpress(ope ps.Operator, dataType schema.DataType, col
 				for _, v := range array {
 					list = append(list, valueExpress(dataType, "%"+v+"%"))
 				}
-				strSQL = fmt.Sprintf("%s not like any (array[%s])", column, strings.Join(list, ",\n"))
+				strSQL = fmt.Sprintf("%s not like all (array[%s])", column, strings.Join(list, ",\n"))
 			}
 
 		}
