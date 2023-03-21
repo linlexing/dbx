@@ -8,16 +8,10 @@ import (
 	"github.com/linlexing/dbx/data"
 )
 
-// Txer 一个能返回DriverName 的Txer
-type Txer interface {
-	common.Txer
-	DriverName() string
-	ConnectString() string
-}
-
 // Tx 一个能存贮driverName的tx
 type tx struct {
 	tx            *sql.Tx
+	conn          *sql.Conn
 	driverName    string
 	connectString string
 }
@@ -27,6 +21,9 @@ func (t *tx) DriverName() string {
 }
 func (t *tx) ConnectString() string {
 	return t.connectString
+}
+func (t *tx) Conn() *sql.Conn {
+	return t.conn
 }
 func (t *tx) ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error) {
 	r, err := t.tx.ExecContext(ctx, data.Bind(t.driverName, query), args...)
@@ -73,8 +70,12 @@ func (t *tx) PrepareContext(ctx context.Context, query string) (*sql.Stmt, error
 }
 
 func (t *tx) Commit() error {
+	//释放连接
+	defer t.conn.Close()
 	return t.tx.Commit()
 }
 func (t *tx) Rollback() error {
+	//释放连接
+	defer t.conn.Close()
 	return t.tx.Rollback()
 }

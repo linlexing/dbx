@@ -420,7 +420,7 @@ func (t *Table) ImportFrom(db common.Queryer, progressFunc func(string, interfac
 	startTime := time.Now()
 	beginTime := startTime
 	finished := false
-	tx, err := t.DB.(common.TxDB).Begin()
+	tx, err := t.DB.(common.TxDB).Beginx()
 	if err != nil {
 		return
 	}
@@ -465,7 +465,7 @@ func (t *Table) ImportFrom(db common.Queryer, progressFunc func(string, interfac
 			}
 			batCount = 0
 			tx = nil
-			tx, err = t.DB.(common.TxDB).Begin()
+			tx, err = t.DB.(common.TxDB).Beginx()
 			if err != nil {
 				log.Println(err)
 				return 0, err

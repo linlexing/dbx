@@ -11,30 +11,10 @@ import (
 	"github.com/linlexing/dbx/data"
 )
 
-// DB 一个能返回DriverName 的DB,并且所有的sql统一使用?作为参数占位符
-type DB interface {
-	common.DB
-	DriverName() string
-	ConnectString() string
-}
-
-// TxDB 一个能返回DriverName 的TxDB,并且所有的sql统一使用?作为参数占位符
-type TxDB interface {
-	common.TxDB
-	Beginx() (Txer, error)
-	BeginTxx(ctx context.Context, opts *sql.TxOptions) (Txer, error)
-	Driver() driver.Driver
-	DriverName() string
-	ConnectString() string
-	Ping() error
-	SetConnMaxLifetime(d time.Duration)
-	SetConnMaxIdleTime(d time.Duration)
-	SetMaxIdleConns(n int)
-	SetMaxOpenConns(n int)
-	ResetConnect() error
-	Stats() sql.DBStats
-}
-
+type Txer = common.Tx
+type TxDB = common.TxDB
+type Tx = common.Tx
+type DB = common.DB
 type db struct {
 	db            *sql.DB
 	driverName    string
@@ -73,32 +53,31 @@ func (d *db) DriverName() string {
 func (d *db) ConnectString() string {
 	return d.connectString
 }
-func (d *db) Begin() (*sql.Tx, error) {
-	return d.db.Begin()
-}
+
+//	func (d *db) Begin() (*sql.Tx, error) {
+//		return d.db.Begin()
+//	}
 func (d *db) Beginx() (Txer, error) {
-	t, err := d.db.Begin()
-	if err != nil {
-		return nil, err
-	}
-	rev := &tx{
-		driverName:    d.DriverName(),
-		tx:            t,
-		connectString: d.ConnectString(),
-	}
-	return rev, nil
+	return d.BeginTxx(context.Background(), nil)
 }
-func (d *db) BeginTx(ctx context.Context, opts *sql.TxOptions) (common.Txer, error) {
-	return d.db.BeginTx(ctx, opts)
-}
+
+//	func (d *db) BeginTx(ctx context.Context, opts *sql.TxOptions) (common.Txer, error) {
+//		return d.db.BeginTx(ctx, opts)
+//	}
 func (d *db) BeginTxx(ctx context.Context, opts *sql.TxOptions) (Txer, error) {
-	t, err := d.db.BeginTx(ctx, opts)
+	conn, err := d.db.Conn(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	t, err := conn.BeginTx(ctx, opts)
 	if err != nil {
 		return nil, err
 	}
 	rev := &tx{
 		driverName:    d.DriverName(),
 		tx:            t,
+		conn:          conn, //commit或者rollback时会自动调用conn.Close
 		connectString: d.ConnectString(),
 	}
 	return rev, nil
