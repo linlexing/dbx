@@ -5,6 +5,7 @@ import (
 	"encoding/csv"
 	"fmt"
 	"log"
+	"regexp"
 	"strings"
 
 	"github.com/linlexing/dbx/scan"
@@ -12,6 +13,11 @@ import (
 
 	ps "github.com/linlexing/dbx/pageselect"
 	"github.com/linlexing/dbx/schema"
+)
+
+var (
+	normalStart = regexp.MustCompile("^[a-zA-Z_\u4e00-\u9fa5]")
+	spec        = regexp.MustCompile("[^0-9a-zA-Z_\u4e00-\u9fa5]")
 )
 
 const driverName = "postgres"
@@ -67,13 +73,27 @@ func (m *meta) ColumnTypes(rows *sql.Rows) ([]*scan.ColumnType, error) {
 	return rev, nil
 }
 func (m *meta) QuotedIdentifier(col string) string {
+	isNormal := true
+	//不是字母下划线汉字开头的，要加包括引号
+	if !normalStart.MatchString(col) {
+		isNormal = false
+	} else if strings.ToLower(col) != col && strings.ToUpper(col) != col {
+		//不全是大小写
+		isNormal = false
+	} else if spec.MatchString(col) {
+		isNormal = false
+	}
+	if isNormal {
+		return col
+	}
+
 	return `"` + strings.ReplaceAll(col, `"`, `""`) + `"`
 }
 func (m *meta) SortByAsc(field string, notNull bool) string {
 	if notNull {
-		return field
+		return field + " ASC"
 	}
-	return field + " NULLS FIRST"
+	return field + " ASC NULLS FIRST"
 }
 func (m *meta) SortByDesc(field string, notNull bool) string {
 	if notNull {
