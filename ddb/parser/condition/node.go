@@ -426,7 +426,7 @@ func (node *Node) string(prev string, fields map[string]schema.DataType,
 		case pageselect.OperatorNotPrefix:
 			return prev +
 				fmt.Sprintf("%s NOT LIKE %s", node.fieldName(), ifels(ifExpr(node.Value),
-					decodeExpr(node.Value), signString("%"+node.Value+"%")))
+					decodeExpr(node.Value), signString(node.Value+"%")))
 			//OperatorSuffix 后缀
 		case pageselect.OperatorSuffix:
 			return prev +
