@@ -65,6 +65,9 @@ const (
 	OperatorLikeArray
 	//OperatorNotLikeArray 不包含列表
 	OperatorNotLikeArray
+	//to_tsquery
+	OperatorQuery
+	OperatorNotQuery
 )
 
 var (
@@ -128,6 +131,7 @@ func makeOpMap() (map[Operator]Operator, map[Operator]Operator) {
 		OperatorLikeArray:
 		//OperatorNotLikeArray not like array
 		OperatorNotLikeArray,
+		OperatorNotQuery: OperatorQuery,
 	}
 	revReverse := map[Operator]Operator{}
 	for k, v := range rev {
@@ -208,7 +212,8 @@ func (o Operator) RemoveReverse() (Operator, bool) {
 		OperatorLengthLessThanOrEqu,
 		OperatorLengthNotEqu,
 		OperatorLikeArray,
-		OperatorNotLikeArray:
+		OperatorNotLikeArray,
+		OperatorQuery:
 		return o, false
 
 	}
@@ -277,6 +282,10 @@ func ParseOperatorFromString(str string) (Operator, error) {
 		return OperatorLikeArray, nil
 	case "!?[]":
 		return OperatorNotLikeArray, nil
+	case "@":
+		return OperatorQuery, nil
+	case "!@":
+		return OperatorNotQuery, nil
 	default:
 		return 0, ErrInvalidOperator
 	}
@@ -342,6 +351,10 @@ func (o Operator) String() string {
 		return "?[]"
 	case OperatorNotLikeArray:
 		return "!?[]"
+	case OperatorQuery:
+		return "@"
+	case OperatorNotQuery:
+		return "!@"
 	default:
 		panic(ErrInvalidOperator)
 	}
@@ -406,6 +419,10 @@ func (o Operator) ChineseString() string {
 		return "包含列表"
 	case OperatorNotLikeArray:
 		return "不包含列表"
+	case OperatorQuery:
+		return "查询"
+	case OperatorNotQuery:
+		return "查询不到"
 	default:
 		panic(ErrInvalidOperator)
 	}

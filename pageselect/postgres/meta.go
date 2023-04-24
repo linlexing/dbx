@@ -298,6 +298,10 @@ func (m *meta) GetOperatorExpress(ope ps.Operator, dataType schema.DataType, col
 		strSQL = fmt.Sprintf("%s between %s and %s", column, valueExpress(dataType, value), valueExpress(dataType, value2))
 	case ps.OperatorNotBetween:
 		strSQL = fmt.Sprintf("%s not between %s and %s", column, valueExpress(dataType, value), valueExpress(dataType, value2))
+	case ps.OperatorQuery:
+		strSQL = fmt.Sprintf("to_tsvector('ngram',%s) @@ to_tsquery('ngram',%s)", column, signString(value))
+	case ps.OperatorNotQuery:
+		strSQL = fmt.Sprintf("not(to_tsvector('ngram',%s) @@ to_tsquery('ngram',%s))", column, signString(value))
 	default:
 		log.Panic(fmt.Errorf("the opt:%s not impl", ope))
 	}
@@ -330,4 +334,10 @@ func valueExpress(dataType schema.DataType, value string) string {
 	default:
 		panic(fmt.Errorf("not impl ValueExpress,type:%d", dataType))
 	}
+}
+
+// 返回单引号包括的字符串
+func signString(str string) string {
+
+	return "'" + strings.Replace(str, "'", "''", -1) + "'"
 }
