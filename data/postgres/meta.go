@@ -28,19 +28,22 @@ func (m *meta) Merge(destTable, srcDataSQL string, pks, columns []string) string
 	for _, v := range pks {
 		pkMap[v] = true
 	}
+	valNotEquWhereList := []string{}
 	for _, field := range columns {
 		//非主键的才更新
 		if _, ok := pkMap[field]; !ok {
 			updateSet = append(updateSet, fmt.Sprintf("%s = excluded.%[1]s", field))
+			valNotEquWhereList = append(valNotEquWhereList, fmt.Sprintf("dest.%s is distinct from excluded.%[1]s", field))
 		}
 	}
 	//如果只有主键字段，则省略WHEN MATCHED THEN子句
 	if len(updateSet) > 0 {
-		onConflict = onConflict + " DO UPDATE SET\n" + strings.Join(updateSet, ",\n")
+		onConflict = onConflict + " DO UPDATE SET\n" + strings.Join(updateSet, ",\n") +
+			"\nwhere\n" + strings.Join(valNotEquWhereList, " or ")
 	} else {
 		onConflict = onConflict + " DO NOTHING"
 	}
-	return fmt.Sprintf("insert %s into %s(%s)select %s from (%s) merge_src %s",
+	return fmt.Sprintf("insert %s into %s as dest(%s)select %s from (%s) merge_src %s",
 		ignore, destTable, strings.Join(columns, ","), strings.Join(columns, ","),
 		srcDataSQL, onConflict)
 

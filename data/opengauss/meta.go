@@ -32,10 +32,12 @@ func (m *meta) Merge(destTable, srcDataSQL string, pks, columns []string) string
 		pkMap[v] = true
 		join = append(join, fmt.Sprintf("dest.%s = src.%s", v, v))
 	}
+	valNotEquWhereList := []string{}
 	for _, field := range columns {
 		//非主键的才更新
 		if _, ok := pkMap[field]; !ok {
 			updateSet = append(updateSet, fmt.Sprintf("dest.%s = src.%[1]s", field))
+			valNotEquWhereList = append(valNotEquWhereList, fmt.Sprintf("dest.%s is distinct from src.%[1]s", field))
 		}
 		insertColumns = append(insertColumns, fmt.Sprintf("dest.%s", field))
 		insertValues = append(insertValues, fmt.Sprintf("src.%s", field))
@@ -43,7 +45,8 @@ func (m *meta) Merge(destTable, srcDataSQL string, pks, columns []string) string
 	//如果只有主键字段，则省略WHEN MATCHED THEN子句
 	updateStr := ""
 	if len(updateSet) > 0 {
-		updateStr = "WHEN MATCHED THEN UPDATE SET\n" + strings.Join(updateSet, ",\n")
+		updateStr = "WHEN MATCHED THEN UPDATE SET\n" + strings.Join(updateSet, ",\n") +
+			"\nwhere\n" + strings.Join(valNotEquWhereList, " or ")
 	}
 	return fmt.Sprintf(`
 MERGE INTO %s dest
