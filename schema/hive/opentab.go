@@ -48,6 +48,7 @@ func (m *meta) OpenTable(db common.DB, tableName string) (*schema.Table, error) 
 				TrueType:    dataType.String,
 				FetchDriver: driverName,
 				Index:       schema.NoIndex,
+				Extended:    map[string]any{},
 			})
 		} else {
 			pstr := "Primary Key for "

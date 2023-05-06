@@ -270,6 +270,7 @@ func getColumns(db common.DB, schemaName, table string) ([]*schema.Column, error
 			Null:        v.Null > 0,
 			TrueType:    v.TrueType,
 			FetchDriver: driverName,
+			Extended:    map[string]any{},
 		}
 
 		//组合主键，有时需要单字段索引

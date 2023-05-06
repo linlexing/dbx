@@ -121,6 +121,7 @@ func (m *meta) OpenTable(db common.DB, tableName string) (*schema.Table, error) 
 			FetchDriver: driverName,
 			TrueType:    col.Type,
 			Null:        col.NotNull != 1,
+			Extended:    map[string]any{},
 		}
 		c.Type, c.MaxLength = sqliteType(col.Name, col.Type)
 		columns = append(columns, c)

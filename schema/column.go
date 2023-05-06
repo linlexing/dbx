@@ -15,14 +15,14 @@ const (
 type Column struct {
 	Name        string
 	Type        DataType
-	MaxLength   int    `json:",omitempty"`
-	Null        bool   `json:",omitempty"`
-	TrueType    string `json:",omitempty"`
-	FetchDriver string `json:",omitempty"` //上次获取字段信息时，数据库驱动的名称
-
-	Index      string   `json:",omitempty"`
-	IndexName  string   `json:",omitempty"` //如果该字段有索引，存放数据库中索引的名称
-	FormerName []string `json:",omitempty"` //曾用名，可以放多个，一个字段改名后，旧名称应当永久不使用，方便从任意版本更新到最新版本
+	MaxLength   int            `json:",omitempty"`
+	Null        bool           `json:",omitempty"`
+	TrueType    string         `json:",omitempty"`
+	FetchDriver string         `json:",omitempty"` //上次获取字段信息时，数据库驱动的名称
+	Index       string         `json:",omitempty"`
+	IndexName   string         `json:",omitempty"` //如果该字段有索引，存放数据库中索引的名称
+	FormerName  []string       `json:",omitempty"` //曾用名，可以放多个，一个字段改名后，旧名称应当永久不使用，方便从任意版本更新到最新版本
+	Extended    map[string]any `json:",omitempty"` //扩展属性，内部没有使用，自由引用
 }
 
 //Eque 判定两个字段定义是否相等
@@ -91,6 +91,11 @@ func (f *Column) Clone() *Column {
 		fns = make([]string, len(f.FormerName))
 		copy(fns, f.FormerName)
 	}
+	cpmap := map[string]any{}
+	for k, v := range f.Extended {
+		cpmap[k] = v
+	}
+
 	return &Column{f.Name, f.Type, f.MaxLength, f.Null,
-		f.TrueType, f.FetchDriver, f.Index, f.IndexName, fns}
+		f.TrueType, f.FetchDriver, f.Index, f.IndexName, fns, cpmap}
 }

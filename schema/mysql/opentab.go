@@ -10,7 +10,7 @@ import (
 	"github.com/linlexing/dbx/schema"
 )
 
-//获取主键字段
+// 获取主键字段
 func getPk(db common.DB, tableName string) ([]string, error) {
 	pks := []string{}
 
@@ -204,6 +204,7 @@ func getColumns(db common.DB, schemaName, tableName string) ([]*schema.Column, e
 			Null:        v.Null > 0,
 			TrueType:    v.TrueType,
 			FetchDriver: driverName,
+			Extended:    map[string]any{},
 		}
 
 		//组合主键，有时需要单字段索引

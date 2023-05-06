@@ -28,11 +28,14 @@ type Table struct {
 	Columns     []*Column
 	FormerName  []string
 	PrimaryKeys []string
+	Extended    map[string]any //扩展属性，内部没有使用，自由引用
 }
 
 // NewTable 返回一个新表，名称会自动依据句点拆分为shcema和name
 func NewTable(name string) *Table {
-	rev := new(Table)
+	rev := &Table{
+		Extended: map[string]any{},
+	}
 	ns := strings.Split(name, ".")
 	if len(ns) > 1 {
 		rev.Schema = ns[0]
@@ -103,7 +106,7 @@ func (t *Table) Create(driver string, db common.DB) error {
 
 }
 func (t *Table) AddColumn(name string, dtype DataType, maxLength int) *Column {
-	c := &Column{Name: name, Type: dtype, MaxLength: maxLength}
+	c := &Column{Name: name, Type: dtype, MaxLength: maxLength, Extended: map[string]any{}}
 	t.Columns = append(t.Columns, c)
 	return c
 }
