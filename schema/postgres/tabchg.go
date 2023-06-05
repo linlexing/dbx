@@ -93,7 +93,14 @@ func (m *meta) ChangeTableSQL(db common.DB, change *schema.TableSchemaChange) (r
 			}
 		}
 		if needCopy {
-			return m.changeTableSQLGauss(db, change)
+			list, er := m.changeTableSQLGauss(db, change)
+			if er != nil {
+				err = er
+				return
+			}
+			//需要加上改名的语句
+			rev = append(rev, list...)
+			return
 		}
 	}
 
