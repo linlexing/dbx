@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/linlexing/dbx/scan"
@@ -313,14 +314,25 @@ func valueExpress(dataType schema.DataType, value string) string {
 		return value[1 : len(value)-1]
 	}
 	switch dataType {
-	case schema.TypeFloat, schema.TypeInt:
+	case schema.TypeFloat:
+		//防止注入攻击
+		if _, err := strconv.ParseFloat(value, 64); err != nil {
+			return "'" + strings.Replace(value, "'", "''", -1) + "'"
+		}
 		return value
+	case schema.TypeInt:
+		//防止注入攻击
+		if _, err := strconv.ParseInt(value, 10, 64); err != nil {
+			return "'" + strings.Replace(value, "'", "''", -1) + "'"
+		}
+		return value
+
 	case schema.TypeString:
 		return "'" + strings.Replace(value, "'", "''", -1) + "'"
 	case schema.TypeDatetime:
 		//如果是like，则直接返回不转换
 		if strings.HasPrefix(value, "%") || strings.HasSuffix(value, "%") {
-			return value
+			return "'" + strings.Replace(value, "'", "''", -1) + "'"
 		}
 		if len(value) == 10 {
 			return fmt.Sprintf("TO_DATE('%s','YYYY-MM-DD')", value)
