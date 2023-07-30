@@ -4,11 +4,13 @@ import (
 	"context"
 	"database/sql"
 	"database/sql/driver"
+	"fmt"
 	"log"
 	"time"
 
 	"github.com/linlexing/dbx/common"
 	"github.com/linlexing/dbx/data"
+	"github.com/sirupsen/logrus"
 )
 
 type Txer = common.Tx
@@ -83,6 +85,22 @@ func (d *db) BeginTxx(ctx context.Context, opts *sql.TxOptions) (Txer, error) {
 	return rev, nil
 }
 func (d *db) ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error) {
+	done := make(chan struct{})
+	tm := time.NewTimer(120 * time.Second)
+	go func() {
+		select {
+		case <-tm.C:
+			logrus.WithFields(logrus.Fields{
+				"sql":   query,
+				"param": fmt.Sprintf("%v", args),
+			}).Info("slow-sql-execcontext")
+		case <-done:
+		}
+	}()
+	defer func() {
+		tm.Stop()
+		close(done)
+	}()
 	r, err := d.db.ExecContext(ctx, data.Bind(d.driverName, query), args...)
 	if err != nil {
 		err = common.NewSQLError(err, query, args...)
@@ -90,6 +108,22 @@ func (d *db) ExecContext(ctx context.Context, query string, args ...any) (sql.Re
 	return r, err
 }
 func (d *db) Exec(query string, args ...interface{}) (sql.Result, error) {
+	done := make(chan struct{})
+	tm := time.NewTimer(120 * time.Second)
+	go func() {
+		select {
+		case <-tm.C:
+			logrus.WithFields(logrus.Fields{
+				"sql":   query,
+				"param": fmt.Sprintf("%v", args),
+			}).Info("slow-sql-exec")
+		case <-done:
+		}
+	}()
+	defer func() {
+		tm.Stop()
+		close(done)
+	}()
 	//无参数不用转换
 	if len(args) > 0 {
 		query = data.Bind(d.driverName, query)
@@ -102,6 +136,22 @@ func (d *db) Exec(query string, args ...interface{}) (sql.Result, error) {
 	return r, err
 }
 func (d *db) QueryContext(ctx context.Context, query string, args ...any) (*sql.Rows, error) {
+	done := make(chan struct{})
+	tm := time.NewTimer(120 * time.Second)
+	go func() {
+		select {
+		case <-tm.C:
+			logrus.WithFields(logrus.Fields{
+				"sql":   query,
+				"param": fmt.Sprintf("%v", args),
+			}).Info("slow-sql-querycontext")
+		case <-done:
+		}
+	}()
+	defer func() {
+		tm.Stop()
+		close(done)
+	}()
 	r, err := d.db.QueryContext(ctx, data.Bind(d.driverName, query), args...)
 	if err != nil {
 		err = common.NewSQLError(err, query, args...)
@@ -109,6 +159,22 @@ func (d *db) QueryContext(ctx context.Context, query string, args ...any) (*sql.
 	return r, err
 }
 func (d *db) Query(query string, args ...interface{}) (*sql.Rows, error) {
+	done := make(chan struct{})
+	tm := time.NewTimer(120 * time.Second)
+	go func() {
+		select {
+		case <-tm.C:
+			logrus.WithFields(logrus.Fields{
+				"sql":   query,
+				"param": fmt.Sprintf("%v", args),
+			}).Info("slow-sql-query")
+		case <-done:
+		}
+	}()
+	defer func() {
+		tm.Stop()
+		close(done)
+	}()
 	//无参数不用转换
 	if len(args) > 0 {
 		query = data.Bind(d.driverName, query)
@@ -121,12 +187,44 @@ func (d *db) Query(query string, args ...interface{}) (*sql.Rows, error) {
 	return r, err
 }
 func (d *db) QueryRow(query string, args ...interface{}) *sql.Row {
+	done := make(chan struct{})
+	tm := time.NewTimer(120 * time.Second)
+	go func() {
+		select {
+		case <-tm.C:
+			logrus.WithFields(logrus.Fields{
+				"sql":   query,
+				"param": fmt.Sprintf("%v", args),
+			}).Info("slow-sql-queryrow")
+		case <-done:
+		}
+	}()
+	defer func() {
+		tm.Stop()
+		close(done)
+	}()
 	if len(args) > 0 {
 		query = data.Bind(d.driverName, query)
 	}
 	return d.db.QueryRow(query, args...)
 }
 func (d *db) QueryRowContext(ctx context.Context, query string, args ...any) *sql.Row {
+	done := make(chan struct{})
+	tm := time.NewTimer(120 * time.Second)
+	go func() {
+		select {
+		case <-tm.C:
+			logrus.WithFields(logrus.Fields{
+				"sql":   query,
+				"param": fmt.Sprintf("%v", args),
+			}).Info("slow-sql-queryrowcontext")
+		case <-done:
+		}
+	}()
+	defer func() {
+		tm.Stop()
+		close(done)
+	}()
 	return d.db.QueryRowContext(ctx, data.Bind(d.driverName, query), args...)
 }
 func (d *db) PrepareContext(ctx context.Context, query string) (*sql.Stmt, error) {
