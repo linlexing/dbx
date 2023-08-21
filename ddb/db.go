@@ -90,9 +90,12 @@ func (d *db) ExecContext(ctx context.Context, query string, args ...any) (sql.Re
 	go func() {
 		select {
 		case <-tm.C:
+			stats := d.db.Stats()
 			logrus.WithFields(logrus.Fields{
-				"sql":   query,
-				"param": fmt.Sprintf("%v", args),
+				"sql":     query,
+				"param":   fmt.Sprintf("%v", args),
+				"maxconn": stats.MaxOpenConnections,
+				"inuse":   stats.InUse,
 			}).Info("slow-sql-execcontext")
 		case <-done:
 		}
@@ -113,9 +116,12 @@ func (d *db) Exec(query string, args ...interface{}) (sql.Result, error) {
 	go func() {
 		select {
 		case <-tm.C:
+			stats := d.db.Stats()
 			logrus.WithFields(logrus.Fields{
-				"sql":   query,
-				"param": fmt.Sprintf("%v", args),
+				"sql":     query,
+				"param":   fmt.Sprintf("%v", args),
+				"maxconn": stats.MaxOpenConnections,
+				"inuse":   stats.InUse,
 			}).Info("slow-sql-exec")
 		case <-done:
 		}
@@ -141,9 +147,12 @@ func (d *db) QueryContext(ctx context.Context, query string, args ...any) (*sql.
 	go func() {
 		select {
 		case <-tm.C:
+			stats := d.db.Stats()
 			logrus.WithFields(logrus.Fields{
-				"sql":   query,
-				"param": fmt.Sprintf("%v", args),
+				"sql":     query,
+				"param":   fmt.Sprintf("%v", args),
+				"maxconn": stats.MaxOpenConnections,
+				"inuse":   stats.InUse,
 			}).Info("slow-sql-querycontext")
 		case <-done:
 		}
@@ -164,9 +173,12 @@ func (d *db) Query(query string, args ...interface{}) (*sql.Rows, error) {
 	go func() {
 		select {
 		case <-tm.C:
+			stats := d.db.Stats()
 			logrus.WithFields(logrus.Fields{
-				"sql":   query,
-				"param": fmt.Sprintf("%v", args),
+				"sql":     query,
+				"param":   fmt.Sprintf("%v", args),
+				"maxconn": stats.MaxOpenConnections,
+				"inuse":   stats.InUse,
 			}).Info("slow-sql-query")
 		case <-done:
 		}
@@ -192,9 +204,12 @@ func (d *db) QueryRow(query string, args ...interface{}) *sql.Row {
 	go func() {
 		select {
 		case <-tm.C:
+			stats := d.db.Stats()
 			logrus.WithFields(logrus.Fields{
-				"sql":   query,
-				"param": fmt.Sprintf("%v", args),
+				"sql":     query,
+				"param":   fmt.Sprintf("%v", args),
+				"maxconn": stats.MaxOpenConnections,
+				"inuse":   stats.InUse,
 			}).Info("slow-sql-queryrow")
 		case <-done:
 		}
@@ -214,9 +229,12 @@ func (d *db) QueryRowContext(ctx context.Context, query string, args ...any) *sq
 	go func() {
 		select {
 		case <-tm.C:
+			stats := d.db.Stats()
 			logrus.WithFields(logrus.Fields{
-				"sql":   query,
-				"param": fmt.Sprintf("%v", args),
+				"sql":     query,
+				"param":   fmt.Sprintf("%v", args),
+				"maxconn": stats.MaxOpenConnections,
+				"inuse":   stats.InUse,
 			}).Info("slow-sql-queryrowcontext")
 		case <-done:
 		}
