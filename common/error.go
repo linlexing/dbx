@@ -7,14 +7,14 @@ import (
 	"github.com/davecgh/go-spew/spew"
 )
 
-//SQLError 表示一个sql语句执行出错
+// SQLError 表示一个sql语句执行出错
 type SQLError struct {
 	SQL    string
 	Params interface{}
 	Err    error
 }
 
-//NewSQLError 构造
+// NewSQLError 构造
 func NewSQLError(err error, sql string, params ...interface{}) SQLError {
 	//如果已经是sqlerr，则不进行再次的包装，因为有ddb的存在
 	if v, ok := err.(SQLError); ok {
@@ -31,6 +31,9 @@ func NewSQLError(err error, sql string, params ...interface{}) SQLError {
 		Params: p,
 		Err:    err,
 	}
+}
+func (e SQLError) Unwrap() error {
+	return e.Err
 }
 func (e SQLError) Error() string {
 	if yes, table := isDuplicatePKErrorPostgres(e.Err); yes {
@@ -59,7 +62,7 @@ func (e SQLError) Error() string {
 	return fmt.Sprintf("%s\n%s\nparams:\n%s", e.Err, e.SQL, spew.Sdump(e.Params))
 }
 
-//isDuplicatePKErrorPostgres 是否主键重复错误，以后可以优化成用reflect来读取结构值
+// isDuplicatePKErrorPostgres 是否主键重复错误，以后可以优化成用reflect来读取结构值
 func isDuplicatePKErrorPostgres(err error) (yes bool, table string) {
 	v := reflect.ValueOf(err)
 	if v.Kind() != reflect.Ptr {
