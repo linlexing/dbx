@@ -18,9 +18,13 @@ type TxDB = common.TxDB
 type Tx = common.Tx
 type DB = common.DB
 type db struct {
-	db            *sql.DB
-	driverName    string
-	connectString string
+	db              *sql.DB
+	driverName      string
+	connectString   string
+	connMaxLifetime time.Duration
+	connMaxIdleTime time.Duration
+	maxIdleConns    int
+	maxOpenConns    int
 }
 
 func (d *db) Driver() driver.Driver {
@@ -30,15 +34,19 @@ func (d *db) Conn(ctx context.Context) (*sql.Conn, error) {
 	return d.db.Conn(ctx)
 }
 func (d *db) SetConnMaxLifetime(t time.Duration) {
+	d.connMaxLifetime = t
 	d.db.SetConnMaxLifetime(t)
 }
 func (d *db) SetConnMaxIdleTime(t time.Duration) {
+	d.connMaxIdleTime = t
 	d.db.SetConnMaxIdleTime(t)
 }
 func (d *db) SetMaxIdleConns(n int) {
+	d.maxIdleConns = n
 	d.db.SetMaxIdleConns(n)
 }
 func (d *db) SetMaxOpenConns(n int) {
+	d.maxOpenConns = n
 	d.db.SetMaxOpenConns(n)
 }
 func (d *db) Stats() sql.DBStats {
@@ -254,11 +262,25 @@ func (d *db) Prepare(query string) (*sql.Stmt, error) {
 func (d *db) Close() error {
 	return d.db.Close()
 }
+
+// 释放所有的连接
 func (d *db) ResetConnect() error {
-	if err := d.db.Close(); err != nil {
+	db := d.db
+	//先开启新的连接
+	if err := d.connect(); err != nil {
 		return err
 	}
-	return d.connect()
+	d.db.SetMaxIdleConns(d.maxIdleConns)
+	d.db.SetMaxOpenConns(d.maxOpenConns)
+	d.db.SetConnMaxIdleTime(d.connMaxIdleTime)
+	d.db.SetConnMaxLifetime(d.connMaxLifetime)
+	go func() {
+		if err := db.Close(); err != nil {
+			logrus.Error(fmt.Errorf("ResetConnect\n%w", err))
+		}
+	}()
+	return nil
+
 }
 func (d *db) connect() (err error) {
 	d.db, err = sql.Open(d.driverName, d.connectString)
