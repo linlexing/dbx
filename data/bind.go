@@ -44,14 +44,52 @@ func BindType(driverName string) int {
 // losing much speed, and should be to avoid confusion.
 
 // Rebind a query from the default bindtype (QUESTION) to the target bindtype.
+// func Rebind(bindType int, query string) string {
+// 	switch bindType {
+// 	case QUESTION, UNKNOWN:
+// 		return query
+// 	}
+
+// 	// Add space enough for 10 params before we have to allocate
+// 	rqb := make([]byte, 0, len(query)+10)
+
+// 	var i, j int
+// 	var leftSign = 0
+// 	for i = strings.Index(query, "?"); i != -1; i = strings.Index(query, "?") {
+// 		//检查单引号个数，只有偶数个才满足条件,奇数个说明是在字符串中，需要跳过
+// 		if leftSign += strings.Count(query[:i], "'"); leftSign%2 == 1 {
+// 			//问号要添加到rqb
+// 			rqb = append(rqb, query[:i+1]...)
+// 			query = query[i+1:]
+// 			continue
+// 		}
+// 		rqb = append(rqb, query[:i]...)
+
+// 		switch bindType {
+// 		case DOLLAR:
+// 			rqb = append(rqb, '$')
+// 		case NAMED:
+// 			rqb = append(rqb, ':', 'a', 'r', 'g')
+// 		case AT:
+// 			rqb = append(rqb, '@', 'p')
+// 		}
+
+// 		j++
+// 		rqb = strconv.AppendInt(rqb, int64(j), 10)
+// 		query = query[i+1:]
+
+// 	}
+
+//		return string(append(rqb, query...))
+//	}
 func Rebind(bindType int, query string) string {
 	switch bindType {
 	case QUESTION, UNKNOWN:
 		return query
 	}
-
+	sb := new(strings.Builder)
 	// Add space enough for 10 params before we have to allocate
-	rqb := make([]byte, 0, len(query)+10)
+	// rqb := make([]byte, 0, len(query)+10)
 
 	var i, j int
 	var leftSign = 0
@@ -59,26 +97,48 @@ func Rebind(bindType int, query string) string {
 		//检查单引号个数，只有偶数个才满足条件,奇数个说明是在字符串中，需要跳过
 		if leftSign += strings.Count(query[:i], "'"); leftSign%2 == 1 {
 			//问号要添加到rqb
-			rqb = append(rqb, query[:i+1]...)
+			if _, err := sb.WriteString(query[:i+1]); err != nil {
+				panic(err)
+			}
+			// rqb = append(rqb, query[:i+1]...)
 			query = query[i+1:]
 			continue
 		}
-		rqb = append(rqb, query[:i]...)
+		if _, err := sb.WriteString(query[:i]); err != nil {
+			panic(err)
+		}
+		// rqb = append(rqb, query[:i]...)
 
 		switch bindType {
 		case DOLLAR:
-			rqb = append(rqb, '$')
+			if _, err := sb.WriteRune('$'); err != nil {
+				panic(err)
+			}
+			// rqb = append(rqb, '$')
 		case NAMED:
-			rqb = append(rqb, ':', 'a', 'r', 'g')
+			if _, err := sb.WriteString(":arg"); err != nil {
+				panic(err)
+			}
+
+			// rqb = append(rqb, ':', 'a', 'r', 'g')
 		case AT:
-			rqb = append(rqb, '@', 'p')
+			if _, err := sb.WriteString(":@p"); err != nil {
+				panic(err)
+			}
+			// rqb = append(rqb, '@', 'p')
 		}
 
 		j++
-		rqb = strconv.AppendInt(rqb, int64(j), 10)
+		// rqb = strconv.AppendInt(rqb, int64(j), 10)
+		if _, err := sb.WriteString(strconv.Itoa(j)); err != nil {
+			panic(err)
+		}
+
 		query = query[i+1:]
 
 	}
-
-	return string(append(rqb, query...))
+	if _, err := sb.WriteString(query); err != nil {
+		panic(err)
+	}
+	return sb.String()
 }
