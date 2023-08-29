@@ -189,7 +189,7 @@ func getColumns(db common.DB, schemaName, table string) ([]*schema.Column, error
 			MaxLength:   v.MaxLength,
 			Null:        v.Null > 0,
 			TrueType:    v.TrueType,
-			FetchDriver: driverName,
+			FetchDriver: db.DriverName(),
 			Extended:    map[string]any{},
 		}
 

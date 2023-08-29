@@ -9,6 +9,7 @@ import (
 
 	"github.com/linlexing/dbx/common"
 	"github.com/linlexing/dbx/schema"
+	"golang.org/x/exp/slices"
 )
 
 func dbType(dataType schema.DataType, maxLength int) string {
@@ -68,7 +69,7 @@ func dropTablePrimaryKeySQL(db common.DB, tableName string) ([]string, error) {
 	return []string{fmt.Sprintf("ALTER TABLE %s DROP CONSTRAINT %s", tableName, pkCons)}, nil
 }
 
-//addTablePrimaryKeySQL 新增主键
+// addTablePrimaryKeySQL 新增主键
 func addTablePrimaryKeySQL(tableName string, pks []string) []string {
 	ns := strings.Split(tableName, ".")
 	var clearTableName string
@@ -80,8 +81,10 @@ func addTablePrimaryKeySQL(tableName string, pks []string) []string {
 	return []string{fmt.Sprintf("alter table %s add constraint %s_pk primary key(%s)", tableName, clearTableName, strings.Join(pks, ","))}
 }
 func colDBType(c *schema.Column) string {
-	if (len(c.FetchDriver) == 0 ||
-		strings.ToLower(c.FetchDriver) == strings.ToLower(driverName)) && len(c.TrueType) > 0 {
+
+	if (len(c.FetchDriver) == 0 || //内存中直接定义
+		slices.Index[string](driverName, strings.ToLower(c.FetchDriver)) >= 0) && //从oracle数据库中取回
+		len(c.TrueType) > 0 {
 		return c.TrueType
 	}
 	return dbType(c.Type, c.MaxLength)
@@ -103,7 +106,7 @@ func dbDefineNull(c *schema.Column) string {
 	return fmt.Sprintf("%s %s%s", c.Name, colDBType(c), nullStr)
 }
 
-//tableRenameSQL 处理表改名，旧名可以是多个，任意一个对上就改名，如果都没有存在，则不处理，也不返回出错
+// tableRenameSQL 处理表改名，旧名可以是多个，任意一个对上就改名，如果都没有存在，则不处理，也不返回出错
 func tableRenameSQL(oldName string, newName string) []string {
 	return []string{fmt.Sprintf("rename %s TO %s", oldName, newName)}
 }
@@ -142,7 +145,7 @@ func removeColumnsSQL(tabName string, cols []string) []string {
 	return []string{fmt.Sprintf("ALTER table %s drop(%s)", tabName, strings.Join(cols, ","))}
 }
 
-//createColumnIndex 新增单字段索引
+// createColumnIndex 新增单字段索引
 func createColumnIndexSQL(tableName string, unique bool, colName string) []string {
 	ns := strings.Split(tableName, ".")
 	schemaName := ""

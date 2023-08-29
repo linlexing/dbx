@@ -7,12 +7,16 @@ import (
 	"github.com/linlexing/dbx/data"
 )
 
-const driverName = "oci8"
+var (
+	driverName = []string{"oci8", "oracle"}
+)
 
 type meta struct{}
 
 func init() {
-	data.Register(driverName, new(meta))
+	for _, one := range driverName {
+		data.Register(one, new(meta))
+	}
 }
 func (m *meta) Concat(vals ...string) string {
 	return strings.Join(vals, "||")

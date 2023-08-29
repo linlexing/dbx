@@ -14,27 +14,33 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-const driverName = "oci8"
+var driverName = []string{"oci8", "oracle"}
 
 type meta struct{}
 
 func init() {
-	ps.Register(driverName, new(meta))
+	for _, one := range driverName {
+		ps.Register(one, new(meta))
+	}
 }
 func fromDBType(ty string) schema.DataType {
 	switch ty {
 	case "SQLT_INT", "SQLT_UIN": //, "SQLT_NUM":
 		return schema.TypeInt
 	case "SQLT_CHR", "SQLT_STR", "SQLT_CLOB", "SQLT_VCS", "SQLT_LVC", "SQLT_AFC",
-		"SQLT_AVC", "SQLT_VST", "SQLT_LNG", "SQLT_VBI", "SQLT_BIN", "SQLT_LBI", "SQLT_LVB":
+		"SQLT_AVC", "SQLT_VST", "SQLT_LNG", "SQLT_VBI", "SQLT_BIN", "SQLT_LBI", "SQLT_LVB",
+		"NCHAR", "CHAR": //oracle
 		return schema.TypeString
 	case "SQLT_FLT", "SQLT_BDOUBLE", "SQLT_BFLOAT", "SQLT_VNU",
 		"SQLT_NUM", /*number,int都是这个类型，目前驱动不支持精度查询，如果放int，解析小数就出错，所以放这里*/
+		"NUMBER",   //oracle
 		"":
 		return schema.TypeFloat
-	case "SQLT_DAT", "SQLT_DATE", "SQLT_TIMESTAMP", "SQLT_TIMESTAMP_TZ", "SQLT_TIMESTAMP_LTZ":
+	case "SQLT_DAT", "SQLT_DATE", "SQLT_TIMESTAMP", "SQLT_TIMESTAMP_TZ", "SQLT_TIMESTAMP_LTZ",
+		"DATE": //oracle
 		return schema.TypeDatetime
-	case "SQLT_BLOB":
+	case "SQLT_BLOB",
+		"OCIClobLocator": //oracle
 		return schema.TypeBytea
 	default:
 		logrus.WithFields(logrus.Fields{
