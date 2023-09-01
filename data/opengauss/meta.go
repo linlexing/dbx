@@ -19,6 +19,28 @@ func init() {
 func (m *meta) Concat(vals ...string) string {
 	return fmt.Sprintf("CONCAT(%s)", strings.Join(vals, ","))
 }
+func (m *meta) UpdateFrom(destTable, srcDataSQL, additionSet string, pks, columns []data.ColMap) string {
+	dataAligs := "datasrc_"
+	// pkMap := map[string]struct{}{}
+	links := make([]string, len(pks))
+	for i, v := range pks {
+		// pkMap[v] = struct{}{}
+		links[i] = fmt.Sprintf("%s.%s=%s.%s", destTable, v.Dest, dataAligs, v.Src)
+	}
+
+	sets := []string{}
+	for _, col := range columns {
+		sets = append(sets, fmt.Sprintf("%s=%s.%s", col.Dest, dataAligs, col.Src))
+	}
+
+	if len(additionSet) > 0 {
+		sets = append(sets, additionSet)
+	}
+
+	setStr := strings.Join(sets, ",")
+	return fmt.Sprintf("update %s set %s from (%s) %s where %s",
+		destTable, setStr, srcDataSQL, dataAligs, strings.Join(links, " and "))
+}
 
 // Merge 将另一个表中的数据合并进本表，要求两个表的主键相同,相同主键的被覆盖
 // columns指定字段清单,不在清单内的字段不会被update

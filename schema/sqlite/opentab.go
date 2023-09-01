@@ -104,6 +104,13 @@ func getIndexInfo(db common.DB, indexName string) ([]indexInfo, error) {
 	}
 	return rev, rows.Err()
 }
+func (m *meta) TablePK(db common.DB, tableName string) ([]string, error) {
+	tab, err := m.OpenTable(db, tableName)
+	if err != nil {
+		return nil, err
+	}
+	return tab.PrimaryKeys, nil
+}
 func (m *meta) OpenTable(db common.DB, tableName string) (*schema.Table, error) {
 	pks := []string{}
 	columns := []*schema.Column{}

@@ -11,7 +11,7 @@ import (
 )
 
 // 获取主键字段
-func getPk(db common.DB, tableName string) ([]string, error) {
+func (m *meta) TablePK(db common.DB, tableName string) ([]string, error) {
 	pks := []string{}
 
 	strSQL := fmt.Sprintf("SHOW KEYS FROM %s WHERE Key_name = 'PRIMARY'", tableName)
@@ -228,7 +228,7 @@ func getColumns(db common.DB, schemaName, tableName string) ([]*schema.Column, e
 func (m *meta) OpenTable(db common.DB, tableName string) (*schema.Table, error) {
 	t := schema.NewTable(tableName)
 
-	pks, err := getPk(db, tableName)
+	pks, err := m.TablePK(db, tableName)
 
 	if err != nil {
 		return nil, err

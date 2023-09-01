@@ -18,8 +18,15 @@ type meta struct {
 func init() {
 	schema.Register(driverName, new(meta))
 }
+func (m *meta) TablePK(db common.DB, tableName string) ([]string, error) {
+	tab, err := m.OpenTable(db, tableName)
+	if err != nil {
+		return nil, err
+	}
+	return tab.PrimaryKeys, nil
+}
 
-//CreateTableAsSQL 生成create table as select语句
+// CreateTableAsSQL 生成create table as select语句
 func (m *meta) CreateTableAsSQL(db common.DB, tableName, strSQL string, param []interface{},
 	pks []string) ([]string, error) {
 	panic("not impl")

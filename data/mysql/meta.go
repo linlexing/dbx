@@ -17,6 +17,28 @@ func init() {
 func (m *meta) Concat(vals ...string) string {
 	return fmt.Sprintf("CONCAT_WS('',%s)", strings.Join(vals, ","))
 }
+func (m *meta) UpdateFrom(destTable, srcDataSQL, additionSet string, pks, columns []data.ColMap) string {
+	dataAligs := "datasrc_"
+
+	links := make([]string, len(pks))
+	for i, v := range pks {
+
+		links[i] = fmt.Sprintf("%s.%s=%s.%s", destTable, v.Dest, dataAligs, v.Src)
+	}
+
+	sets := []string{}
+	for _, col := range columns {
+		sets = append(sets, fmt.Sprintf("%s.%s=%s.%s", destTable, col.Dest, dataAligs, col.Src))
+	}
+
+	if len(additionSet) > 0 {
+		sets = append(sets, additionSet)
+	}
+
+	setStr := strings.Join(sets, ",")
+	return fmt.Sprintf("update %s inner join (%s) %s on %s set %s",
+		destTable, srcDataSQL, dataAligs, strings.Join(links, " and "), setStr)
+}
 func (m *meta) Merge(destTable, srcDataSQL string, pks, columns []string) string {
 	updateSet := []string{}
 	pkMap := map[string]bool{}

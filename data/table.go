@@ -967,3 +967,13 @@ func (t *Table) Merge(tabName string, cols ...string) error {
 	_, err := t.DB.Exec(strSQL)
 	return err
 }
+
+// 关联更新
+func (t *Table) UpdateFrom(srcDataSQL, additionSet string, pk, columns []ColMap) (int64, error) {
+	strSQL := Find(t.Driver).UpdateFrom(t.FullName(), srcDataSQL, additionSet, pk, columns)
+	sr, err := t.DB.Exec(strSQL)
+	if err != nil {
+		return 0, err
+	}
+	return sr.RowsAffected()
+}

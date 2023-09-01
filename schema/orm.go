@@ -27,14 +27,14 @@ type structField struct {
 	parentName      string          //如果是子表属性，这里是子表属性名称，用于指标名称转换
 }
 
-//checkType 检查数据库类型和实际类型是否相容
-//数据库类型 Go类型
-//String string struct slice map bool
-//Bytea  []byte struct slice map
-//Datetime time.Time *time.Time
-//Float  float64
-//Int    int64,bool
-//child []struct
+// checkType 检查数据库类型和实际类型是否相容
+// 数据库类型 Go类型
+// String string struct slice map bool
+// Bytea  []byte struct slice map
+// Datetime time.Time *time.Time
+// Float  float64
+// Int    int64,bool
+// child []struct
 func (s *structField) checkType(root bool) error {
 	st := s.st
 	if s.child {
@@ -94,18 +94,18 @@ func (s *structField) checkType(root bool) error {
 		return fmt.Errorf("float type must is float64")
 	case TypeInt:
 		switch st.Kind() {
-		case reflect.Int64, reflect.Bool:
+		case reflect.Int64, reflect.Bool, reflect.Uint64:
 			return nil
 		}
-		return fmt.Errorf("int type must is int64")
+		return fmt.Errorf("int type must is int64 uint64 bool")
 	default:
 		str, _ := dt.String()
 		return errors.New("invalid type:" + str)
 	}
 }
 
-//json 指示该字段是否用json转换
-//注意指针的struct，也要转json
+// json 指示该字段是否用json转换
+// 注意指针的struct，也要转json
 func (s *structField) json() bool {
 
 	return !s.child && s.define.Type == TypeString &&
@@ -115,7 +115,7 @@ func (s *structField) json() bool {
 			s.st.Kind() == reflect.Map)
 }
 
-//gob 指示该字段是否用gob转换
+// gob 指示该字段是否用gob转换
 func (s *structField) gob() bool {
 	if s.child {
 		return false
@@ -130,7 +130,7 @@ func (s *structField) gob() bool {
 			s.st.Kind() == reflect.Map)
 }
 
-//isZero 判断一个值是否是0值
+// isZero 判断一个值是否是0值
 func (s *structField) isZero(val reflect.Value) bool {
 	if val.IsValid() == false {
 		return true
@@ -188,9 +188,9 @@ func (s *structField) isZero(val reflect.Value) bool {
 	}
 }
 
-//get 会自动转换
-//空值且数据库可为空返回nil
-//str 和 bytea类型字段，如果值是struct slice map，则返回json 和 gob
+// get 会自动转换
+// 空值且数据库可为空返回nil
+// str 和 bytea类型字段，如果值是struct slice map，则返回json 和 gob
 func (s *structField) get(obj reflect.Value) (interface{}, error) {
 	p := s.getv(obj)
 	//子表必定是[]struct
@@ -334,12 +334,16 @@ func (s *structField) setv(obj reflect.Value, val reflect.Value) {
 		}
 	}()
 	p := obj.FieldByIndex(s.valPath)
-	p.Set(val)
+	if p.Kind() == reflect.Uint64 && val.Kind() == reflect.Int64 {
+		p.Set(reflect.ValueOf(uint64(val.Int())))
+	} else {
+		p.Set(val)
+	}
 }
 
-//fieldsFromStruct 读取一个结构体，转换成元数据，可以接受一个*struct、
-//[]struct、[]*struct,并需传入一个属性路径索引数组，方便后期赋值
-//允许匿名嵌套,所有未导出的字段被忽略
+// fieldsFromStruct 读取一个结构体，转换成元数据，可以接受一个*struct、
+// []struct、[]*struct,并需传入一个属性路径索引数组，方便后期赋值
+// 允许匿名嵌套,所有未导出的字段被忽略
 func fieldsFromStruct(vtype reflect.Type, conv converFieldName, parentName string,
 	parentPath []int, root bool) (rev []*structField, err error) {
 	rev = []*structField{}
@@ -472,8 +476,8 @@ func struct2Table(tableName string, fnames []string, vtype reflect.Type, conv co
 
 }
 
-//TableFromStruct 将一个struct转换成table清单,可能有明细表
-//第一个是主表，剩余是明细表
+// TableFromStruct 将一个struct转换成table清单,可能有明细表
+// 第一个是主表，剩余是明细表
 func TableFromStruct(meta interface{}, tabNames ...string) ([]*Table, error) {
 	vtype := reflect.TypeOf(meta)
 	if vtype.Kind() == reflect.Ptr {
@@ -544,7 +548,7 @@ func childStruct2Row(vval reflect.Value, conv converFieldName,
 	return
 }
 
-//Struct2Row 结构体的值转换成map
+// Struct2Row 结构体的值转换成map
 func Struct2Row(meta interface{}) (main map[string]interface{},
 	detail map[string][]map[string]interface{}, err error) {
 	conv, ok := meta.(converFieldName)
@@ -554,7 +558,7 @@ func Struct2Row(meta interface{}) (main map[string]interface{},
 	return mainStruct2Row(reflect.ValueOf(meta), conv)
 }
 
-//Row2Struct map转换成结构体的值
+// Row2Struct map转换成结构体的值
 func Row2Struct(row map[string]interface{},
 	child map[string][]map[string]interface{}, vval interface{}) error {
 	conv, ok := vval.(converFieldName)
@@ -602,7 +606,7 @@ func mainRow2Struct(row map[string]interface{},
 	return nil
 }
 
-//childRow2Struct 将一个子表记录转换成struct
+// childRow2Struct 将一个子表记录转换成struct
 func childRow2Struct(row map[string]interface{}, vval reflect.Value,
 	conv converFieldName, parentName string) error {
 	types, err := fieldsFromStruct(vval.Type(), conv, parentName, nil, false)

@@ -55,7 +55,7 @@ func getPKIDS(db common.DB, tableName string) ([]int, error) {
 
 // 获取主键字段
 // tablename需要加单引号才能被sql语句识别
-func getPk(db common.DB, tableName string) ([]string, error) {
+func (m *meta) TablePK(db common.DB, tableName string) ([]string, error) {
 	//为适应华为高斯，改成两步获取
 	ids, err := getPKIDS(db, tableName)
 	if err != nil {
@@ -299,7 +299,7 @@ func (m *meta) OpenTable(db common.DB, tableName string) (*schema.Table, error) 
 	}
 	pks := []string{}
 	if tabExists {
-		pks, err = getPk(db, tableName)
+		pks, err = m.TablePK(db, tableName)
 		if err != nil {
 			return nil, err
 		}

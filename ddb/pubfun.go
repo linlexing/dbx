@@ -2,13 +2,11 @@ package ddb
 
 import (
 	"database/sql"
-	"fmt"
 
 	"github.com/linlexing/dbx/common"
-	"github.com/linlexing/dbx/suid"
 )
 
-//RunAtTx 在一个事务中运行，自动处理commit 和rollback
+// RunAtTx 在一个事务中运行，自动处理commit 和rollback
 func RunAtTx(db TxDB, callback func(Txer) error) (err error) {
 	tx, err := db.Beginx()
 	if err != nil {
@@ -32,7 +30,7 @@ func RunAtTx(db TxDB, callback func(Txer) error) (err error) {
 	return
 }
 
-//Openx 打开一个数据库连接，返回一个包装过的DB对象，其能返回DriverName
+// Openx 打开一个数据库连接，返回一个包装过的DB对象，其能返回DriverName
 func Openx(driverName, cnt string) (TxDB, error) {
 	rev := &db{
 		driverName:    driverName,
@@ -42,7 +40,7 @@ func Openx(driverName, cnt string) (TxDB, error) {
 	return rev, err
 }
 
-//ScanStrings 扫描一个单列的查询，并返回一个字符串数组
+// ScanStrings 扫描一个单列的查询，并返回一个字符串数组
 func ScanStrings(db common.Queryer, strSQL string, args ...interface{}) (strs []string, err error) {
 
 	rows, err := db.Query(strSQL, args...)
@@ -64,7 +62,7 @@ func ScanStrings(db common.Queryer, strSQL string, args ...interface{}) (strs []
 	return
 }
 
-//Columns 根据一个sql返回列名
+// Columns 根据一个sql返回列名
 func Columns(db common.Queryer, strSQL string, args ...interface{}) (strs []string, err error) {
 
 	rows, err := db.Query(strSQL, args...)
@@ -77,7 +75,7 @@ func Columns(db common.Queryer, strSQL string, args ...interface{}) (strs []stri
 	return
 }
 
-//QueryMaps 获取一个查询的所有记录，智能识别其类型
+// QueryMaps 获取一个查询的所有记录，智能识别其类型
 func QueryMaps(db common.Queryer, strSQL string,
 	args ...interface{}) (rev []map[string]interface{}, cols []string, err error) {
 
@@ -116,15 +114,7 @@ func QueryMaps(db common.Queryer, strSQL string,
 	return
 }
 
-//GetTempTableName 获取一个临时表名
+// GetTempTableName 获取一个临时表名
 func GetTempTableName(prev string) (string, error) {
-
-	if len(prev) == 0 {
-		return "", fmt.Errorf("prev can't empty")
-	}
-	id, err := suid.Next()
-	if err != nil {
-		return "", err
-	}
-	return prev + id, nil
+	return common.GetTempTableName(prev)
 }

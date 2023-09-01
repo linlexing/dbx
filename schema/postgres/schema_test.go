@@ -45,7 +45,7 @@ func tableTest() *schema.Table {
 	return tab
 }
 
-//测试创建表
+// 测试创建表
 func TestCreateTable(t *testing.T) {
 	db, err := getdb()
 	if err != nil {
@@ -61,7 +61,7 @@ func TestCreateTable(t *testing.T) {
 	}
 }
 
-//测试表是否存在
+// 测试表是否存在
 func TestTableExists(t *testing.T) {
 	db, err := getdb()
 	if err != nil {
@@ -94,7 +94,7 @@ func TestTableExists(t *testing.T) {
 
 }
 
-//测试新增单字段索引
+// 测试新增单字段索引
 func TestCreateColumnIndex(t *testing.T) {
 	db, err := getdb()
 	if err != nil {
@@ -117,7 +117,7 @@ func TestCreateColumnIndex(t *testing.T) {
 	}
 }
 
-//测试删除多列
+// 测试删除多列
 func TestRemoveColumns(t *testing.T) {
 	db, err := getdb()
 	if err != nil {
@@ -141,7 +141,7 @@ func TestRemoveColumns(t *testing.T) {
 	}
 }
 
-//测试表重命名
+// 测试表重命名
 func TestTableRename(t *testing.T) {
 	db, err := getdb()
 	if err != nil {
@@ -164,7 +164,7 @@ func TestTableRename(t *testing.T) {
 	}
 }
 
-//测试删除列索引
+// 测试删除列索引
 func TestDropColumIndex(t *testing.T) {
 	db, err := getdb()
 	if err != nil {
@@ -192,7 +192,7 @@ func TestDropColumIndex(t *testing.T) {
 
 }
 
-//测试删除表主键
+// 测试删除表主键
 func TestDropTablePrimaryKey(t *testing.T) {
 	db, err := getdb()
 	if err != nil {
@@ -215,7 +215,7 @@ func TestDropTablePrimaryKey(t *testing.T) {
 	}
 }
 
-//测试新增主键
+// 测试新增主键
 func TestAddTablePrimaryKey(t *testing.T) {
 	db, err := getdb()
 	if err != nil {
@@ -243,7 +243,7 @@ func TestAddTablePrimaryKey(t *testing.T) {
 	}
 }
 
-//测试获取主键字段
+// 测试获取主键字段
 func TestGetPk(t *testing.T) {
 	db, err := getdb()
 	if err != nil {
@@ -260,13 +260,13 @@ func TestGetPk(t *testing.T) {
 			t.Error(err)
 		}
 	}()
-	_, err = getPk(db, "test01")
+	_, err = TablePK(db, "test01")
 	if err != nil {
 		t.Error("测试获取逐渐字段未通过")
 	}
 }
 
-//测试获取表的列
+// 测试获取表的列
 func TestGetTableColumns(t *testing.T) {
 	db, err := getdb()
 	if err != nil {
@@ -341,7 +341,7 @@ func TestGetTableColumns(t *testing.T) {
 // 	}
 // }
 
-//测试 OpenTable
+// 测试 OpenTable
 func TestOpenTable(t *testing.T) {
 	db, err := getdb()
 	if err != nil {
