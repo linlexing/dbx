@@ -86,6 +86,18 @@ func (m *meta) TableNames(db common.DB) (names []string, err error) {
 	return
 }
 
+/*
+// 性能提升一倍，用处不大,！！！不能用，因为在事务中，只要发生一次error，整个事务就被污染，必须rollback
+func (m *meta) TableExists(db common.DB, tabName string) (bool, error) {
+	var str sql.NullString
+	if err := db.QueryRow("select '" + tabName + "'::regclass").Scan(&str); err != nil {
+		// if err := db.QueryRow("select to_regclass('" + tabName + "')").Scan(&str); err != nil {
+		// if err := db.QueryRow("select '1' from " + tabName + " where 1=2").Scan(&str); err != nil {
+		return false, nil
+	}
+	return true, nil
+}*/
+
 func (m *meta) TableExists(db common.DB, tabName string) (bool, error) {
 	schemaName := ""
 	ns := strings.Split(tabName, ".")
@@ -116,7 +128,6 @@ func (m *meta) TableExists(db common.DB, tabName string) (bool, error) {
 
 	return iCount > 0, nil
 }
-
 func (m *meta) CreateTableSQL(db common.DB, tab *schema.Table) (rev []string, _ error) {
 	cols := []string{}
 	for _, v := range tab.Columns {
