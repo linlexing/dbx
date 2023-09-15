@@ -39,9 +39,9 @@ var (
 	// \* matches the character * literally (case sensitive)
 	// / matches the character / literally (case sensitive)
 	regComment = regexp.MustCompile(`(?:[^']|'[^']*')*?(/\*[^*]*\*+(?:[^/*][^*]*\*+)*/)`)
-	regExists  = regexp.MustCompile(`^from\s+(.*)\s+on\s+(.*?)\s+where\s+(.*)$`)
-	regInTable = regexp.MustCompile(`^(.*)\s+in\s+(.*)\((.*)\)\s+where\s+(.*)$`)
-	regCount   = regexp.MustCompile(`^COUNT\(from\s+(.*)\s+on\s+(.*?)\s+where\s+(.*)\)\s+(.*)\s+(.*)$`)
+	regExists  = regexp.MustCompile(`(?ms)^from\s+(.*)\s+on\s+(.*?)\s+where\s+(.*)$`)
+	regInTable = regexp.MustCompile(`(?ms)^(.*)\s+in\s+(.*)\((.*)\)\s+where\s+(.*)$`)
+	regCount   = regexp.MustCompile(`(?ms)^COUNT\(from\s+(.*)\s+on\s+(.*?)\s+where\s+(.*)\)\s+(.*)\s+(.*)$`)
 )
 
 const (
