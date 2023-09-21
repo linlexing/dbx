@@ -98,170 +98,251 @@ func valueExpress(dataType schema.DataType, value string) string {
 	}
 }
 
-func (m *meta) GetOperatorExpress(ope ps.Operator, dataType schema.DataType, left, right, value2 string) (strSQL string) {
+func valueExpressNoQuotes(dataType schema.DataType, value string) string {
+	if len(value) >= 2 && value[0] == '`' && value[len(value)-1] == '`' {
+		return value[1 : len(value)-1]
+	}
+	switch dataType {
+	case schema.TypeFloat, schema.TypeInt:
+		return value
+	case schema.TypeString:
+		return strings.Replace(value, "'", "''", -1)
+	case schema.TypeDatetime:
+		if len(value) == 10 {
+			return value
+		} else if len(value) == 19 {
+			return value
+		} else {
+			panic(fmt.Errorf("invalid datetime:%s", value))
+		}
+	default:
+		panic(fmt.Errorf("not impl ValueExpress,type:%d", dataType))
+	}
+}
+func (m *meta) GetOperatorExpress(ope ps.Operator, dataType schema.DataType, column, value, value2 string) (strSQL string) {
 	//需要考虑到null的情况
 	switch ope {
 	case ps.OperatorEqu: // "=" 等于
-		if right == "" {
-			strSQL = fmt.Sprintf("%s is null", left)
+		if value == "" {
+			strSQL = fmt.Sprintf("(%s is null or %[1]s ='')", column)
 		} else {
-			strSQL = fmt.Sprintf("%s = %s", left, valueExpress(dataType, right))
+			strSQL = fmt.Sprintf("%s = %s", column, valueExpress(dataType, value))
 		}
 	case ps.OperatorNotEqu: // "!=" 不等于
-		if right == "" {
-			strSQL = fmt.Sprintf("%s is not null", left)
+		if value == "" {
+			strSQL = fmt.Sprintf("(%s is not null and %[1]s <>'')", column)
 		} else {
-			strSQL = fmt.Sprintf("(%s <> %s or %[1]s is null)", left, valueExpress(dataType, right))
+			strSQL = fmt.Sprintf("(%s <> %s or %[1]s is null or %[1]s = '')", column, valueExpress(dataType, value))
 		}
 	case ps.OperatorGreaterThan: // ">" 大于
-		if right == "" {
-			strSQL = fmt.Sprintf("%s is not null", left)
+		if value == "" {
+			strSQL = fmt.Sprintf("(%s is not null and %[1]s <>'')", column)
 		} else {
-			strSQL = fmt.Sprintf("%s > %s", left, valueExpress(dataType, right))
+			strSQL = fmt.Sprintf("%s > %s", column, valueExpress(dataType, value))
 		}
 	case ps.OperatorGreaterThanOrEqu: // ">=" 大于等于
-		if right == "" {
+		if value == "" {
 			strSQL = "1=1"
 		} else {
-			strSQL = fmt.Sprintf("%s >= %s", left, valueExpress(dataType, right))
+			strSQL = fmt.Sprintf("%s >= %s", column, valueExpress(dataType, value))
 		}
 	case ps.OperatorLessThan: //"<" 小于
-		if right == "" {
+		if value == "" {
 			strSQL = "1=2"
 		} else {
-			strSQL = fmt.Sprintf("(%s < %s or %[1]s is null)", left, valueExpress(dataType, right))
+			strSQL = fmt.Sprintf("(%s < %s or %[1]s is null or %[1]s = '')", column, valueExpress(dataType, value))
 		}
 	case ps.OperatorLessThanOrEqu: // "<=" 小于等于
-		if right == "" {
-			strSQL = fmt.Sprintf("%s is null", left)
+		if value == "" {
+			strSQL = fmt.Sprintf("(%s is null or %[1]s ='')", column)
 
 		} else {
-			strSQL = fmt.Sprintf("(%s <= %s or %[1]s is null)", left, valueExpress(dataType, right))
+			strSQL = fmt.Sprintf("(%s <= %s or %[1]s is null or %[1]s = '')", column, valueExpress(dataType, value))
 		}
 	case ps.OperatorLike: //"?" 包含
-		if right == "" {
-			strSQL = fmt.Sprintf("%s is null", left)
+		if value == "" {
+			strSQL = fmt.Sprintf("(%s is null or %[1]s ='')", column)
 		} else {
-			strSQL = fmt.Sprintf("%s like %s", left, valueExpress(dataType, "%"+right+"%"))
+			strSQL = fmt.Sprintf("%s like %s", column, valueExpress(dataType, "%"+value+"%"))
 		}
 	case ps.OperatorNotLike: //"!?" 不包含
-		if right == "" {
-			strSQL = fmt.Sprintf("%s is not null", left)
+		if value == "" {
+			strSQL = fmt.Sprintf("(%s is not null and %[1]s <>'')", column)
 		} else {
-			strSQL = fmt.Sprintf("%s not like %s", left, valueExpress(dataType, "%"+right+"%"))
+			strSQL = fmt.Sprintf("%s not like %s", column, valueExpress(dataType, "%"+value+"%"))
 		}
 	case ps.OperatorPrefix: // "?>" 前缀
-		if right == "" {
-			strSQL = fmt.Sprintf("%s is null", left)
+		if value == "" {
+			strSQL = fmt.Sprintf("(%s is null or %[1]s ='')", column)
 		} else {
-			strSQL = fmt.Sprintf("%s like %s", left, valueExpress(dataType, right+"%"))
+			strSQL = fmt.Sprintf("%s like %s", column, valueExpress(dataType, value+"%"))
 		}
 	case ps.OperatorNotPrefix: //"!?>" 非前缀
-		if right == "" {
-			strSQL = fmt.Sprintf("%s is not null", left)
+		if value == "" {
+			strSQL = fmt.Sprintf("(%s is not null and %[1]s <>'')", column)
 		} else {
-			strSQL = fmt.Sprintf("%s not like %s", left, valueExpress(dataType, right+"%"))
+			strSQL = fmt.Sprintf("%s not like %s", column, valueExpress(dataType, value+"%"))
 		}
 	case ps.OperatorSuffix: // "<?" 后缀
-		if right == "" {
-			strSQL = fmt.Sprintf("%s is null", left)
+		if value == "" {
+			strSQL = fmt.Sprintf("(%s is null or %[1]s ='')", column)
 		} else {
-			strSQL = fmt.Sprintf("%s like %s", left, valueExpress(dataType, "%"+right))
+			strSQL = fmt.Sprintf("%s like %s", column, valueExpress(dataType, "%"+value))
 		}
 	case ps.OperatorNotSuffix: // "!<?" 非后缀
-		if right == "" {
-			strSQL = fmt.Sprintf("%s is not null", left)
+		if value == "" {
+			strSQL = fmt.Sprintf("(%s is not null and %[1]s <>'')", column)
 		} else {
-			strSQL = fmt.Sprintf("%s not like %s", left, valueExpress(dataType, "%"+right))
+			strSQL = fmt.Sprintf("%s not like %s", column, valueExpress(dataType, "%"+value))
 		}
 	case ps.OperatorIn: //"in" 在列表
-		if right == "" {
-			strSQL = fmt.Sprintf("%s is null", left)
+		if value == "" {
+			strSQL = fmt.Sprintf("(%s is null or %[1]s ='')", column)
 		} else {
-			//在列表简化起见，不再类型化
-			if array, err := csv.NewReader(strings.NewReader(right)).Read(); err != nil {
+
+			if array, err := csv.NewReader(strings.NewReader(value)).Read(); err != nil {
 				log.Panic(err)
 			} else {
 				list := []string{}
 				for _, v := range array {
 					list = append(list, valueExpress(dataType, v))
 				}
-				strSQL = fmt.Sprintf("%s in (%s)", left, strings.Join(list, ",\n"))
+				strSQL = fmt.Sprintf("%s in (%s)", column, strings.Join(list, ",\n"))
 			}
 
 		}
 	case ps.OperatorNotIn: //"!in" 不在列表
-		if right == "" {
-			strSQL = fmt.Sprintf("%s is not null", left)
+		if value == "" {
+			strSQL = fmt.Sprintf("(%s is not null and %[1]s <>'')", column)
 		} else {
 
-			if array, err := csv.NewReader(strings.NewReader(right)).Read(); err != nil {
+			if array, err := csv.NewReader(strings.NewReader(value)).Read(); err != nil {
 				log.Panic(err)
 			} else {
 				list := []string{}
 				for _, v := range array {
 					list = append(list, valueExpress(dataType, v))
 				}
-				strSQL = fmt.Sprintf("%s not in (%s)", left, strings.Join(list, ",\n"))
+				strSQL = fmt.Sprintf("%s not in (%s)", column, strings.Join(list, ",\n"))
 			}
 		}
+	case ps.OperatorLikeArray:
+		if value == "" {
+			strSQL = fmt.Sprintf("(%s is null or %[1]s ='')", column)
+		} else {
+			//简化起见，也不再类型化
+			if array, err := csv.NewReader(strings.NewReader(value)).Read(); err != nil {
+				log.Panic(err)
+			} else {
+				rList := []string{}
+				var matchItems string
+				for _, v := range array {
+					//正则长度限制
+					if len(v) > 256 { //单个就超长就跳过
+						continue
+					}
+					if len(matchItems)+len(v) > 256 {
+						rList = append(rList, fmt.Sprintf("%s rlike '%s'", column, matchItems))
+						matchItems = ""
+					}
+					if len(matchItems) > 0 {
+						matchItems = matchItems + fmt.Sprintf("|%s", valueExpressNoQuotes(dataType, v))
+					} else {
+						matchItems = valueExpressNoQuotes(dataType, v)
+					}
+				}
+				rList = append(rList, fmt.Sprintf("%s rlike '%s'", column, matchItems))
+				strSQL = fmt.Sprintf("(%s)", strings.Join(rList, " or "))
+			}
+
+		}
+	case ps.OperatorNotLikeArray:
+		if value == "" {
+			strSQL = fmt.Sprintf("(%s is not null and %[1]s <>'')", column)
+		} else {
+			//简化起见，也不再类型化
+			if array, err := csv.NewReader(strings.NewReader(value)).Read(); err != nil {
+				log.Panic(err)
+			} else {
+				rList := []string{}
+				var matchItems string
+				for _, v := range array {
+					//正则长度限制
+					if len(v) > 256 { //单个就超长就跳过
+						continue
+					}
+					if len(matchItems)+len(v) > 256 {
+						rList = append(rList, fmt.Sprintf("%s rlike '%s'", column, matchItems))
+						matchItems = ""
+					}
+					if len(matchItems) > 0 {
+						matchItems = matchItems + fmt.Sprintf("|%s", valueExpressNoQuotes(dataType, v))
+					} else {
+						matchItems = valueExpressNoQuotes(dataType, v)
+					}
+				}
+				rList = append(rList, fmt.Sprintf("%s rlike '%s'", column, matchItems))
+				strSQL = fmt.Sprintf("not (%s)", strings.Join(rList, " or "))
+			}
+
+		}
 	case ps.OperatorRegexp: // "~" 正则
-		if right == "" {
-			strSQL = fmt.Sprintf("%s is null", left)
+		if value == "" {
+			strSQL = fmt.Sprintf("(%s is null or %[1]s ='')", column)
 		} else {
 
-			strSQL = fmt.Sprintf("%s rlike %s", left, valueExpress(dataType, right))
+			strSQL = fmt.Sprintf("%s rlike %s", column, valueExpress(dataType, value))
 
 		}
 	case ps.OperatorNotRegexp: //"!~" 非正则
-		if right == "" {
-			strSQL = fmt.Sprintf("%s is not null", left)
+		if value == "" {
+			strSQL = fmt.Sprintf("(%s is not null and %[1]s <>'')", column)
 		} else {
 
-			strSQL = fmt.Sprintf("%s not rlike %s", left, valueExpress(dataType, right))
+			strSQL = fmt.Sprintf("%s not rlike %s", column, valueExpress(dataType, value))
 
 		}
 	case ps.OperatorIsNull: // "e" 为空
-		strSQL = fmt.Sprintf("%s is null", left)
+		strSQL = fmt.Sprintf("(%s is null or %[1]s ='')", column)
 	case ps.OperatorIsNotNull: //"!e" 不为空
-		strSQL = fmt.Sprintf("%s is not null", left)
+		strSQL = fmt.Sprintf("(%s is not null and %[1]s <>'')", column)
 	case ps.OperatorLengthEqu: // "_" 长度等于
 
-		strSQL = fmt.Sprintf("%s RLIKE '.{%s}'", left, right)
+		strSQL = fmt.Sprintf("%s RLIKE '.{%s}'", column, value)
 
 	case ps.OperatorLengthNotEqu: // "!_" 长度不等于
-		ilen, err := strconv.Atoi(right)
+		ilen, err := strconv.Atoi(value)
 		if err != nil {
-			log.Panic(fmt.Errorf("the length:%s invalid", right))
+			log.Panic(fmt.Errorf("the length:%s invalid", value))
 		}
-		strSQL = fmt.Sprintf("%s RLIKE '.{0,%d}|.{%d,}", left, ilen-1, ilen+1)
+		strSQL = fmt.Sprintf("%s RLIKE '.{0,%d}|.{%d,}", column, ilen-1, ilen+1)
 
 	case ps.OperatorLengthGreaterThan: // "_>" 长度大于
-		ilen, err := strconv.Atoi(right)
+		ilen, err := strconv.Atoi(value)
 		if err != nil {
-			log.Panic(fmt.Errorf("the length:%s invalid", right))
+			log.Panic(fmt.Errorf("the length:%s invalid", value))
 		}
 
-		strSQL = fmt.Sprintf("%s RLIKE '.{%d,}", left, ilen+1)
+		strSQL = fmt.Sprintf("%s RLIKE '.{%d,}", column, ilen+1)
 
 	case ps.OperatorLengthGreaterThanOrEqu: // "_>=" 长度大于等于
 
-		strSQL = fmt.Sprintf("%s RLIKE '.{%s,}", left, right)
+		strSQL = fmt.Sprintf("%s RLIKE '.{%s,}", column, value)
 
 	case ps.OperatorLengthLessThan: //"_<" 长度小于
-		ilen, err := strconv.Atoi(right)
+		ilen, err := strconv.Atoi(value)
 		if err != nil {
-			log.Panic(fmt.Errorf("the length:%s invalid", right))
+			log.Panic(fmt.Errorf("the length:%s invalid", value))
 		}
-		strSQL = fmt.Sprintf("%s RLIKE '{0,%d}", left, ilen-1)
+		strSQL = fmt.Sprintf("%s RLIKE '{0,%d}", column, ilen-1)
 
 	case ps.OperatorLengthLessThanOrEqu: //"_<=" 长度小于
 
-		strSQL = fmt.Sprintf("%s RLIKE '.{0,%s}", left, right)
+		strSQL = fmt.Sprintf("%s RLIKE '.{0,%s}", column, value)
 	case ps.OperatorBetween:
-		strSQL = fmt.Sprintf("%s between %s and %s", left, valueExpress(dataType, right), valueExpress(dataType, value2))
+		strSQL = fmt.Sprintf("%s between %s and %s", column, valueExpress(dataType, value), valueExpress(dataType, value2))
 	case ps.OperatorNotBetween:
-		strSQL = fmt.Sprintf("%s not between %s and %s", left, valueExpress(dataType, right), valueExpress(dataType, value2))
+		strSQL = fmt.Sprintf("%s not between %s and %s", column, valueExpress(dataType, value), valueExpress(dataType, value2))
 	default:
 		log.Panic(fmt.Errorf("the opt:%s not impl", ope))
 	}
