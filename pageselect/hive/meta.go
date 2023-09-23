@@ -136,19 +136,31 @@ func (m *meta) GetOperatorExpress(ope ps.Operator, dataType schema.DataType, col
 	switch ope {
 	case ps.OperatorEqu: // "=" 等于
 		if value == "" {
-			strSQL = fmt.Sprintf("(%s is null or %[1]s ='')", column)
+			if dataType == schema.TypeString {
+				strSQL = fmt.Sprintf("(%s is null or %[1]s ='')", column)
+			} else {
+				strSQL = fmt.Sprintf("%s is null", column)
+			}
 		} else {
 			strSQL = fmt.Sprintf("%s = %s", column, valueExpress(dataType, value))
 		}
 	case ps.OperatorNotEqu: // "!=" 不等于
 		if value == "" {
-			strSQL = fmt.Sprintf("(%s is not null and %[1]s <>'')", column)
+			if dataType == schema.TypeString {
+				strSQL = fmt.Sprintf("(%s is not null and %[1]s <>'')", column)
+			} else {
+				strSQL = fmt.Sprintf("%s is not null", column)
+			}
 		} else {
 			strSQL = fmt.Sprintf("(%s <> %s or %[1]s is null or %[1]s = '')", column, valueExpress(dataType, value))
 		}
 	case ps.OperatorGreaterThan: // ">" 大于
 		if value == "" {
-			strSQL = fmt.Sprintf("(%s is not null and %[1]s <>'')", column)
+			if dataType == schema.TypeString {
+				strSQL = fmt.Sprintf("(%s is not null and %[1]s <>'')", column)
+			} else {
+				strSQL = fmt.Sprintf("%s is not null", column)
+			}
 		} else {
 			strSQL = fmt.Sprintf("%s > %s", column, valueExpress(dataType, value))
 		}
@@ -162,54 +174,90 @@ func (m *meta) GetOperatorExpress(ope ps.Operator, dataType schema.DataType, col
 		if value == "" {
 			strSQL = "1=2"
 		} else {
-			strSQL = fmt.Sprintf("(%s < %s or %[1]s is null or %[1]s = '')", column, valueExpress(dataType, value))
+			if dataType == schema.TypeString {
+				strSQL = fmt.Sprintf("(%s < %s or %[1]s is null or %[1]s = '')", column, valueExpress(dataType, value))
+			} else {
+				strSQL = fmt.Sprintf("(%s < %s or %[1]s is null)", column, valueExpress(dataType, value))
+			}
 		}
 	case ps.OperatorLessThanOrEqu: // "<=" 小于等于
 		if value == "" {
-			strSQL = fmt.Sprintf("(%s is null or %[1]s ='')", column)
+			if dataType == schema.TypeString {
+				strSQL = fmt.Sprintf("(%s is null or %[1]s ='')", column)
+			} else {
+				strSQL = fmt.Sprintf("%s is null", column)
+			}
 
 		} else {
 			strSQL = fmt.Sprintf("(%s <= %s or %[1]s is null or %[1]s = '')", column, valueExpress(dataType, value))
 		}
 	case ps.OperatorLike: //"?" 包含
 		if value == "" {
-			strSQL = fmt.Sprintf("(%s is null or %[1]s ='')", column)
+			if dataType == schema.TypeString {
+				strSQL = fmt.Sprintf("(%s is null or %[1]s ='')", column)
+			} else {
+				strSQL = fmt.Sprintf("%s is null", column)
+			}
 		} else {
 			strSQL = fmt.Sprintf("%s like %s", column, valueExpress(dataType, "%"+value+"%"))
 		}
 	case ps.OperatorNotLike: //"!?" 不包含
 		if value == "" {
-			strSQL = fmt.Sprintf("(%s is not null and %[1]s <>'')", column)
+			if dataType == schema.TypeString {
+				strSQL = fmt.Sprintf("(%s is not null and %[1]s <>'')", column)
+			} else {
+				strSQL = fmt.Sprintf("%s is not null", column)
+			}
 		} else {
 			strSQL = fmt.Sprintf("%s not like %s", column, valueExpress(dataType, "%"+value+"%"))
 		}
 	case ps.OperatorPrefix: // "?>" 前缀
 		if value == "" {
-			strSQL = fmt.Sprintf("(%s is null or %[1]s ='')", column)
+			if dataType == schema.TypeString {
+				strSQL = fmt.Sprintf("(%s is null or %[1]s ='')", column)
+			} else {
+				strSQL = fmt.Sprintf("%s is null", column)
+			}
 		} else {
 			strSQL = fmt.Sprintf("%s like %s", column, valueExpress(dataType, value+"%"))
 		}
 	case ps.OperatorNotPrefix: //"!?>" 非前缀
 		if value == "" {
-			strSQL = fmt.Sprintf("(%s is not null and %[1]s <>'')", column)
+			if dataType == schema.TypeString {
+				strSQL = fmt.Sprintf("(%s is not null and %[1]s <>'')", column)
+			} else {
+				strSQL = fmt.Sprintf("%s is not null", column)
+			}
 		} else {
 			strSQL = fmt.Sprintf("%s not like %s", column, valueExpress(dataType, value+"%"))
 		}
 	case ps.OperatorSuffix: // "<?" 后缀
 		if value == "" {
-			strSQL = fmt.Sprintf("(%s is null or %[1]s ='')", column)
+			if dataType == schema.TypeString {
+				strSQL = fmt.Sprintf("(%s is null or %[1]s ='')", column)
+			} else {
+				strSQL = fmt.Sprintf("%s is null", column)
+			}
 		} else {
 			strSQL = fmt.Sprintf("%s like %s", column, valueExpress(dataType, "%"+value))
 		}
 	case ps.OperatorNotSuffix: // "!<?" 非后缀
 		if value == "" {
-			strSQL = fmt.Sprintf("(%s is not null and %[1]s <>'')", column)
+			if dataType == schema.TypeString {
+				strSQL = fmt.Sprintf("(%s is not null and %[1]s <>'')", column)
+			} else {
+				strSQL = fmt.Sprintf("%s is not null", column)
+			}
 		} else {
 			strSQL = fmt.Sprintf("%s not like %s", column, valueExpress(dataType, "%"+value))
 		}
 	case ps.OperatorIn: //"in" 在列表
 		if value == "" {
-			strSQL = fmt.Sprintf("(%s is null or %[1]s ='')", column)
+			if dataType == schema.TypeString {
+				strSQL = fmt.Sprintf("(%s is null or %[1]s ='')", column)
+			} else {
+				strSQL = fmt.Sprintf("%s is null", column)
+			}
 		} else {
 
 			if array, err := csv.NewReader(strings.NewReader(value)).Read(); err != nil {
@@ -225,7 +273,11 @@ func (m *meta) GetOperatorExpress(ope ps.Operator, dataType schema.DataType, col
 		}
 	case ps.OperatorNotIn: //"!in" 不在列表
 		if value == "" {
-			strSQL = fmt.Sprintf("(%s is not null and %[1]s <>'')", column)
+			if dataType == schema.TypeString {
+				strSQL = fmt.Sprintf("(%s is not null and %[1]s <>'')", column)
+			} else {
+				strSQL = fmt.Sprintf("%s is not null", column)
+			}
 		} else {
 
 			if array, err := csv.NewReader(strings.NewReader(value)).Read(); err != nil {
@@ -240,7 +292,11 @@ func (m *meta) GetOperatorExpress(ope ps.Operator, dataType schema.DataType, col
 		}
 	case ps.OperatorLikeArray:
 		if value == "" {
-			strSQL = fmt.Sprintf("(%s is null or %[1]s ='')", column)
+			if dataType == schema.TypeString {
+				strSQL = fmt.Sprintf("(%s is null or %[1]s ='')", column)
+			} else {
+				strSQL = fmt.Sprintf("%s is null", column)
+			}
 		} else {
 			//简化起见，也不再类型化
 			if array, err := csv.NewReader(strings.NewReader(value)).Read(); err != nil {
@@ -270,7 +326,11 @@ func (m *meta) GetOperatorExpress(ope ps.Operator, dataType schema.DataType, col
 		}
 	case ps.OperatorNotLikeArray:
 		if value == "" {
-			strSQL = fmt.Sprintf("(%s is not null and %[1]s <>'')", column)
+			if dataType == schema.TypeString {
+				strSQL = fmt.Sprintf("(%s is not null and %[1]s <>'')", column)
+			} else {
+				strSQL = fmt.Sprintf("%s is not null", column)
+			}
 		} else {
 			//简化起见，也不再类型化
 			if array, err := csv.NewReader(strings.NewReader(value)).Read(); err != nil {
@@ -300,24 +360,36 @@ func (m *meta) GetOperatorExpress(ope ps.Operator, dataType schema.DataType, col
 		}
 	case ps.OperatorRegexp: // "~" 正则
 		if value == "" {
-			strSQL = fmt.Sprintf("(%s is null or %[1]s ='')", column)
+			if dataType == schema.TypeString {
+				strSQL = fmt.Sprintf("(%s is null or %[1]s ='')", column)
+			} else {
+				strSQL = fmt.Sprintf("%s is null", column)
+			}
 		} else {
-
 			strSQL = fmt.Sprintf("%s rlike %s", column, valueExpress(dataType, value))
-
 		}
 	case ps.OperatorNotRegexp: //"!~" 非正则
 		if value == "" {
-			strSQL = fmt.Sprintf("(%s is not null and %[1]s <>'')", column)
+			if dataType == schema.TypeString {
+				strSQL = fmt.Sprintf("(%s is not null and %[1]s <>'')", column)
+			} else {
+				strSQL = fmt.Sprintf("%s is not null", column)
+			}
 		} else {
-
 			strSQL = fmt.Sprintf("%s not rlike %s", column, valueExpress(dataType, value))
-
 		}
 	case ps.OperatorIsNull: // "e" 为空
-		strSQL = fmt.Sprintf("(%s is null or %[1]s ='')", column)
+		if dataType == schema.TypeString {
+			strSQL = fmt.Sprintf("(%s is null or %[1]s ='')", column)
+		} else {
+			strSQL = fmt.Sprintf("%s is null", column)
+		}
 	case ps.OperatorIsNotNull: //"!e" 不为空
-		strSQL = fmt.Sprintf("(%s is not null and %[1]s <>'')", column)
+		if dataType == schema.TypeString {
+			strSQL = fmt.Sprintf("(%s is not null and %[1]s <>'')", column)
+		} else {
+			strSQL = fmt.Sprintf("%s is not null", column)
+		}
 	case ps.OperatorLengthEqu: // "_" 长度等于
 
 		strSQL = fmt.Sprintf("char_length(%s) = %s", column, value)
