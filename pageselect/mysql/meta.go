@@ -156,7 +156,11 @@ func (m *meta) GetOperatorExpress(ope ps.Operator, dataType schema.DataType, col
 				strSQL = fmt.Sprintf("%s is not null", column)
 			}
 		} else {
-			strSQL = fmt.Sprintf("(%s <> %s or %[1]s is null or %[1]s = '')", column, valueExpress(dataType, value))
+			if dataType == schema.TypeString {
+				strSQL = fmt.Sprintf("(%s <> %s or %[1]s is null or %[1]s = '')", column, valueExpress(dataType, value))
+			} else {
+				strSQL = fmt.Sprintf("(%s <> %s or %[1]s is null)", column, valueExpress(dataType, value))
+			}
 		}
 	case ps.OperatorGreaterThan: // ">" 大于
 		if value == "" {
@@ -193,7 +197,11 @@ func (m *meta) GetOperatorExpress(ope ps.Operator, dataType schema.DataType, col
 			}
 
 		} else {
-			strSQL = fmt.Sprintf("(%s <= %s or %[1]s is null or %[1]s = '')", column, valueExpress(dataType, value))
+			if dataType == schema.TypeString {
+				strSQL = fmt.Sprintf("(%s <= %s or %[1]s is null or %[1]s = '')", column, valueExpress(dataType, value))
+			} else {
+				strSQL = fmt.Sprintf("(%s <= %s or %[1]s is null)", column, valueExpress(dataType, value))
+			}
 		}
 	case ps.OperatorLike: //"?" 包含
 		if value == "" {
