@@ -11,12 +11,12 @@ import (
 	"time"
 )
 
-//ErrInvalidDataType 无效的数据类型
+// ErrInvalidDataType 无效的数据类型
 type ErrInvalidDataType struct {
 	d DataType
 }
 
-//字符串转换成时间，按照各种可能的格式
+// 字符串转换成时间，按照各种可能的格式
 func StrToDate(s string) (tm time.Time, err error) {
 	tm, err = time.ParseInLocation("2006-1-2", s, time.Local)
 	if err == nil {
@@ -66,7 +66,7 @@ func newErrInvalidDataType(d DataType) *ErrInvalidDataType {
 	}
 }
 
-//DataType 字段的数据类型
+// DataType 字段的数据类型
 type DataType int
 
 const (
@@ -94,7 +94,7 @@ const (
 	TypeByteaString = "BYTEA"
 )
 
-//MarshalJSON 实现json的自定义的json序列化，主要是为了兼容前个直接保存字符串值的版本
+// MarshalJSON 实现json的自定义的json序列化，主要是为了兼容前个直接保存字符串值的版本
 func (d DataType) MarshalJSON() ([]byte, error) {
 	str, err := d.String()
 	if err != nil {
@@ -103,12 +103,12 @@ func (d DataType) MarshalJSON() ([]byte, error) {
 	return json.Marshal(str)
 }
 
-//MarshalYAML 是支持yaml序列化
+// MarshalYAML 是支持yaml序列化
 func (d DataType) MarshalYAML() (interface{}, error) {
 	return d.String()
 }
 
-//UnmarshalYAML 支持yaml反序列化
+// UnmarshalYAML 支持yaml反序列化
 func (d *DataType) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	var outstr string
 	if err := unmarshal(&outstr); err != nil {
@@ -122,7 +122,7 @@ func (d *DataType) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	return nil
 }
 
-//UnmarshalJSON 实现自定义的json反序列化，主要是为了兼容前个版本
+// UnmarshalJSON 实现自定义的json反序列化，主要是为了兼容前个版本
 func (d *DataType) UnmarshalJSON(v []byte) error {
 	var str string
 	//v 是一个字符串，带有两端双引号，需要转换
@@ -137,7 +137,7 @@ func (d *DataType) UnmarshalJSON(v []byte) error {
 	return nil
 }
 
-//ParseDataType 将一个字符串转换成类型值
+// ParseDataType 将一个字符串转换成类型值
 func ParseDataType(d string) (DataType, error) {
 	switch d {
 	case TypeStringString:
@@ -155,7 +155,7 @@ func ParseDataType(d string) (DataType, error) {
 	}
 }
 
-//String 返回类型的字符串名称
+// String 返回类型的字符串名称
 func (d DataType) String() (string, error) {
 	switch d {
 	case TypeString:
@@ -174,7 +174,7 @@ func (d DataType) String() (string, error) {
 
 }
 
-//ChineseString 返回类型的汉字名称
+// ChineseString 返回类型的汉字名称
 func (d DataType) ChineseString() (string, error) {
 	switch d {
 	case TypeString:
@@ -192,7 +192,7 @@ func (d DataType) ChineseString() (string, error) {
 	}
 }
 
-//ParseString 将一个字符串转换成标准值
+// ParseString 将一个字符串转换成标准值
 func (d DataType) ParseString(v string) (interface{}, error) {
 	if len(v) == 0 {
 		return nil, nil
@@ -241,7 +241,7 @@ func (d DataType) ParseString(v string) (interface{}, error) {
 	}
 }
 
-//ToString 转换成字符串形式,值必须要满足要求
+// ToString 转换成字符串形式,值必须要满足要求
 func (d DataType) ToString(v interface{}) (result string, err error) {
 	//nil代表null，不需要转换，否则会出错
 	if v == nil {
@@ -288,6 +288,9 @@ func (d DataType) ToString(v interface{}) (result string, err error) {
 			result = strconv.FormatFloat(float64(tv), 'f', -1, 64)
 		case float64:
 			result = strconv.FormatFloat(tv, 'f', -1, 64)
+		case int, int16, int32, int64, int8,
+			uint, uint16, uint32, uint64, uint8:
+			result = fmt.Sprintf("%d", tv)
 		default:
 			err = fmt.Errorf("v:%#v can't to string", v)
 		}
@@ -297,7 +300,7 @@ func (d DataType) ToString(v interface{}) (result string, err error) {
 	return
 }
 
-//ParseScan 转换数据库驱动扫描出的值，特别是time类型的，很可能是string形式
+// ParseScan 转换数据库驱动扫描出的值，特别是time类型的，很可能是string形式
 func (d DataType) ParseScan(v interface{}) (result interface{}, err error) {
 	//nil代表null，不需要转换，否则会出错
 	if v == nil {
@@ -408,7 +411,7 @@ func (d DataType) ParseScan(v interface{}) (result interface{}, err error) {
 
 }
 
-//ToJSON 转换一个字段值，方便其保存json格式，主要目地是检查数据类型和处理二进制数据和日期
+// ToJSON 转换一个字段值，方便其保存json格式，主要目地是检查数据类型和处理二进制数据和日期
 func (d DataType) ToJSON(v interface{}) (interface{}, error) {
 	if v == nil {
 		return nil, nil
@@ -457,7 +460,7 @@ func (d DataType) ToJSON(v interface{}) (interface{}, error) {
 	}
 }
 
-//ParseJSON 从一个json数据中读取值，需要转换[]byte,time等类型
+// ParseJSON 从一个json数据中读取值，需要转换[]byte,time等类型
 func (d DataType) ParseJSON(v interface{}) (interface{}, error) {
 	if v == nil {
 		return nil, nil
