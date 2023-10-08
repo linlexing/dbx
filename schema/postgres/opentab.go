@@ -292,18 +292,20 @@ func getColumns(db common.DB, schemaName, table string) ([]*schema.Column, error
 }
 func (m *meta) OpenTable(db common.DB, tableName string) (*schema.Table, error) {
 	t := schema.NewTable(tableName)
-	//获取主键前需要先判断表是否存在，防止出现表不存在抛出异常
-	tabExists, err := m.TableExists(db, tableName)
+	//新的pgx驱动好像不会抛出异常了，移除tableexists的判断，可以提速
+	// //获取主键前需要先判断表是否存在，防止出现表不存在抛出异常
+	// tabExists, err := m.TableExists(db, tableName)
+	// if err != nil {
+	// 	return nil, err
+	// }
+	// if !tabExists {
+	// 	return nil, fmt.Errorf("table:%s not exists", tableName)
+	// }
+	pks, err := m.TablePK(db, tableName)
 	if err != nil {
 		return nil, err
 	}
-	pks := []string{}
-	if tabExists {
-		pks, err = m.TablePK(db, tableName)
-		if err != nil {
-			return nil, err
-		}
-	}
+
 	cols, err := getColumns(db, t.Schema, t.Name)
 	if err != nil {
 		return nil, err
