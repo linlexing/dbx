@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/linlexing/dbx/pageselect/coltype"
 	"github.com/linlexing/dbx/scan"
 
 	ps "github.com/linlexing/dbx/pageselect"
@@ -43,11 +44,14 @@ func (m *meta) ColumnTypes(rows *sql.Rows) ([]*scan.ColumnType, error) {
 	}
 	rev := []*scan.ColumnType{}
 	for _, one := range cols {
-		rev = append(rev,
-			&scan.ColumnType{
-				Name: one.Name(),
-				Type: sqlite.SqliteType(one.Name(), one.DatabaseTypeName()),
-			})
+		colty, ok := coltype.RecognizeColumnType(one)
+		if !ok {
+			colty = sqlite.SqliteType(one.Name(), one.DatabaseTypeName())
+		}
+		rev = append(rev, &scan.ColumnType{
+			Name: one.Name(),
+			Type: colty,
+		})
 	}
 	return rev, nil
 }

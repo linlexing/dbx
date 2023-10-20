@@ -59,7 +59,8 @@ type PageSelect struct {
 	ManualPage    bool
 	Conditions    []*SQLCondition
 	Columns       []string
-	ColumnTypes   ColumnTypes //本来只用名称即可，但go 1.8中Query返回ColumnType的特性，很多驱动还不支持，需要手工传入所有可能列的类型
+	//本来只用名称即可，但go 1.8中Query返回ColumnType的特性，很多驱动还不支持，需要手工传入所有可能列的类型
+	ColumnTypes   ColumnTypes
 	Order         []string
 	Divide        []string
 	Limit         int

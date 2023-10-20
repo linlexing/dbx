@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	ps "github.com/linlexing/dbx/pageselect"
+	"github.com/linlexing/dbx/pageselect/coltype"
 	"github.com/linlexing/dbx/scan"
 	"github.com/linlexing/dbx/schema"
 	"github.com/sirupsen/logrus"
@@ -51,11 +52,14 @@ func (m *meta) ColumnTypes(rows *sql.Rows) ([]*scan.ColumnType, error) {
 	}
 	rev := []*scan.ColumnType{}
 	for _, one := range cols {
-		rev = append(rev,
-			&scan.ColumnType{
-				Name: one.Name(),
-				Type: fromDBType(one.DatabaseTypeName()),
-			})
+		colty, ok := coltype.RecognizeColumnType(one)
+		if !ok {
+			colty = fromDBType(one.DatabaseTypeName())
+		}
+		rev = append(rev, &scan.ColumnType{
+			Name: one.Name(),
+			Type: colty,
+		})
 	}
 	return rev, nil
 }

@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/linlexing/dbx/pageselect/coltype"
 	"github.com/linlexing/dbx/scan"
 	"github.com/sirupsen/logrus"
 
@@ -63,12 +64,16 @@ func (m *meta) ColumnTypes(rows *sql.Rows) ([]*scan.ColumnType, error) {
 	}
 	rev := []*scan.ColumnType{}
 	for _, one := range cols {
+		colty, ok := coltype.RecognizeColumnType(one)
+		if !ok {
+			colty = fromDBType(one.DatabaseTypeName())
+		}
 		rev = append(rev,
 			&scan.ColumnType{
 				//postgres默认是小写，如果是中英文混排，含有大写字母，则不能转换成大写，
 				//因为select使用时，pg会自动转换成小写
 				Name: one.Name(),
-				Type: fromDBType(one.DatabaseTypeName()),
+				Type: colty,
 			})
 	}
 	return rev, nil

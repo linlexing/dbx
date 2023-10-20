@@ -5,11 +5,11 @@ import (
 	"encoding/csv"
 	"fmt"
 	"log"
-	"reflect"
 	"strconv"
 	"strings"
 
 	ps "github.com/linlexing/dbx/pageselect"
+	"github.com/linlexing/dbx/pageselect/coltype"
 	"github.com/linlexing/dbx/scan"
 	"github.com/linlexing/dbx/schema"
 	"github.com/sirupsen/logrus"
@@ -22,10 +22,7 @@ type meta struct{}
 func init() {
 	ps.Register(driverName, new(meta))
 }
-func fromScanType(ty reflect.Type) schema.DataType {
-	println(ty.Name(), ty.Kind())
-	return schema.TypeString
-}
+
 func fromDBType(ty *sql.ColumnType) schema.DataType {
 	switch ty.DatabaseTypeName() {
 	case "SQL_C_LONG", "SQL_C_SHORT", "SQL_C_SBIGINT", "SQL_C_UBIGINT":
@@ -52,19 +49,15 @@ func (m *meta) ColumnTypes(rows *sql.Rows) ([]*scan.ColumnType, error) {
 	}
 	rev := []*scan.ColumnType{}
 	for _, one := range cols {
-		if len(one.DatabaseTypeName()) == 0 {
-			rev = append(rev,
-				&scan.ColumnType{
-					Name: one.Name(),
-					Type: fromScanType(one.ScanType()),
-				})
-		} else {
-			rev = append(rev,
-				&scan.ColumnType{
-					Name: one.Name(),
-					Type: fromDBType(one),
-				})
+		colty, ok := coltype.RecognizeColumnType(one)
+		if !ok {
+			colty = fromDBType(one)
 		}
+		rev = append(rev, &scan.ColumnType{
+			Name: one.Name(),
+			Type: colty,
+		})
+
 	}
 	return rev, nil
 }
