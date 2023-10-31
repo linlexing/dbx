@@ -388,6 +388,7 @@ func fieldsFromStruct(vtype reflect.Type, conv converFieldName, parentName strin
 		}
 		defineTag, defineOk := field.Tag.Lookup("dbx")
 		trueTypeTag, typeTypeOk := field.Tag.Lookup("dbx_t")
+		extends, _ := field.Tag.Lookup("dbx_e")
 		formerNameTag, _ := field.Tag.Lookup("dbx_fname")
 		//只有定义和实际类型都没定义时，才从上个字段复制定义
 		if !defineOk && !typeTypeOk {
@@ -418,7 +419,7 @@ func fieldsFromStruct(vtype reflect.Type, conv converFieldName, parentName strin
 				sf.childName = tags[0]
 				sf.childFormerName = strings.Fields(formerNameTag)
 			} else {
-				sf.define, err = columnDefine(defineTag, trueTypeTag, formerNameTag)
+				sf.define, err = columnDefine(defineTag, trueTypeTag, formerNameTag, extends)
 				if err != nil {
 					return
 				}
@@ -432,7 +433,7 @@ func fieldsFromStruct(vtype reflect.Type, conv converFieldName, parentName strin
 			sf.childName = name
 			sf.childFormerName = strings.Fields(formerNameTag)
 		} else {
-			sf.define, err = columnDefine(name+" "+defineTag, trueTypeTag, formerNameTag)
+			sf.define, err = columnDefine(name+" "+defineTag, trueTypeTag, formerNameTag, extends)
 			if err != nil {
 				return
 			}

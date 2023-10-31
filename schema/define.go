@@ -43,7 +43,7 @@ func stringifyColumn(c *Column, isPk bool) (rev string, err error) {
 	return line, nil
 }
 
-func columnDefine(line, trueTypeLine, formerNameTag string) (result *colDef, err error) {
+func columnDefine(line, trueTypeLine, formerNameTag, extendsTag string) (result *colDef, err error) {
 	//先去除注释
 	result = &colDef{
 		Column: &Column{},
@@ -126,29 +126,40 @@ func columnDefine(line, trueTypeLine, formerNameTag string) (result *colDef, err
 	result.Index = index
 	//下面处理truetype
 	lineList = columnTrueType.FindStringSubmatch(trueTypeLine)
-	if len(lineList) == 0 {
-		return
+	if len(lineList) > 0 {
+		//第一个是整行，需要去除
+		lineList = lineList[1:]
+		if len(lineList) == 0 {
+			return
+		}
+		if len(lineList) != 2 {
+			err = fmt.Errorf("TrueType (%s) not is [db type]", trueTypeLine)
+			return
+		}
+		dbName, typeName := strings.TrimSpace(lineList[0]), strings.TrimSpace(lineList[1])
+		if len(dbName) == 0 {
+			err = fmt.Errorf("TrueType define dbname can't is empty")
+			return
+		}
+		if len(typeName) == 0 {
+			err = fmt.Errorf("TrueType define typename can't is empty")
+			return
+		}
+		result.FetchDriver = dbName
+		result.TrueType = typeName
 	}
-	//第一个是整行，需要去除
-	lineList = lineList[1:]
-	if len(lineList) == 0 {
-		return
+	if len(extendsTag) > 0 {
+		result.Column.Extended = map[string]any{}
+		//解开扩展属性
+		for _, one := range strings.Fields(extendsTag) {
+			list := strings.SplitN(one, "=", 2)
+			if len(list) == 1 {
+				result.Extended[list[0]] = ""
+			} else {
+				result.Extended[list[0]] = list[1]
+			}
+		}
 	}
-	if len(lineList) != 2 {
-		err = fmt.Errorf("TrueType (%s) not is [db type]", trueTypeLine)
-		return
-	}
-	dbName, typeName := strings.TrimSpace(lineList[0]), strings.TrimSpace(lineList[1])
-	if len(dbName) == 0 {
-		err = fmt.Errorf("TrueType define dbname can't is empty")
-		return
-	}
-	if len(typeName) == 0 {
-		err = fmt.Errorf("TrueType define typename can't is empty")
-		return
-	}
-	result.FetchDriver = dbName
-	result.TrueType = typeName
 	return
 }
 func columnsDefine(d []*colDef) (columns []*Column, pks []string) {
