@@ -101,7 +101,7 @@ func (u *Update) ExecLog(nt NotifyAndKill, db common.DB, tmpTableName string, pa
 	}
 	where := []string{}
 	if len(u.AdditionWhere) > 0 {
-		where = append(where, u.AdditionWhere)
+		where = append(where, "("+u.AdditionWhere+")")
 	}
 	for i, field := range u.Table.PrimaryKeys {
 		where = append(where, fmt.Sprintf("%s.%s = %s.%s", u.Table.FullName(), field, dataAlias, u.DataUniqueFields[i]))
