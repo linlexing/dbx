@@ -25,9 +25,9 @@ func init() {
 
 func fromDBType(ty *sql.ColumnType) schema.DataType {
 	switch ty.DatabaseTypeName() {
-	case "SQL_C_LONG", "SQL_C_SHORT", "SQL_C_SBIGINT", "SQL_C_UBIGINT":
+	case "SQL_C_LONG", "SQL_C_SHORT", "SQL_C_SBIGINT", "SQL_C_UBIGINT", "SQL_BIGINT":
 		return schema.TypeInt
-	case "SQL_C_CHAR", "SQL_C_WCHAR":
+	case "SQL_C_CHAR", "SQL_C_WCHAR", "SQL_VARCHAR":
 		return schema.TypeString
 	case "SQL_C_FLOAT", "SQL_C_DOUBLE", "SQL_C_NUMERIC":
 		return schema.TypeFloat
