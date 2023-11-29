@@ -71,6 +71,9 @@ type SqlVisitor interface {
 	// Visit a parse tree produced by SqlParser#tableSource.
 	VisitTableSource(ctx *TableSourceContext) interface{}
 
+	// Visit a parse tree produced by SqlParser#joinClause.
+	VisitJoinClause(ctx *JoinClauseContext) interface{}
+
 	// Visit a parse tree produced by SqlParser#whereClause.
 	VisitWhereClause(ctx *WhereClauseContext) interface{}
 

@@ -92,6 +92,10 @@ func (v *BaseSqlVisitor) VisitTableSource(ctx *TableSourceContext) interface{} {
 	return v.VisitChildren(ctx)
 }
 
+func (v *BaseSqlVisitor) VisitJoinClause(ctx *JoinClauseContext) interface{} {
+	return v.VisitChildren(ctx)
+}
+
 func (v *BaseSqlVisitor) VisitWhereClause(ctx *WhereClauseContext) interface{} {
 	return v.VisitChildren(ctx)
 }

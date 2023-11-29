@@ -71,6 +71,9 @@ type SqlListener interface {
 	// EnterTableSource is called when entering the tableSource production.
 	EnterTableSource(c *TableSourceContext)
 
+	// EnterJoinClause is called when entering the joinClause production.
+	EnterJoinClause(c *JoinClauseContext)
+
 	// EnterWhereClause is called when entering the whereClause production.
 	EnterWhereClause(c *WhereClauseContext)
 
@@ -160,6 +163,9 @@ type SqlListener interface {
 
 	// ExitTableSource is called when exiting the tableSource production.
 	ExitTableSource(c *TableSourceContext)
+
+	// ExitJoinClause is called when exiting the joinClause production.
+	ExitJoinClause(c *JoinClauseContext)
 
 	// ExitWhereClause is called when exiting the whereClause production.
 	ExitWhereClause(c *WhereClauseContext)

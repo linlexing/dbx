@@ -102,7 +102,7 @@ bind_variables : BIND_VARIABLE ;
 selectStatement :
  SELECT
  selectElements
- FROM tableSources (join tableSources ON logicExpression)?
+ FROM tableSources joinClause
  (whereClause)?
  (groupByClause)?
  (havingClause)?
@@ -155,6 +155,8 @@ tableSource
  : tableName
  | '(' selectStatement ')'
  ;
+
+joinClause : (join tableSources ON logicExpression)* ;
 
 whereClause : WHERE logicExpression ;
 

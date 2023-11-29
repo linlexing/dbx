@@ -147,6 +147,12 @@ func (s *BaseSqlListener) EnterTableSource(ctx *TableSourceContext) {}
 // ExitTableSource is called when production tableSource is exited.
 func (s *BaseSqlListener) ExitTableSource(ctx *TableSourceContext) {}
 
+// EnterJoinClause is called when production joinClause is entered.
+func (s *BaseSqlListener) EnterJoinClause(ctx *JoinClauseContext) {}
+
+// ExitJoinClause is called when production joinClause is exited.
+func (s *BaseSqlListener) ExitJoinClause(ctx *JoinClauseContext) {}
+
 // EnterWhereClause is called when production whereClause is entered.
 func (s *BaseSqlListener) EnterWhereClause(ctx *WhereClauseContext) {}
 
