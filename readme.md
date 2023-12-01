@@ -1,15 +1,91 @@
 readme
 =============
-数据库操作的增强功能，主要增加了表的处理，处理其结构更新
+The database enhancement operations library.
+Support mysql postgresql oracle dmdb hive sqlite database type.
+Provides data structure definitions, data manipulation, and paging classes.
 
-common:	通用的接口
+-------------
+```go
+package main
 
-data:	数据操作的模块，主要有Table、Bill
+import (
+	_ "github.com/jackc/pgx/v5"
+	_ "github.com/jackc/pgx/v5/stdlib"
+	"github.com/linlexing/dbx/ddb"
+	_ "github.com/linlexing/dbx/postgres"
+	"github.com/linlexing/dbx/schema"
+)
 
-pageselect:一个分页查询模块
+func main() {
+	db, err := ddb.Openx("pgx", "postgres://common:123456@localhost:5432/postgres?sslmode=disable")
+	if err != nil {
+		panic(err)
+	}
+	//table struct define
+	//create table
+	tabTest := schema.NewTable("TestTab")
+	tabTest.Columns = []*schema.Column{
+		{
+			Name:      "ID",
+			Type:      schema.TypeString,
+			MaxLength: 24,
+		},
+		{
+			Name:      "Name",
+			Type:      schema.TypeString,
+			MaxLength: 50,
+		},
+		{
+			Name: "Remark",
+			Type: schema.TypeString,
+		},
+		{
+			Name: "Age",
+			Type: schema.TypeInt,
+		},
+		{
+			Name: "Birthday",
+			Type: schema.TypeDatetime,
+		},
+	}
+	tabTest.PrimaryKeys = []string{"ID"}
+	// list, err := tabTest.Extract(db.DriverName(), db)
+	// if err != nil {
+	// 	panic(err)
+	// }
+	// for _, l := range list {
+	// 	println(l)
+	// }
+	//db change
+	if err := tabTest.Update(db.DriverName(), db); err != nil {
+		panic(err)
+	}
+	defer func() {
+		if _, err := db.Exec("drop table TestTab"); err != nil {
+			panic(err)
+		}
+	}()
+	//change struct
+	tabTest.ColumnByName("Name").MaxLength = 100
+	tabTest.ColumnByName("Age").Type = schema.TypeFloat
+	//remove Remark
+	tabTest.Columns = append(tabTest.Columns[:2], tabTest.Columns[3:]...)
+	tabTest.Columns = append(tabTest.Columns, &schema.Column{
+		Name:      "Detail",
+		Type:      schema.TypeString,
+		MaxLength: 100,
+	})
+	// list, err = tabTest.Extract(db.DriverName(), db)
+	// if err != nil {
+	// 	panic(err)
+	// }
+	// for _, l := range list {
+	// 	println(l)
+	// }
+	//db change
+	if err := tabTest.Update(db.DriverName(), db); err != nil {
+		panic(err)
+	}
+}
 
-render:	一个sql语句渲染模块，主要是处理参数字符串花
-
-scan:	一个简单的类型化scan
-
-schema:	数据库表结构操作模块
+```
