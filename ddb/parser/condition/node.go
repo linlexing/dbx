@@ -168,12 +168,12 @@ func NewCountNode(from string, link []NodeLinkColumn, where string,
 }
 
 // 简化一个Node，将and/or尽量合并成一层
-func (node *Node) reduction() {
+func (node *Node) Reduction() {
 	switch node.NodeType {
 	case NodeAnd:
 		nodes := []*Node{}
 		for _, one := range node.Children {
-			one.reduction()
+			one.Reduction()
 			if one.NodeType == NodeAnd {
 				for _, sub := range one.Children {
 					nodes = append(nodes, sub)
@@ -186,7 +186,7 @@ func (node *Node) reduction() {
 	case NodeOr:
 		nodes := []*Node{}
 		for _, one := range node.Children {
-			one.reduction()
+			one.Reduction()
 			if one.NodeType == NodeOr {
 
 				nodes = append(nodes, one.Children...)
@@ -614,7 +614,7 @@ func ParserNode(val string) *Node {
 	}
 	//先进行注释的识别
 	var vars map[string]interface{}
-	val, vars = processComment(val)
+	val, vars = ProcessComment(val)
 	stream := antlr.NewInputStream(`where ` + val)
 	lexer := parser.NewSqlLexer(stream)
 	cs := antlr.NewCommonTokenStream(lexer, 0)
@@ -625,6 +625,10 @@ func ParserNode(val string) *Node {
 	visitor.vars = vars
 	return visitor.Visit(tree).(*Node)
 
+}
+func ParseByContext(ctx parser.IWhereClauseContext) *Node {
+	visitor := new(SqlWhereVisitorImpl)
+	return visitor.Visit(ctx).(*Node)
 }
 func findBracketExpr(val string) (left string, right string) {
 	iBracket := 0
@@ -753,7 +757,7 @@ func processIn(comment string) *Node {
 }
 
 // 处理注释，识别关联查询并生成node列表
-func processComment(define string) (rev string, vars map[string]interface{}) {
+func ProcessComment(define string) (rev string, vars map[string]interface{}) {
 	wait := define
 	vars = map[string]interface{}{}
 	iDynamic := 0

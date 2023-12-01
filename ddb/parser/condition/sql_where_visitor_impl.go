@@ -96,7 +96,7 @@ func (s *SqlWhereVisitorImpl) Visit(tree antlr.ParseTree) interface{} {
 	switch val := tree.(type) {
 	case *parser.WhereClauseContext:
 		node := val.Accept(s).(*Node)
-		node.reduction()
+		node.Reduction()
 		return node
 	default:
 		panic("not impl")
@@ -131,6 +131,9 @@ func expr2NodeName(expr parser.IExprContext) *Node {
 	return &Node{Field: expr.GetText(), NodeType: NodeCondition}
 }
 func (s *SqlWhereVisitorImpl) VisitLogicExpression(ctx *parser.LogicExpressionContext) interface{} {
+	return ParseLogicExpression(s, ctx, s.vars)
+}
+func ParseLogicExpression(s antlr.ParseTreeVisitor, ctx *parser.LogicExpressionContext, vars map[string]interface{}) interface{} {
 	//逻辑关系隔开的条件
 	if logicExpression1, logicalOperator, logicExpression2 :=
 		ctx.LogicExpression(0), ctx.GetLogicalOperator(), ctx.LogicExpression(1); logicExpression1 != nil && logicalOperator != nil && logicExpression2 != nil {
@@ -342,7 +345,7 @@ func (s *SqlWhereVisitorImpl) VisitLogicExpression(ctx *parser.LogicExpressionCo
 		ctx.LogicExpression(0); left != nil && right != nil && logicExpr != nil {
 		if comment != nil && comment.GetText() == commentDynamicNode {
 			id := strings.Split(logicExpr.GetText(), "=")[1]
-			return s.vars[id].(*Node)
+			return vars[id].(*Node)
 		}
 		return logicExpr.Accept(s)
 	}
