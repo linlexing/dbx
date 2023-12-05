@@ -24,7 +24,8 @@ func TestEasy(t *testing.T) {
 	sql = `姓名,a.名字,a.字段1*a.字段2||a.字段3 AS 流水号/*注释*/,字段2 AS 名称号,字段3 别名3,a.姓名 AS 别名4,/*注释*/'b.姓名.信息' AS 别名5/*注释*/`
 	// sql = `a.字段1 AS 流水号`
 	// sql = `'啊啊' AS 流水号`
-	sql = `a.*,'啊啊' AS 流水号`
+	sql = `*,a.*,'啊啊' AS 流水号`
+	// sql = `a.*,b.*`
 	// sql = `*`
 	node := ParserNode(sql)
 	spew.Dump(node)

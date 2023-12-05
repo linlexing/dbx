@@ -21,18 +21,12 @@ type sqlSelectelementsVisitorImpl struct {
 func (s *sqlSelectelementsVisitorImpl) Visit(tree antlr.ParseTree) interface{} {
 	switch val := tree.(type) {
 	case *parser.SelectElementsContext:
-		if val.GetText() == "*" {
-			return &model.NodeSelectelements{
-				NodeType: model.NodeStar,
-				Elements: nil,
-			}
-		}
 		arr := val.Accept(s).([]interface{})
 		var eles []*model.Element
 		for _, v := range arr {
 			eles = append(eles, v.(*model.Element))
 		}
-		return &model.NodeSelectelements{NodeType: model.NodeElements, Elements: eles}
+		return &model.NodeSelectelements{Elements: eles}
 	default:
 		panic("not impl")
 	}

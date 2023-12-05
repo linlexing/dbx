@@ -6,15 +6,9 @@ import (
 	"github.com/linlexing/dbx/ddb/parser/condition"
 )
 
-type SelectElementsType string
 type JoinType string
 
 const (
-	//*
-	NodeStar SelectElementsType = "Star"
-	//元素
-	NodeElements SelectElementsType = "Elements"
-
 	InnerJoin JoinType = "INNER JOIN"
 	LeftJoin  JoinType = "LEFT JOIN"
 	RightJoin JoinType = "RIGHT JOIN"
@@ -36,7 +30,6 @@ type NodeSelectStatement struct {
 }
 
 type NodeSelectelements struct {
-	NodeType SelectElementsType
 	Elements []*Element
 }
 type Element struct {

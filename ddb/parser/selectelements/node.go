@@ -42,9 +42,6 @@ func NewElement(tableAlias, columnName, express, as, alias string) *model.Elemen
 	}
 }
 func SelectElementsString(node *model.NodeSelectelements) string {
-	if node.NodeType == model.NodeStar {
-		return "*"
-	}
 	var elements []string
 	for _, v := range node.Elements {
 		col := v.Express
