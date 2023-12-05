@@ -68,10 +68,13 @@ func TestJoin(t *testing.T) {
 }
 func TestTableSources(t *testing.T) {
 	var sql = `规上月度1 a,规上月度1_as b`
-	sql = `规上月度1 a,规上月度1_as b,(select 名称 from 学生表) c`
+	sql = `e$自动化流程管理,规上月度1 a,规上月度1_as b,(select 名称 from 学生表) c`
+	sql = `e$自动化流程管理`
 	nodes := parserNodeTableSources(sql)
 
 	spew.Dump(nodes)
 	println("========================")
-	println(tableSourceString(nodes[0], nil, "wholesql", nil, true))
+	for _, v := range nodes {
+		println(tableSourceString(v, nil, "wholesql", nil, true))
+	}
 }

@@ -2,6 +2,7 @@ package selectstatement
 
 import (
 	"fmt"
+	"log"
 	"strings"
 
 	"github.com/antlr/antlr4/runtime/Go/antlr/v4"
@@ -114,6 +115,15 @@ func parseByTableSourcesContext(ctx parser.ITableSourcesContext, vars map[string
 func tableSourceString(node *model.NodeTableSource, fields map[string]schema.DataType,
 	OuterTableName string, getview condition.GetUserConditionViewDefineFunc, buildComment bool) string {
 	if len(node.Source.TableName) > 0 {
+		if ru := []rune(node.Source.TableName); getview != nil && len(ru) > 1 && string(ru[1]) == "$" {
+			str, err := getview(node.Source.TableName)
+			if err != nil {
+				log.Panic(err)
+			}
+			if len(str) > 0 {
+				return fmt.Sprintf("(%s) %s", str, node.Alias)
+			}
+		}
 		return fmt.Sprintf("%s %s", node.Source.TableName, node.Alias)
 	}
 	return fmt.Sprintf("%s %s",
