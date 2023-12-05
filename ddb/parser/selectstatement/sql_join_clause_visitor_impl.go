@@ -1,4 +1,4 @@
-package joinclause
+package selectstatement
 
 import (
 	"github.com/antlr/antlr4/runtime/Go/antlr/v4"
@@ -6,27 +6,29 @@ import (
 	"github.com/linlexing/dbx/ddb/parser/condition"
 	"github.com/linlexing/dbx/ddb/parser/logicexpression"
 	"github.com/linlexing/dbx/ddb/parser/model"
-	"github.com/linlexing/dbx/ddb/parser/tablesources"
 )
 
-type SqlJoinClauseVisitorImpl struct {
+type sqlJoinClauseVisitorImpl struct {
 	parser.SqlVisitor
 	vars map[string]interface{}
 }
-type SqlJoinVisitorImpl struct {
+type sqlJoinVisitorImpl struct {
 	parser.SqlVisitor
 }
 
-func (s *SqlJoinClauseVisitorImpl) Visit(tree antlr.ParseTree) interface{} {
+func (s *sqlJoinClauseVisitorImpl) Visit(tree antlr.ParseTree) interface{} {
 	switch val := tree.(type) {
 	case *parser.JoinClauseContext:
 		arr := val.Accept(s).([][]interface{})
 		var joinClause []*model.NodeJoinClause
 		for _, v := range arr {
 			joinClause = append(joinClause, &model.NodeJoinClause{
-				JoinType:        v[0].(model.JoinType),
-				TableSources:    v[1].([]*model.NodeTableSource),
-				LogicExpression: v[2].(*condition.Node),
+				JoinType: v[0].(model.JoinType),
+				TableSource: &model.NodeTableSource{
+					Source: v[1].(*model.Source),
+					Alias:  v[2].(string),
+				},
+				OnExpress: v[3].(*condition.Node),
 			})
 		}
 		return joinClause
@@ -34,7 +36,7 @@ func (s *SqlJoinClauseVisitorImpl) Visit(tree antlr.ParseTree) interface{} {
 		panic("not impl")
 	}
 }
-func (s *SqlJoinClauseVisitorImpl) VisitJoinClause(ctx *parser.JoinClauseContext) interface{} {
+func (s *sqlJoinClauseVisitorImpl) VisitJoinClause(ctx *parser.JoinClauseContext) interface{} {
 	res := [][]interface{}{}
 	for k := range ctx.AllJoin() {
 		var joinType model.JoinType
@@ -50,14 +52,15 @@ func (s *SqlJoinClauseVisitorImpl) VisitJoinClause(ctx *parser.JoinClauseContext
 		}
 		tmp := []interface{}{
 			joinType,
-			new(tablesources.SqlTableSourcesVisitorImpl).Visit(ctx.AllTableSources()[k]),
+			new(sqlTableSourceVisitorImpl).Visit(ctx.AllTableSource()[k]),
+			ctx.AllAlias()[k].GetText(),
 			new(logicexpression.SqlLogicExpressionVisitorImpl).Visit(ctx.AllLogicExpression()[k]),
 		}
 		res = append(res, tmp)
 	}
 	return res
 }
-func (s *SqlJoinVisitorImpl) Visit(tree antlr.ParseTree) interface{} {
+func (s *sqlJoinVisitorImpl) Visit(tree antlr.ParseTree) interface{} {
 	switch val := tree.(type) {
 	case *parser.JoinContext:
 		joinType := val.Accept(s).(model.JoinType)
@@ -66,6 +69,6 @@ func (s *SqlJoinVisitorImpl) Visit(tree antlr.ParseTree) interface{} {
 		panic("not impl")
 	}
 }
-func (s *SqlJoinVisitorImpl) VisitJoin(ctx *parser.JoinContext) interface{} {
+func (s *sqlJoinVisitorImpl) VisitJoin(ctx *parser.JoinContext) interface{} {
 	return ctx.JOIN().Accept(s)
 }

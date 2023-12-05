@@ -6,7 +6,7 @@ import (
 	"github.com/linlexing/dbx/ddb/parser/condition"
 )
 
-func ParserNode(val string) *condition.Node {
+func parserNode(val string) *condition.Node {
 	if len(val) == 0 {
 		return nil
 	}
@@ -24,7 +24,8 @@ func ParserNode(val string) *condition.Node {
 	return visitor.Visit(tree).(*condition.Node)
 
 }
-func ParseByContext(ctx parser.ILogicExpressionContext) *condition.Node {
+func ParseByContext(ctx parser.ILogicExpressionContext, vars map[string]interface{}) *condition.Node {
 	visitor := new(SqlLogicExpressionVisitorImpl)
+	visitor.vars = vars
 	return visitor.Visit(ctx).(*condition.Node)
 }

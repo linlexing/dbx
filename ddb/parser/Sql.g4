@@ -76,7 +76,7 @@ fragment LETTER : [a-zA-Z] ;
 DECIMAL_LITERAL: DEC_DIGIT+ ;  //10
 
 ID : ('a'..'z' | 'A'..'Z' | '\u4E00'..'\u9FA5')
- ('a'..'z' | 'A'..'Z' | '\u4E00'..'\u9FA5' | '\uFF08'..'\uFF09' | '0'..'9' | '.' | '_')* ;
+ ('a'..'z' | 'A'..'Z' | '\u4E00'..'\u9FA5' | '\uFF08'..'\uFF09' | '0'..'9' | '.' | '_' | '*')* ;
 //Chinese | bracket:('\u4E00'..'\u9FA5' | '\uFF08'..'\uFF09')
 
 TEXT_STRING : ('\'' (('\\' '\\') | ('\'' '\'') | ('\\' '\'') | ~('\''))* '\'') ;
@@ -85,7 +85,7 @@ TEXT_ALIAS : ('"' ~[" \t\r\n]+ '"') ;  //Oracle, PostgreSQL
 
 BIND_VARIABLE : (':' ~[: \t\r\n]+) ;  //Oracle, PostgreSQL
 
-columnName : ID ;
+columnName : (star='*' | ID) ;
 tableName : ID ;
 typeName : ID ;
 functionName : ID ;
@@ -111,7 +111,7 @@ selectStatement :
  | selectStatement union selectStatement
  ;
 
-selectElements : (star='*' | selectElement)(',' selectElement)* ;
+selectElements : (selectElement)(',' selectElement)* ;
 
 selectElement : expr (AS? alias)? ;
 
@@ -156,7 +156,7 @@ tableSource
  | '(' selectStatement ')'
  ;
 
-joinClause : (join tableSources ON logicExpression)* ;
+joinClause : (join tableSource alias ON logicExpression)* ;
 
 whereClause : WHERE logicExpression ;
 

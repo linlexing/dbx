@@ -229,6 +229,9 @@ func (node *Node) fieldName() string {
 }
 func (node *Node) string(prev string, fields map[string]schema.DataType,
 	outerTableName string, getview GetUserConditionViewDefineFunc, buildComment bool) string {
+	if node == nil {
+		return ""
+	}
 	switch node.NodeType {
 	case NodePlain:
 		comment := ""
@@ -621,13 +624,14 @@ func ParserNode(val string) *Node {
 	p := parser.NewSqlParser(cs)
 	p.BuildParseTrees = true
 	tree := p.WhereClause()
-	visitor := new(SqlWhereVisitorImpl)
+	visitor := new(sqlWhereVisitorImpl)
 	visitor.vars = vars
 	return visitor.Visit(tree).(*Node)
 
 }
-func ParseByContext(ctx parser.IWhereClauseContext) *Node {
-	visitor := new(SqlWhereVisitorImpl)
+func ParseByContext(ctx parser.IWhereClauseContext, vars map[string]interface{}) *Node {
+	visitor := new(sqlWhereVisitorImpl)
+	visitor.vars = vars
 	return visitor.Visit(ctx).(*Node)
 }
 func findBracketExpr(val string) (left string, right string) {
@@ -798,8 +802,7 @@ func ProcessComment(define string) (rev string, vars map[string]interface{}) {
 			rev += addDynamicNode(processIn(comment))
 			continue
 		}
-		//普通的注释，不做处理，纳入结果中
-		rev += comment
+		//普通的注释删除；保留则加上：rev += comment
 		wait = wait[positions[3]:]
 	}
 	rev += wait

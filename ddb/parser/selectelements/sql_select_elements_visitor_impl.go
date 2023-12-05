@@ -10,26 +10,24 @@ import (
 
 var (
 	//按.分隔，单双引号、括号内的不算
-	//`(\([^)]*\)|'[^']*'|[^.()']+)+`
 	regPoint = regexp.MustCompile(`(\([^)]*\)|'[^']*'|"[^"]*"|[^.()'"]+)+`)
-
-	regComment = regexp.MustCompile(`(?:[^']|'[^']*')*?(/\*[^*]*\*+(?:[^/*][^*]*\*+)*/)`)
 )
 
-type SqlSelectelementsVisitorImpl struct {
+type sqlSelectelementsVisitorImpl struct {
 	parser.SqlVisitor
-	vars map[string]interface{}
+	// vars map[string]interface{}
 }
 
-func (s *SqlSelectelementsVisitorImpl) Visit(tree antlr.ParseTree) interface{} {
+func (s *sqlSelectelementsVisitorImpl) Visit(tree antlr.ParseTree) interface{} {
 	switch val := tree.(type) {
 	case *parser.SelectElementsContext:
-		arr := val.Accept(s).([]interface{})
-		//有*只返回*
-		if val.GetStar() != nil {
-			return &model.NodeSelectelements{NodeType: model.NodeStar, Elements: nil}
+		if val.GetText() == "*" {
+			return &model.NodeSelectelements{
+				NodeType: model.NodeStar,
+				Elements: nil,
+			}
 		}
-
+		arr := val.Accept(s).([]interface{})
 		var eles []*model.Element
 		for _, v := range arr {
 			eles = append(eles, v.(*model.Element))
@@ -39,7 +37,7 @@ func (s *SqlSelectelementsVisitorImpl) Visit(tree antlr.ParseTree) interface{} {
 		panic("not impl")
 	}
 }
-func (s *SqlSelectelementsVisitorImpl) VisitSelectElements(ctx *parser.SelectElementsContext) interface{} {
+func (s *sqlSelectelementsVisitorImpl) VisitSelectElements(ctx *parser.SelectElementsContext) interface{} {
 	var res []interface{}
 	for k := range ctx.AllSelectElement() {
 		res = append(res, ctx.SelectElement(k).Accept(s))
@@ -47,7 +45,7 @@ func (s *SqlSelectelementsVisitorImpl) VisitSelectElements(ctx *parser.SelectEle
 	return res
 }
 
-func (s *SqlSelectelementsVisitorImpl) VisitSelectElement(ctx *parser.SelectElementContext) interface{} {
+func (s *sqlSelectelementsVisitorImpl) VisitSelectElement(ctx *parser.SelectElementContext) interface{} {
 	var tableAlias, columnName, exprStr, asStr, aliaStr string
 	expr, as, alias := ctx.Expr(), ctx.AS(), ctx.Alias()
 	if expr != nil {

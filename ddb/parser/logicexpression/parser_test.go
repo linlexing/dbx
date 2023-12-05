@@ -18,7 +18,7 @@ import (
 //		// fmt.Println(ctx.ToStringTree)
 //	}
 func TestEasy(t *testing.T) {
-	node := ParserNode(`length(abc)>0 AND qwe like '456%'`)
+	node := parserNode(`length(abc)>0 AND qwe like '456%'`)
 	spew.Dump(node)
 	spew.Dump(node.ConditionLines(nil, "wholesql", nil))
 	println("========================")
@@ -47,7 +47,7 @@ func TestMain(t *testing.T) {
 	// d=1 and
 	// e=1 and
 	// f=1`)
-	node := ParserNode(`(
+	node := parserNode(`(
         a = '1' AND
         /*PLAINTEXT*/
         ((id=123) and

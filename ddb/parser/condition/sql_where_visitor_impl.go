@@ -59,8 +59,8 @@ const (
 	commentDynamicNode = "/*DYNAMIC-NODE*/"
 )
 
-// SqlWhereVisitorImpl 完成条件串的转换，只支持简单的 字段名 运算符 值 条件
-type SqlWhereVisitorImpl struct {
+// sqlWhereVisitorImpl 完成条件串的转换，只支持简单的 字段名 运算符 值 条件
+type sqlWhereVisitorImpl struct {
 	parser.SqlVisitor
 	vars map[string]interface{}
 }
@@ -85,14 +85,14 @@ func decodeExprOrConst(expr parser.IExprContext) string {
 	return expr.GetText()
 
 }
-func NewSqlWhereVisitorImpl() *SqlWhereVisitorImpl {
-	return &SqlWhereVisitorImpl{
+func NewSqlWhereVisitorImpl() *sqlWhereVisitorImpl {
+	return &sqlWhereVisitorImpl{
 		SqlVisitor: &parser.BaseSqlVisitor{},
 		vars:       make(map[string]interface{}),
 	}
 }
 
-func (s *SqlWhereVisitorImpl) Visit(tree antlr.ParseTree) interface{} {
+func (s *sqlWhereVisitorImpl) Visit(tree antlr.ParseTree) interface{} {
 	switch val := tree.(type) {
 	case *parser.WhereClauseContext:
 		node := val.Accept(s).(*Node)
@@ -102,7 +102,7 @@ func (s *SqlWhereVisitorImpl) Visit(tree antlr.ParseTree) interface{} {
 		panic("not impl")
 	}
 }
-func (s *SqlWhereVisitorImpl) VisitWhereClause(ctx *parser.WhereClauseContext) interface{} {
+func (s *sqlWhereVisitorImpl) VisitWhereClause(ctx *parser.WhereClauseContext) interface{} {
 	return ctx.LogicExpression().Accept(s)
 }
 
@@ -130,7 +130,7 @@ func expr2NodeName(expr parser.IExprContext) *Node {
 	}
 	return &Node{Field: expr.GetText(), NodeType: NodeCondition}
 }
-func (s *SqlWhereVisitorImpl) VisitLogicExpression(ctx *parser.LogicExpressionContext) interface{} {
+func (s *sqlWhereVisitorImpl) VisitLogicExpression(ctx *parser.LogicExpressionContext) interface{} {
 	return ParseLogicExpression(s, ctx, s.vars)
 }
 func ParseLogicExpression(s antlr.ParseTreeVisitor, ctx *parser.LogicExpressionContext, vars map[string]interface{}) interface{} {

@@ -1,6 +1,8 @@
 package model
 
 import (
+	"regexp"
+
 	"github.com/linlexing/dbx/ddb/parser/condition"
 )
 
@@ -18,6 +20,8 @@ const (
 	RightJoin JoinType = "RIGHT JOIN"
 	Join      JoinType = "JOIN"
 )
+
+var regComment = regexp.MustCompile(`(?:[^']|'[^']*')*?(/\*[^*]*\*+(?:[^/*][^*]*\*+)*/)`)
 
 type NodeSelectStatement struct {
 	SelectElements *NodeSelectelements
@@ -52,7 +56,7 @@ type Source struct {
 	SelectStatement *NodeSelectStatement
 }
 type NodeJoinClause struct {
-	JoinType        JoinType
-	TableSources    []*NodeTableSource
-	LogicExpression *condition.Node
+	JoinType    JoinType
+	TableSource *NodeTableSource
+	OnExpress   *condition.Node
 }

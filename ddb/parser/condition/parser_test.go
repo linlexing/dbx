@@ -18,7 +18,30 @@ import (
 //		// fmt.Println(ctx.ToStringTree)
 //	}
 func TestEasy(t *testing.T) {
-	node := ParserNode(`length(abc)>0`)
+	// node := ParserNode(`length(abc)/*注释*/>0/*注释*/`)
+	node := ParserNode(`/*EXISTS(from e$自动化流程管理 on 名称=wholesql.名称 where )*/
+	(EXISTS(select 1 from (select 名称,类别,归属方式,创建用户,归属部门,最后修改时间,流水号 from (
+	select
+	  id as 流水号,
+	  name as 名称,
+	  category as 类别,
+	  ownerby as 归属方式,
+	  username as 创建用户,
+	  dept as 归属部门,
+	  lasttime as 最后修改时间
+	from
+	  dataflow
+	where
+	  (
+		ownerby = 'd'
+		and dept = {{P .User.Dept.Code}}
+	  )
+	  or (
+		ownerby = 'u'
+		and username = {{P .User.Name}}
+	  )
+	) wholesql) exists_inner0 where 名称=wholesql.名称))`)
+
 	spew.Dump(node)
 	spew.Dump(node.ConditionLines(nil, "wholesql", nil))
 	println("========================")
