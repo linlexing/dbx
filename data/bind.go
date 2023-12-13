@@ -13,28 +13,58 @@ const (
 	AT
 )
 
-// 是否是postgresql数据库
+type DriverType int
+
+const (
+	Oracle = iota
+	Postgres
+	Mysql
+	Sqlite
+	SqlServer
+	DBWeb
+	Hive
+	Unknown
+)
+
+// 废弃：用ParseDriverType代替
 func IsPostgres(driver string) bool {
+	return ParseDriverType(driver) == Postgres
+}
+func ParseDriverType(driver string) DriverType {
 	switch driver {
 	case "postgres", "pgx-opengauss", "opengauss", "pgx", "pq-timeouts", "cloudsqlpostgres":
-		return true
+		return Postgres
+	case "oci8", "dmdb", "oracle", "godror":
+		return Oracle
+	case "mysql":
+		return Mysql
+	case "sqlserver":
+		return SqlServer
+	case "dbweb":
+		return DBWeb
+	case "sqlite":
+		return Sqlite
+	case "hive":
+		return Hive
+	default:
+		if strings.HasPrefix(driver, "sqlite3") {
+			return Sqlite
+		} else {
+			return Unknown
+		}
 	}
-	return false
 }
 
 // BindType returns the bindtype for a given database given a drivername.
 func BindType(driverName string) int {
-	if IsPostgres(driverName) {
+	switch ParseDriverType(driverName) {
+	case Postgres:
 		return DOLLAR
-	}
-	switch driverName {
-	case "mysql":
+	case Mysql, Sqlite:
 		return QUESTION
-	case "sqlite3":
-		return QUESTION
-	case "oci8", "ora", "goracle", "oracle":
+	case Oracle:
 		return NAMED
-	case "sqlserver":
+	case SqlServer:
 		return AT
 	}
 	return UNKNOWN

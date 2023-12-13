@@ -12,7 +12,7 @@ import (
 )
 
 var (
-	driverName = []string{"oci8", "oracle"}
+	driverName = []string{"oci8", "oracle", "godror"}
 )
 
 type meta struct {
