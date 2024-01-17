@@ -15,7 +15,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-var driverName = []string{"oci8", "oracle"}
+var driverName = []string{"oci8", "oracle", "godror"}
 
 type meta struct{}
 

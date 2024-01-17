@@ -361,7 +361,7 @@ func truncateTimeZone(tm time.Time) time.Time {
 // 检查row中是否含有非空字段的值，以及去掉多余的字段值
 // 如果是oracle，则需要去除时间中的时区，以免触发ORA-01878错误
 func (t *Table) checkAndConvertRow(row map[string]interface{}) error {
-	if t.Driver == "oci8" {
+	if ParseDriverType(t.Driver) == Oracle {
 		for k, v := range row {
 			if tm, ok := v.(time.Time); ok {
 				row[k] = truncateTimeZone(tm)
@@ -949,7 +949,7 @@ func (t *Table) Merge(tabName string, cols ...string) error {
 		colMap[c] = struct{}{}
 	}
 	//判断是否是postgres
-	if IsPostgres(t.Driver) {
+	if ParseDriverType(t.Driver) == Postgres {
 		//是否有非空字段而且不在字段范围内
 		hasNotNull := false
 		for _, col := range t.Columns {
