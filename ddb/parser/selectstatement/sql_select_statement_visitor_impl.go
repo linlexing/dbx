@@ -5,7 +5,6 @@ import (
 	"github.com/linlexing/dbx/ddb/parser"
 	"github.com/linlexing/dbx/ddb/parser/condition"
 	"github.com/linlexing/dbx/ddb/parser/model"
-	"github.com/linlexing/dbx/ddb/parser/selectelements"
 )
 
 type sqlSelectStatementVisitorImpl struct {
@@ -27,9 +26,10 @@ func (s *sqlSelectStatementVisitorImpl) VisitSelectStatement(ctx *parser.SelectS
 	var nodeTableSources []*model.NodeTableSource
 	var nodeJoinClause []*model.NodeJoinClause
 	var nodeWhereClause *condition.Node
+	var nodeSelectStatements []*model.NodeSelectStatement
+	var unionAll bool
 	if ctx.SelectElements() != nil {
-		//SelectElements没注释
-		nodeSelectElements = selectelements.ParseByContext(ctx.SelectElements())
+		nodeSelectElements = parseBySelectElementsContext(ctx.SelectElements(), s.vars)
 	}
 	if ctx.TableSources() != nil {
 		nodeTableSources = parseByTableSourcesContext(ctx.TableSources(), s.vars)
@@ -40,10 +40,22 @@ func (s *sqlSelectStatementVisitorImpl) VisitSelectStatement(ctx *parser.SelectS
 	if ctx.WhereClause() != nil {
 		nodeWhereClause = condition.ParseByContext(ctx.WhereClause(), s.vars)
 	}
+	if ctx.Union() != nil {
+		if ctx.Union().ALL() != nil {
+			unionAll = true
+		}
+	}
+	if len(ctx.AllSelectStatement()) > 0 {
+		for k := range ctx.AllSelectStatement() {
+			nodeSelectStatements = append(nodeSelectStatements, ctx.AllSelectStatement()[k].Accept(s).(*model.NodeSelectStatement))
+		}
+	}
 	return &model.NodeSelectStatement{
 		SelectElements: nodeSelectElements,
 		TableSources:   nodeTableSources,
 		JoinClause:     nodeJoinClause,
 		WhereClause:    nodeWhereClause,
+		UnionSelect:    nodeSelectStatements,
+		UnionAll:       unionAll,
 	}
 }

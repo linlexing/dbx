@@ -9,7 +9,6 @@ import (
 	"github.com/linlexing/dbx/ddb/parser"
 	"github.com/linlexing/dbx/ddb/parser/condition"
 	"github.com/linlexing/dbx/ddb/parser/model"
-	"github.com/linlexing/dbx/ddb/parser/selectelements"
 	"github.com/linlexing/dbx/schema"
 )
 
@@ -31,15 +30,28 @@ func ParserNode(val string) *model.NodeSelectStatement {
 	return visitor.Visit(tree).(*model.NodeSelectStatement)
 }
 
-// func ParseByContext(ctx parser.ISelectStatementContext) *model.NodeSelectStatement {
-// 	visitor := new(SqlSelectStatementVisitorImpl)
-// 	return visitor.Visit(ctx).(*model.NodeSelectStatement)
-// }
+func parseBySelectStatementContext(ctx parser.ISelectStatementContext, vars map[string]interface{}) *model.NodeSelectStatement {
+	visitor := new(sqlSelectStatementVisitorImpl)
+	visitor.vars = vars
+	return visitor.Visit(ctx).(*model.NodeSelectStatement)
+}
 
-// 两边自带括号
 func SelectStatementString(node *model.NodeSelectStatement,
 	fields map[string]schema.DataType, OuterTableName string,
 	getview condition.GetUserConditionViewDefineFunc, buildComment bool) string {
+	var sql string
+	if len(node.UnionSelect) > 0 {
+		var selects []string
+		unionStr := " UNION "
+		if node.UnionAll {
+			unionStr = " UNION ALL "
+		}
+		for k := range node.UnionSelect {
+			selects = append(selects, SelectStatementString(node.UnionSelect[k], fields, OuterTableName, getview, buildComment))
+		}
+		sql = strings.Join(selects, unionStr)
+		return sql
+	}
 	var tableSources []string
 	for _, v := range node.TableSources {
 		tableSources = append(tableSources, tableSourceString(v, fields, OuterTableName, getview, buildComment))
@@ -48,13 +60,13 @@ func SelectStatementString(node *model.NodeSelectStatement,
 	if len(whereStr) > 0 {
 		whereStr = "WHERE " + whereStr
 	}
-	sql := strings.TrimSpace(fmt.Sprintf(`SELECT %s FROM %s %s %s`,
-		selectelements.SelectElementsString(node.SelectElements),
+	sql = strings.TrimSpace(fmt.Sprintf(`SELECT %s FROM %s %s %s`,
+		selectElementsString(node.SelectElements, fields, OuterTableName, getview, buildComment),
 		strings.Join(tableSources, ","),
 		joinClauseString(node.JoinClause, fields, OuterTableName, getview, buildComment),
 		whereStr,
 	))
-	return fmt.Sprintf(`(%s)`, sql)
+	return sql
 }
 
 func parserNodeJoin(val string) []*model.NodeJoinClause {
@@ -126,7 +138,58 @@ func tableSourceString(node *model.NodeTableSource, fields map[string]schema.Dat
 		}
 		return fmt.Sprintf("%s %s", node.Source.TableName, node.Alias)
 	}
-	return fmt.Sprintf("%s %s",
+	return fmt.Sprintf("(%s) %s",
 		SelectStatementString(node.Source.SelectStatement, fields, OuterTableName, getview, buildComment),
 		node.Alias)
+}
+func parserNodeSelectelements(val string) *model.NodeSelectelements {
+	if len(val) == 0 {
+		return nil
+	}
+	var vars map[string]interface{}
+	// val, _ = condition.ProcessComment(val)
+	stream := antlr.NewInputStream(val)
+	lexer := parser.NewSqlLexer(stream)
+	cs := antlr.NewCommonTokenStream(lexer, 0)
+	p := parser.NewSqlParser(cs)
+	p.BuildParseTrees = true
+	tree := p.SelectElements()
+	visitor := new(sqlSelectelementsVisitorImpl)
+	visitor.vars = vars
+	return visitor.Visit(tree).(*model.NodeSelectelements)
+}
+
+func parseBySelectElementsContext(ctx parser.ISelectElementsContext, vars map[string]interface{}) *model.NodeSelectelements {
+	visitor := new(sqlSelectelementsVisitorImpl)
+	visitor.vars = vars
+	return visitor.Visit(ctx).(*model.NodeSelectelements)
+}
+
+func selectElementsString(node *model.NodeSelectelements, fields map[string]schema.DataType,
+	OuterTableName string, getview condition.GetUserConditionViewDefineFunc, buildComment bool) string {
+	var elements []string
+	if node != nil {
+		for _, v := range node.Elements {
+			col := v.Express
+			if v.Subquery != nil {
+				col = "(" + SelectStatementString(v.Subquery, fields, OuterTableName, getview, buildComment) + ")"
+			}
+			var as, alias string
+			if len(v.ColumnName) > 0 {
+				if len(v.TableAlias) > 0 {
+					col = v.TableAlias + "." + v.ColumnName
+				} else {
+					col = v.ColumnName
+				}
+			}
+			if len(v.As) > 0 {
+				as = " " + v.As
+			}
+			if len(v.Alias) > 0 {
+				alias = " " + v.Alias
+			}
+			elements = append(elements, fmt.Sprintf("%s%s%s", col, as, alias))
+		}
+	}
+	return strings.Join(elements, ",")
 }

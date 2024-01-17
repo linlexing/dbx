@@ -42,6 +42,11 @@ JOIN : J O I N ;
 ON : O N ;
 UNION : U N I O N ;
 ALL : A L L ;
+CASE : C A S E ;
+WHEN : W H E N ;
+THEN : T H E N ;
+ELSE : E L S E ;
+END : E N D ;
 
 fragment A : [aA] ;
 fragment B : [bB] ;
@@ -123,6 +128,10 @@ expr
  | expr ('+'|'-') expr
  | expr ('||') expr
  | '(' expr ')'
+ | CASE WHEN logicExpression THEN expr (WHEN logicExpression THEN expr)* (ELSE expr)? END
+ | CASE expr WHEN expr THEN expr (WHEN expr THEN expr)* (ELSE expr)? END
+ | NULL
+ | selectStatement
  ;
 
 value

@@ -22,11 +22,12 @@ type NodeSelectStatement struct {
 	TableSources   []*NodeTableSource
 	JoinClause     []*NodeJoinClause
 	WhereClause    *condition.Node
+	UnionSelect    []*NodeSelectStatement
+	UnionAll       bool
 	// 	GroupByClause
 	// 	HavingClause
 	// 	OrderByClause
 	// 	LimitClause
-	// 	UnionSelect
 }
 
 type NodeSelectelements struct {
@@ -36,6 +37,7 @@ type Element struct {
 	TableAlias string //a.X 单纯字段才识别
 	ColumnName string //a.X 单纯字段才识别
 	Express    string //表达式
+	Subquery   *NodeSelectStatement
 	As         string
 	Alias      string
 }
