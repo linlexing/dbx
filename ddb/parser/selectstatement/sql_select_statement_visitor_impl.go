@@ -3,8 +3,6 @@ package selectstatement
 import (
 	"github.com/antlr/antlr4/runtime/Go/antlr/v4"
 	"github.com/linlexing/dbx/ddb/parser"
-	"github.com/linlexing/dbx/ddb/parser/condition"
-	"github.com/linlexing/dbx/ddb/parser/model"
 )
 
 type sqlSelectStatementVisitorImpl struct {
@@ -15,18 +13,18 @@ type sqlSelectStatementVisitorImpl struct {
 func (s *sqlSelectStatementVisitorImpl) Visit(tree antlr.ParseTree) interface{} {
 	switch val := tree.(type) {
 	case *parser.SelectStatementContext:
-		node := val.Accept(s).(*model.NodeSelectStatement)
+		node := val.Accept(s).(*NodeSelectStatement)
 		return node
 	default:
 		panic("not impl")
 	}
 }
 func (s *sqlSelectStatementVisitorImpl) VisitSelectStatement(ctx *parser.SelectStatementContext) interface{} {
-	var nodeSelectElements *model.NodeSelectelements
-	var nodeTableSources []*model.NodeTableSource
-	var nodeJoinClause []*model.NodeJoinClause
-	var nodeWhereClause *condition.Node
-	var nodeSelectStatements []*model.NodeSelectStatement
+	var nodeSelectElements *NodeSelectelements
+	var nodeTableSources []*NodeTableSource
+	var nodeJoinClause []*NodeJoinClause
+	var nodeWhereClause *NodeCondition
+	var nodeSelectStatements []*NodeSelectStatement
 	var unionAll bool
 	if ctx.SelectElements() != nil {
 		nodeSelectElements = parseBySelectElementsContext(ctx.SelectElements(), s.vars)
@@ -38,7 +36,7 @@ func (s *sqlSelectStatementVisitorImpl) VisitSelectStatement(ctx *parser.SelectS
 		nodeJoinClause = parseByJoinContext(ctx.JoinClause(), s.vars)
 	}
 	if ctx.WhereClause() != nil {
-		nodeWhereClause = condition.ParseByContext(ctx.WhereClause(), s.vars)
+		nodeWhereClause = WhereParseByContext(ctx.WhereClause(), s.vars)
 	}
 	if ctx.Union() != nil {
 		if ctx.Union().ALL() != nil {
@@ -47,10 +45,10 @@ func (s *sqlSelectStatementVisitorImpl) VisitSelectStatement(ctx *parser.SelectS
 	}
 	if len(ctx.AllSelectStatement()) > 0 {
 		for k := range ctx.AllSelectStatement() {
-			nodeSelectStatements = append(nodeSelectStatements, ctx.AllSelectStatement()[k].Accept(s).(*model.NodeSelectStatement))
+			nodeSelectStatements = append(nodeSelectStatements, ctx.AllSelectStatement()[k].Accept(s).(*NodeSelectStatement))
 		}
 	}
-	return &model.NodeSelectStatement{
+	return &NodeSelectStatement{
 		SelectElements: nodeSelectElements,
 		TableSources:   nodeTableSources,
 		JoinClause:     nodeJoinClause,

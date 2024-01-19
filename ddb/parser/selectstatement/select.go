@@ -7,18 +7,16 @@ import (
 
 	"github.com/antlr/antlr4/runtime/Go/antlr/v4"
 	"github.com/linlexing/dbx/ddb/parser"
-	"github.com/linlexing/dbx/ddb/parser/condition"
-	"github.com/linlexing/dbx/ddb/parser/model"
 	"github.com/linlexing/dbx/schema"
 )
 
-func ParserNode(val string) *model.NodeSelectStatement {
+func ParserSelectNode(val string) *NodeSelectStatement {
 	if len(val) == 0 {
 		return nil
 	}
 	//注释
 	var vars map[string]interface{}
-	val, vars = condition.ProcessComment(val)
+	val, vars = ProcessComment(val)
 	stream := antlr.NewInputStream(val)
 	lexer := parser.NewSqlLexer(stream)
 	cs := antlr.NewCommonTokenStream(lexer, 0)
@@ -27,18 +25,18 @@ func ParserNode(val string) *model.NodeSelectStatement {
 	tree := p.SelectStatement()
 	visitor := new(sqlSelectStatementVisitorImpl)
 	visitor.vars = vars
-	return visitor.Visit(tree).(*model.NodeSelectStatement)
+	return visitor.Visit(tree).(*NodeSelectStatement)
 }
 
-func parseBySelectStatementContext(ctx parser.ISelectStatementContext, vars map[string]interface{}) *model.NodeSelectStatement {
+func parseBySelectStatementContext(ctx parser.ISelectStatementContext, vars map[string]interface{}) *NodeSelectStatement {
 	visitor := new(sqlSelectStatementVisitorImpl)
 	visitor.vars = vars
-	return visitor.Visit(ctx).(*model.NodeSelectStatement)
+	return visitor.Visit(ctx).(*NodeSelectStatement)
 }
 
-func SelectStatementString(node *model.NodeSelectStatement,
+func SelectStatementString(node *NodeSelectStatement,
 	fields map[string]schema.DataType, OuterTableName string,
-	getview condition.GetUserConditionViewDefineFunc, buildComment bool) string {
+	getview GetUserConditionViewDefineFunc, buildComment bool) string {
 	var sql string
 	if len(node.UnionSelect) > 0 {
 		var selects []string
@@ -69,7 +67,7 @@ func SelectStatementString(node *model.NodeSelectStatement,
 	return sql
 }
 
-func parserNodeJoin(val string) []*model.NodeJoinClause {
+func parserNodeJoin(val string) []*NodeJoinClause {
 	if len(val) == 0 {
 		return nil
 	}
@@ -84,15 +82,15 @@ func parserNodeJoin(val string) []*model.NodeJoinClause {
 	tree := p.JoinClause()
 	visitor := new(sqlJoinClauseVisitorImpl)
 	// visitor.vars = vars
-	return visitor.Visit(tree).([]*model.NodeJoinClause)
+	return visitor.Visit(tree).([]*NodeJoinClause)
 }
-func parseByJoinContext(ctx parser.IJoinClauseContext, vars map[string]interface{}) []*model.NodeJoinClause {
+func parseByJoinContext(ctx parser.IJoinClauseContext, vars map[string]interface{}) []*NodeJoinClause {
 	visitor := new(sqlJoinClauseVisitorImpl)
 	visitor.vars = vars
-	return visitor.Visit(ctx).([]*model.NodeJoinClause)
+	return visitor.Visit(ctx).([]*NodeJoinClause)
 }
-func joinClauseString(nodes []*model.NodeJoinClause, fields map[string]schema.DataType,
-	outerTableName string, getview condition.GetUserConditionViewDefineFunc, buildComment bool) string {
+func joinClauseString(nodes []*NodeJoinClause, fields map[string]schema.DataType,
+	outerTableName string, getview GetUserConditionViewDefineFunc, buildComment bool) string {
 	var joins []string
 	for _, v := range nodes {
 		joins = append(joins, fmt.Sprintf("%s %s ON %s",
@@ -102,7 +100,7 @@ func joinClauseString(nodes []*model.NodeJoinClause, fields map[string]schema.Da
 	return strings.Join(joins, " ")
 }
 
-func parserNodeTableSources(val string) []*model.NodeTableSource {
+func parserNodeTableSources(val string) []*NodeTableSource {
 	if len(val) == 0 {
 		return nil
 	}
@@ -117,15 +115,15 @@ func parserNodeTableSources(val string) []*model.NodeTableSource {
 	tree := p.TableSources()
 	visitor := new(sqlTableSourcesVisitorImpl)
 	visitor.vars = vars
-	return visitor.Visit(tree).([]*model.NodeTableSource)
+	return visitor.Visit(tree).([]*NodeTableSource)
 }
-func parseByTableSourcesContext(ctx parser.ITableSourcesContext, vars map[string]interface{}) []*model.NodeTableSource {
+func parseByTableSourcesContext(ctx parser.ITableSourcesContext, vars map[string]interface{}) []*NodeTableSource {
 	visitor := new(sqlTableSourcesVisitorImpl)
 	visitor.vars = vars
-	return visitor.Visit(ctx).([]*model.NodeTableSource)
+	return visitor.Visit(ctx).([]*NodeTableSource)
 }
-func tableSourceString(node *model.NodeTableSource, fields map[string]schema.DataType,
-	OuterTableName string, getview condition.GetUserConditionViewDefineFunc, buildComment bool) string {
+func tableSourceString(node *NodeTableSource, fields map[string]schema.DataType,
+	OuterTableName string, getview GetUserConditionViewDefineFunc, buildComment bool) string {
 	if len(node.Source.TableName) > 0 {
 		if ru := []rune(node.Source.TableName); getview != nil && len(ru) > 1 && string(ru[1]) == "$" {
 			str, err := getview(node.Source.TableName)
@@ -142,7 +140,7 @@ func tableSourceString(node *model.NodeTableSource, fields map[string]schema.Dat
 		SelectStatementString(node.Source.SelectStatement, fields, OuterTableName, getview, buildComment),
 		node.Alias)
 }
-func parserNodeSelectelements(val string) *model.NodeSelectelements {
+func parserNodeSelectelements(val string) *NodeSelectelements {
 	if len(val) == 0 {
 		return nil
 	}
@@ -156,17 +154,17 @@ func parserNodeSelectelements(val string) *model.NodeSelectelements {
 	tree := p.SelectElements()
 	visitor := new(sqlSelectelementsVisitorImpl)
 	visitor.vars = vars
-	return visitor.Visit(tree).(*model.NodeSelectelements)
+	return visitor.Visit(tree).(*NodeSelectelements)
 }
 
-func parseBySelectElementsContext(ctx parser.ISelectElementsContext, vars map[string]interface{}) *model.NodeSelectelements {
+func parseBySelectElementsContext(ctx parser.ISelectElementsContext, vars map[string]interface{}) *NodeSelectelements {
 	visitor := new(sqlSelectelementsVisitorImpl)
 	visitor.vars = vars
-	return visitor.Visit(ctx).(*model.NodeSelectelements)
+	return visitor.Visit(ctx).(*NodeSelectelements)
 }
 
-func selectElementsString(node *model.NodeSelectelements, fields map[string]schema.DataType,
-	OuterTableName string, getview condition.GetUserConditionViewDefineFunc, buildComment bool) string {
+func selectElementsString(node *NodeSelectelements, fields map[string]schema.DataType,
+	OuterTableName string, getview GetUserConditionViewDefineFunc, buildComment bool) string {
 	var elements []string
 	if node != nil {
 		for _, v := range node.Elements {

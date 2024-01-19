@@ -1,4 +1,4 @@
-package condition
+package selectstatement
 
 import (
 	"regexp"
@@ -95,7 +95,7 @@ func NewSqlWhereVisitorImpl() *sqlWhereVisitorImpl {
 func (s *sqlWhereVisitorImpl) Visit(tree antlr.ParseTree) interface{} {
 	switch val := tree.(type) {
 	case *parser.WhereClauseContext:
-		node := val.Accept(s).(*Node)
+		node := val.Accept(s).(*NodeCondition)
 		node.Reduction()
 		return node
 	default:
@@ -111,7 +111,7 @@ func (s *sqlWhereVisitorImpl) VisitWhereClause(ctx *parser.WhereClauseContext) i
 // }
 
 // 将运算符左边的表达式转换成node的name和func
-func expr2NodeName(expr parser.IExprContext) *Node {
+func expr2NodeName(expr parser.IExprContext) *NodeCondition {
 	if funcCall := expr.(*parser.ExprContext).FunctionCall(); funcCall != nil {
 
 		switch tv := funcCall.(*parser.FunctionCallContext).CommonFunction().(type) {
@@ -128,7 +128,7 @@ func expr2NodeName(expr parser.IExprContext) *Node {
 			panic("invalid function " + tv.GetText())
 		}
 	}
-	return &Node{Field: expr.GetText(), NodeType: NodeCondition}
+	return &NodeCondition{Field: expr.GetText(), NodeType: ConditionNodeCondition}
 }
 func (s *sqlWhereVisitorImpl) VisitLogicExpression(ctx *parser.LogicExpressionContext) interface{} {
 	return ParseLogicExpression(s, ctx, s.vars)
@@ -139,12 +139,12 @@ func ParseLogicExpression(s antlr.ParseTreeVisitor, ctx *parser.LogicExpressionC
 		ctx.LogicExpression(0), ctx.GetLogicalOperator(), ctx.LogicExpression(1); logicExpression1 != nil && logicalOperator != nil && logicExpression2 != nil {
 		var nodeType NodeType
 		if ctx.AND() != nil {
-			nodeType = NodeAnd
+			nodeType = ConditionNodeAnd
 		} else {
-			nodeType = NodeOr
+			nodeType = ConditionNodeOr
 		}
-		return NewLogicNode(nodeType, []*Node{logicExpression1.Accept(s).(*Node),
-			logicExpression2.Accept(s).(*Node)})
+		return NewLogicNode(nodeType, []*NodeCondition{logicExpression1.Accept(s).(*NodeCondition),
+			logicExpression2.Accept(s).(*NodeCondition)})
 	}
 	//运算符隔开的单个条件
 	if expr1, operate, expr2 := ctx.Expr(0), ctx.ComparisonOperator(), ctx.Expr(1); expr1 != nil && operate != nil && expr2 != nil {
@@ -345,7 +345,7 @@ func ParseLogicExpression(s antlr.ParseTreeVisitor, ctx *parser.LogicExpressionC
 		ctx.LogicExpression(0); left != nil && right != nil && logicExpr != nil {
 		if comment != nil && comment.GetText() == commentDynamicNode {
 			id := strings.Split(logicExpr.GetText(), "=")[1]
-			return vars[id].(*Node)
+			return vars[id].(*NodeCondition)
 		}
 		return logicExpr.Accept(s)
 	}

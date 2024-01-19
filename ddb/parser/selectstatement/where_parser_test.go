@@ -1,4 +1,4 @@
-package condition
+package selectstatement
 
 import (
 	"testing"
@@ -19,7 +19,7 @@ import (
 //	}
 func TestEasy(t *testing.T) {
 	// node := ParserNode(`length(abc)/*注释*/>0/*注释*/`)
-	node := ParserNode(`/*EXISTS(from e$自动化流程管理 on 名称=wholesql.名称 where )*/
+	node := ParserWhereNode(`/*EXISTS(from e$自动化流程管理 on 名称=wholesql.名称 where )*/
 	(EXISTS(select 1 from (select 名称,类别,归属方式,创建用户,归属部门,最后修改时间,流水号 from (
 	select
 	  id as 流水号,
@@ -70,7 +70,7 @@ func TestMain(t *testing.T) {
 	// d=1 and
 	// e=1 and
 	// f=1`)
-	node := ParserNode(`(
+	node := ParserWhereNode(`(
         a = '1' AND
         /*PLAINTEXT*/
         ((id=123) and
@@ -101,4 +101,11 @@ where=wholesql.aaa) > 0) AND
 	println(node.WhereString(nil, "wholesql", nil, true))
 	// t.Log(tree.ToStringTree(nil, p))
 	// antlr.ParseTreeWalkerDefault.Walk(NewTreeShapeListener(), tree)
+}
+func TestMultiTable(t *testing.T) {
+	node := ParserWhereNode("select 1 from a where exists(select 1 from b where a.c=b.c)")
+	spew.Dump(node)
+	spew.Dump(node.ConditionLines(nil, "wholesql", nil))
+	println("========================")
+	println(node.WhereString(nil, "wholesql", nil, true))
 }

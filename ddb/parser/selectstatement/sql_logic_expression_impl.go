@@ -1,9 +1,8 @@
-package logicexpression
+package selectstatement
 
 import (
 	"github.com/antlr/antlr4/runtime/Go/antlr/v4"
 	"github.com/linlexing/dbx/ddb/parser"
-	"github.com/linlexing/dbx/ddb/parser/condition"
 )
 
 type SqlLogicExpressionVisitorImpl struct {
@@ -21,7 +20,7 @@ func NewSqlLogicExpressionVisitorImpl() *SqlLogicExpressionVisitorImpl {
 func (s *SqlLogicExpressionVisitorImpl) Visit(tree antlr.ParseTree) interface{} {
 	switch val := tree.(type) {
 	case *parser.LogicExpressionContext:
-		node := val.Accept(s).(*condition.Node)
+		node := val.Accept(s).(*NodeCondition)
 		node.Reduction()
 		return node
 	default:
@@ -29,5 +28,5 @@ func (s *SqlLogicExpressionVisitorImpl) Visit(tree antlr.ParseTree) interface{} 
 	}
 }
 func (s *SqlLogicExpressionVisitorImpl) VisitLogicExpression(ctx *parser.LogicExpressionContext) interface{} {
-	return condition.ParseLogicExpression(s, ctx, s.vars)
+	return ParseLogicExpression(s, ctx, s.vars)
 }

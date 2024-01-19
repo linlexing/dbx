@@ -185,7 +185,7 @@ func TestSelectStatement(t *testing.T) {
 	t$产业活动单位表 a LEFT JOIN 行业代码表 b ON a.行业代码 = b.代码
   where
 	a.状态 is null or a.状态<> '剔除'`
-	node := ParserNode(sql)
+	node := ParserSelectNode(sql)
 
 	spew.Dump(node)
 	println("========================")

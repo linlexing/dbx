@@ -1,4 +1,4 @@
-package logicexpression
+package selectstatement
 
 import (
 	"testing"
@@ -17,14 +17,14 @@ import (
 //	func (*TreeShapeListener) EnterEveryRule(ctx antlr.ParserRuleContext) {
 //		// fmt.Println(ctx.ToStringTree)
 //	}
-func TestEasy(t *testing.T) {
-	node := parserNode(`length(abc)>0 AND qwe like '456%'`)
+func LogicTestEasy(t *testing.T) {
+	node := parserLogicNode(`length(abc)>0 AND qwe like '456%'`)
 	spew.Dump(node)
 	spew.Dump(node.ConditionLines(nil, "wholesql", nil))
 	println("========================")
 	println(node.WhereString(nil, "wholesql", nil, true))
 }
-func TestMain(t *testing.T) {
+func LogicTestMain(t *testing.T) {
 	t.Log("start")
 	// node := ParserNode(`a=1 and /*PLAINTEXT*/
 	// ((id=123) and
@@ -47,7 +47,7 @@ func TestMain(t *testing.T) {
 	// d=1 and
 	// e=1 and
 	// f=1`)
-	node := parserNode(`(
+	node := parserLogicNode(`(
         a = '1' AND
         /*PLAINTEXT*/
         ((id=123) and

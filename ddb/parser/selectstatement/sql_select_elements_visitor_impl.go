@@ -6,9 +6,6 @@ import (
 
 	"github.com/antlr/antlr4/runtime/Go/antlr/v4"
 	"github.com/linlexing/dbx/ddb/parser"
-	"github.com/linlexing/dbx/ddb/parser/condition"
-	"github.com/linlexing/dbx/ddb/parser/logicexpression"
-	"github.com/linlexing/dbx/ddb/parser/model"
 )
 
 var (
@@ -27,11 +24,11 @@ func (s *sqlSelectelementsVisitorImpl) Visit(tree antlr.ParseTree) interface{} {
 	switch val := tree.(type) {
 	case *parser.SelectElementsContext:
 		arr := val.Accept(s).([]interface{})
-		var eles []*model.Element
+		var eles []*Element
 		for _, v := range arr {
-			eles = append(eles, v.(*model.Element))
+			eles = append(eles, v.(*Element))
 		}
-		return &model.NodeSelectelements{Elements: eles}
+		return &NodeSelectelements{Elements: eles}
 	default:
 		panic("not impl")
 	}
@@ -46,7 +43,7 @@ func (s *sqlSelectelementsVisitorImpl) VisitSelectElements(ctx *parser.SelectEle
 
 func (s *sqlSelectelementsVisitorImpl) VisitSelectElement(ctx *parser.SelectElementContext) interface{} {
 	var tableAlias, columnName, exprStr, asStr, aliaStr string
-	var subquery *model.NodeSelectStatement
+	var subquery *NodeSelectStatement
 	expr, as, alias := ctx.Expr(), ctx.AS(), ctx.Alias()
 	//判断有无括号
 	bracket := reBracket.MatchString(expr.GetText())
@@ -76,7 +73,7 @@ func (s *sqlSelectelementsVisitorImpl) VisitSelectElement(ctx *parser.SelectElem
 						if len(expr.AllLogicExpression()) > k {
 							addStr = fmt.Sprintf("WHEN %s THEN %s ",
 								//这里不深入视图列表、关联表查询了
-								expr.AllLogicExpression()[k].Accept(new(logicexpression.SqlLogicExpressionVisitorImpl)).(*condition.Node).WhereString(nil, "wholesql", nil, true),
+								expr.AllLogicExpression()[k].Accept(new(SqlLogicExpressionVisitorImpl)).(*NodeCondition).WhereString(nil, "wholesql", nil, true),
 								expr.Expr(k).GetText())
 						}
 						//有ELSE最后一个给ELSE
@@ -122,7 +119,7 @@ func (s *sqlSelectelementsVisitorImpl) VisitSelectElement(ctx *parser.SelectElem
 	if alias != nil {
 		aliaStr = alias.GetText()
 	}
-	return &model.Element{
+	return &Element{
 		TableAlias: tableAlias,
 		ColumnName: columnName,
 		Express:    exprStr,
