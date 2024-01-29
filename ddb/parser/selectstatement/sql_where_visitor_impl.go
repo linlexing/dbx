@@ -106,12 +106,38 @@ func (s *sqlWhereVisitorImpl) VisitWhereClause(ctx *parser.WhereClauseContext) i
 	return ctx.LogicExpression().Accept(s)
 }
 
-// func isColumn(expr parser.IExprContext) bool {
-// 	return expr.(*parser.ExprContext).ColumnName() != nil
-// }
+//	func isColumn(expr parser.IExprContext) bool {
+//		return expr.(*parser.ExprContext).ColumnName() != nil
+//	}
+//
+// 识别SelectStatement,去除多余括号
+func dealExprBracket(expr parser.IExprContext) (parser.IExprContext, *NodeCondition) {
+	if haveBracket := reBracket.MatchString(expr.GetText()); haveBracket {
+		for {
+			if !haveBracket {
+				break
+			}
+			if len(expr.AllExpr()) > 0 {
+				expr = expr.Expr(0)
+			}
+			if expr.SelectStatement() != nil {
+				visitor := new(sqlSelectStatementVisitorImpl)
+				subSelect := visitor.Visit(expr.SelectStatement()).(*NodeSelectStatement)
+				return expr, NewSubSelectNode(subSelect)
+			}
+			haveBracket = reBracket.MatchString(expr.GetText())
+		}
+	}
+	return expr, nil
+}
 
 // 将运算符左边的表达式转换成node的name和func
 func expr2NodeName(expr parser.IExprContext) *NodeCondition {
+	var subSelectNode *NodeCondition
+	expr, subSelectNode = dealExprBracket(expr)
+	if subSelectNode != nil {
+		return subSelectNode
+	}
 	if funcCall := expr.(*parser.ExprContext).FunctionCall(); funcCall != nil {
 
 		switch tv := funcCall.(*parser.FunctionCallContext).CommonFunction().(type) {
@@ -134,6 +160,12 @@ func (s *sqlWhereVisitorImpl) VisitLogicExpression(ctx *parser.LogicExpressionCo
 	return ParseLogicExpression(s, ctx, s.vars)
 }
 func ParseLogicExpression(s antlr.ParseTreeVisitor, ctx *parser.LogicExpressionContext, vars map[string]interface{}) interface{} {
+	//not logicExpression
+	if not, logicExpression1 := ctx.NOT(), ctx.LogicExpression(0); not != nil && logicExpression1 != nil {
+		node := ParseLogicExpression(s, logicExpression1.(*parser.LogicExpressionContext), vars).(*NodeCondition)
+		node.Reverse = true
+		return node
+	}
 	//逻辑关系隔开的条件
 	if logicExpression1, logicalOperator, logicExpression2 :=
 		ctx.LogicExpression(0), ctx.GetLogicalOperator(), ctx.LogicExpression(1); logicExpression1 != nil && logicalOperator != nil && logicExpression2 != nil {
@@ -145,6 +177,14 @@ func ParseLogicExpression(s antlr.ParseTreeVisitor, ctx *parser.LogicExpressionC
 		}
 		return NewLogicNode(nodeType, []*NodeCondition{logicExpression1.Accept(s).(*NodeCondition),
 			logicExpression2.Accept(s).(*NodeCondition)})
+	}
+	//两边表达式都是子查询，PlainNode
+	if expr1, expr2 := ctx.Expr(0), ctx.Expr(1); expr1 != nil && expr2 != nil {
+		_, subSelectNode1 := dealExprBracket(expr1)
+		_, subSelectNode2 := dealExprBracket(expr2)
+		if subSelectNode1 != nil && subSelectNode2 != nil {
+			return NewPlainNode(getText(ctx))
+		}
 	}
 	//运算符隔开的单个条件
 	if expr1, operate, expr2 := ctx.Expr(0), ctx.ComparisonOperator(), ctx.Expr(1); expr1 != nil && operate != nil && expr2 != nil {
@@ -258,6 +298,15 @@ func ParseLogicExpression(s antlr.ParseTreeVisitor, ctx *parser.LogicExpressionC
 		return node
 
 	}
+
+	//IN/NOT IN Table
+	if not, expr1, in, subSelect := ctx.NOT(), ctx.Expr(0), ctx.IN(),
+		ctx.SelectStatement(); in != nil && expr1 != nil && subSelect != nil {
+		visitor := new(sqlSelectStatementVisitorImpl)
+		nodeSelectStatement := visitor.Visit(subSelect).(*NodeSelectStatement)
+		return NewInSubSelectNode(expr1.GetText(), nodeSelectStatement, not != nil)
+	}
+
 	//IN/NOT IN
 	if not, in, expr := ctx.NOT(), ctx.IN(), ctx.AllExpr(); in != nil && len(expr) > 1 {
 		node := expr2NodeName(expr[0])
@@ -339,6 +388,12 @@ func ParseLogicExpression(s antlr.ParseTreeVisitor, ctx *parser.LogicExpressionC
 		}
 		return node
 
+	}
+	//EXISTS (selectStatement)
+	if not, exists, subSelect := ctx.NOT(), ctx.EXISTS(), ctx.SelectStatement(); exists != nil && subSelect != nil {
+		visitor := new(sqlSelectStatementVisitorImpl)
+		nodeSelectStatement := visitor.Visit(subSelect).(*NodeSelectStatement)
+		return NewExistsSubSelectNode(nodeSelectStatement, not != nil)
 	}
 	//动态node '(' logicExpression ')'
 	if comment, left, right, logicExpr := ctx.COMMENT(), ctx.GetLeftBracket(), ctx.GetRightBracket(),

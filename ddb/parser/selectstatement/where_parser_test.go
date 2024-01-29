@@ -19,7 +19,7 @@ import (
 //	}
 func TestEasy(t *testing.T) {
 	// node := ParserNode(`length(abc)/*注释*/>0/*注释*/`)
-	node := ParserWhereNode(`/*EXISTS(from e$自动化流程管理 on 名称=wholesql.名称 where )*/
+	sql := `/*EXISTS(from e$自动化流程管理 on 名称=wholesql.名称 where )*/
 	(EXISTS(select 1 from (select 名称,类别,归属方式,创建用户,归属部门,最后修改时间,流水号 from (
 	select
 	  id as 流水号,
@@ -40,7 +40,31 @@ func TestEasy(t *testing.T) {
 		ownerby = 'u'
 		and username = {{P .User.Name}}
 	  )
-	) wholesql) exists_inner0 where 名称=wholesql.名称))`)
+	) wholesql) exists_inner0 where 名称=wholesql.名称))`
+	sql = `((length(字段))) > 1`
+	sql = `(case 字段 when '1' then 1 else 2 end) > 1`
+	sql = `(select 数量 from 库存 where 名称 = '东西') = 2`
+	sql = `(select 数量 from 库存 where 名称 = '东西') = (select 总数 from 仓库 where 产品 = '物品')`
+	sql = `not (select 数量 from 库存 where 名称 = '东西') like 'q%'`
+	// sql = `not (数量 > 2)`
+	sql = `(select 数量 from 库存 where 名称 = '东西') in (1,2)`
+	sql = `/*IN(名称 in e$sqlhis(名称) where )*/
+	(名称 in (select 名称 from (select dbname,exetime,id,rowsaffected,sql,username,usedtime from (
+	select
+	  *
+	from
+	  sqlhis
+	) wholesql) in_inner))`
+	sql = `substr(总数,1,1) in (select 数量 from 库存 where 名称 = 'dsa')`
+	sql = `(EXISTS(select name from 库存))`
+	sql = `((select count(*) from (select name from 库存) cnt_inner0) = 2)`
+	sql = `((select count(*) from (select dbname,exetime,id,rowsaffected,sql,username,usedtime from (
+		select
+		  *
+		from
+		  sqlhis
+		) wholesql) cnt_inner0 where dbname=wholesql.名称) = 1)`
+	node := ParserWhereNode(sql)
 
 	spew.Dump(node)
 	spew.Dump(node.ConditionLines(nil, "wholesql", nil))

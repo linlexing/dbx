@@ -127,11 +127,11 @@ expr
  | expr ('*'|'/') expr
  | expr ('+'|'-') expr
  | expr ('||') expr
+ | '(' selectStatement ')'
  | '(' expr ')'
  | CASE WHEN logicExpression THEN expr (WHEN logicExpression THEN expr)* (ELSE expr)? END
  | CASE expr WHEN expr THEN expr (WHEN expr THEN expr)* (ELSE expr)? END
  | NULL
- | selectStatement
  ;
 
 value

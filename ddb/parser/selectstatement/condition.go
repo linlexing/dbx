@@ -85,7 +85,7 @@ type NodeCondition struct {
 	Link      []NodeLinkColumn //关联条件，如果是in，则不起作用
 	InColumn  string           //in的内层字段
 
-	SubSelect *NodeSelectStatement //如果是关联查询，nodeteype=exists intable count，这里存放子查询，如果是从注释中获取，这里应该是nil，上面4个属性和这个是二选一
+	SubSelect *NodeSelectStatement //如果是关联查询，nodetype=exists intable count，这里存放子查询，如果是从注释中获取，这里应该是nil，上面4个属性和这个是二选一
 
 	Children []*NodeCondition
 }
@@ -107,6 +107,14 @@ func NewFuncNode(field, funcName string, args []string) *NodeCondition {
 		Args:     args,
 	}
 
+	return rev
+}
+
+func NewSubSelectNode(subSelect *NodeSelectStatement) *NodeCondition {
+	rev := &NodeCondition{
+		NodeType:  ConditionNodeCondition,
+		SubSelect: subSelect,
+	}
 	return rev
 }
 
@@ -146,6 +154,16 @@ func NewInTableNode(column, from, inColumn, where string, reverse bool) *NodeCon
 	}
 }
 
+// NewInSubSelectNode 分配一个InTable子查询条件节点
+func NewInSubSelectNode(field string, subSelect *NodeSelectStatement, reverse bool) *NodeCondition {
+	return &NodeCondition{
+		NodeType:  ConditionNodeInTable,
+		Field:     field,
+		Reverse:   reverse,
+		SubSelect: subSelect,
+	}
+}
+
 // NewExistsNode 分配一个Exists条件节点
 func NewExistsNode(from string, link []NodeLinkColumn, where string, reverse bool) *NodeCondition {
 	return &NodeCondition{
@@ -154,6 +172,15 @@ func NewExistsNode(from string, link []NodeLinkColumn, where string, reverse boo
 		PlainText: where,
 		Link:      link,
 		Reverse:   reverse,
+	}
+}
+
+// NewExistsSubSelectNode 分配一个Exists子查询条件节点
+func NewExistsSubSelectNode(subSelect *NodeSelectStatement, reverse bool) *NodeCondition {
+	return &NodeCondition{
+		NodeType:  ConditionNodeExists,
+		Reverse:   reverse,
+		SubSelect: subSelect,
 	}
 }
 
@@ -229,6 +256,9 @@ func (node *NodeCondition) fieldName() string {
 		}
 		fieldName = fmt.Sprintf("%s(%s%s)", node.Func, node.Field, args)
 	}
+	if node.SubSelect != nil {
+		fieldName = fmt.Sprintf("(%s)", SelectStatementString(node.SubSelect, nil, "", nil, false))
+	}
 	return fieldName
 }
 func (node *NodeCondition) string(prev string, fields map[string]schema.DataType,
@@ -302,6 +332,14 @@ func (node *NodeCondition) string(prev string, fields map[string]schema.DataType
 			panic("invalid op:" + op.String() + " at linkcount")
 		}
 	case ConditionNodeExists:
+		if node.SubSelect != nil {
+			cop := "EXISTS"
+			if node.Reverse {
+				cop = "NOT EXISTS"
+			}
+			return fmt.Sprintf("(%s(%s))", cop,
+				SelectStatementString(node.SubSelect, fields, outerTableName, getview, buildComment))
+		}
 		from := node.From
 		if getview != nil {
 			if viewDef, err := getview(from); err == nil {
@@ -336,6 +374,14 @@ func (node *NodeCondition) string(prev string, fields map[string]schema.DataType
 		}
 		return comment + prev + "(" + cPrev + innerText + ")"
 	case ConditionNodeInTable:
+		if node.SubSelect != nil {
+			cop := "in"
+			if node.Reverse {
+				cop = "not in"
+			}
+			return fmt.Sprintf("(%s %s (%s))", node.Field, cop,
+				SelectStatementString(node.SubSelect, fields, outerTableName, getview, buildComment))
+		}
 		from := node.From
 		if getview != nil {
 			if viewDef, err := getview(from); err == nil {

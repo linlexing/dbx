@@ -46,9 +46,22 @@ func (s *sqlSelectelementsVisitorImpl) VisitSelectElement(ctx *parser.SelectElem
 	var subquery *NodeSelectStatement
 	expr, as, alias := ctx.Expr(), ctx.AS(), ctx.Alias()
 	//判断有无括号
-	bracket := reBracket.MatchString(expr.GetText())
-	if bracket {
-		expr = expr.Expr(0)
+	haveBracket := reBracket.MatchString(expr.GetText())
+	bracket := haveBracket
+	//去除多余的括号
+	if haveBracket {
+		for {
+			if !haveBracket {
+				break
+			}
+			if len(expr.AllExpr()) > 0 {
+				expr = expr.Expr(0)
+			}
+			if expr.SelectStatement() != nil {
+				break
+			}
+			haveBracket = reBracket.MatchString(expr.GetText())
+		}
 	}
 	if expr != nil {
 		//分隔a.xx，识别表别名
@@ -107,6 +120,7 @@ func (s *sqlSelectelementsVisitorImpl) VisitSelectElement(ctx *parser.SelectElem
 			}
 			if expr.SelectStatement() != nil {
 				subquery = parseBySelectStatementContext(expr.SelectStatement(), s.vars)
+				exprStr = ""
 			}
 		}
 	}

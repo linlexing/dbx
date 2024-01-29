@@ -247,6 +247,8 @@ end) as 专业标识`
 	ELSE NULL
 	END) as 专业标识,'1' as 数值,a.字段 as 字段a`
 	sql = `(select min(统计局代码) from t$法人单位表 d where (d.状态 is null or d.状态 <> '剔除') and a.归属法人组织机构代码 = d.组织机构代码) as 法人_统计局代码`
+	sql = `substr(名字,1,2) as 字段`
+	sql = `((select 1 from 表a)) as 字段`
 	node := parserNodeSelectelements(sql)
 	spew.Dump(node)
 	// spew.Dump(node.ColumnName (nil, "wholesql", nil))
