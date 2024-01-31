@@ -67,9 +67,9 @@ func TestEasy(t *testing.T) {
 	node := ParserWhereNode(sql)
 
 	spew.Dump(node)
-	spew.Dump(node.ConditionLines(nil, "wholesql", nil))
+	spew.Dump(node.ConditionLines(nil, "wholesql", nil, false))
 	println("========================")
-	println(node.WhereString(nil, "wholesql", nil, true))
+	println(node.WhereString(nil, "wholesql", nil, true, false))
 }
 func TestMain(t *testing.T) {
 	t.Log("start")
@@ -120,16 +120,16 @@ where=wholesql.aaa) > 0) AND
         f = '1'
 )`)
 	spew.Dump(node)
-	spew.Dump(node.ConditionLines(nil, "wholesql", nil))
+	spew.Dump(node.ConditionLines(nil, "wholesql", nil, false))
 	println("========================")
-	println(node.WhereString(nil, "wholesql", nil, true))
+	println(node.WhereString(nil, "wholesql", nil, true, false))
 	// t.Log(tree.ToStringTree(nil, p))
 	// antlr.ParseTreeWalkerDefault.Walk(NewTreeShapeListener(), tree)
 }
 func TestMultiTable(t *testing.T) {
 	node := ParserWhereNode("select 1 from a where exists(select 1 from b where a.c=b.c)")
 	spew.Dump(node)
-	spew.Dump(node.ConditionLines(nil, "wholesql", nil))
+	spew.Dump(node.ConditionLines(nil, "wholesql", nil, false))
 	println("========================")
-	println(node.WhereString(nil, "wholesql", nil, true))
+	println(node.WhereString(nil, "wholesql", nil, true, false))
 }

@@ -71,15 +71,15 @@ type NodeLinkColumn struct {
 
 // NodeCondition 一个条件节点，可以有子节点，也可以是叶子
 type NodeCondition struct {
-	NodeType NodeType
-	Reverse  bool //条件是否反转，即是否加上not，对于 and or节点无效
-	Field    string
-	Func     string   //针对字段处理的函数,第一个参数是字段名
-	Args     []string //函数的参数
-	Operate  pageselect.Operator
-	Value    string
-	Value2   string //用于区间运算符，尾值
-
+	NodeType  NodeType
+	Reverse   bool //条件是否反转，即是否加上not，对于 and or节点无效
+	Field     string
+	Fields    map[string]schema.DataType //字段类型
+	Func      string                     //针对字段处理的函数,第一个参数是字段名
+	Args      []string                   //函数的参数
+	Operate   pageselect.Operator
+	Value     string
+	Value2    string           //用于区间运算符，尾值
 	PlainText string           //如果是关联查询，则是数据源附加的过滤条件
 	From      string           //数据源，表名或视图名，仅exists intable count有用
 	Link      []NodeLinkColumn //关联条件，如果是in，则不起作用
@@ -257,12 +257,12 @@ func (node *NodeCondition) fieldName() string {
 		fieldName = fmt.Sprintf("%s(%s%s)", node.Func, node.Field, args)
 	}
 	if node.SubSelect != nil {
-		fieldName = fmt.Sprintf("(%s)", SelectStatementString(node.SubSelect, nil, "", nil, false))
+		fieldName = fmt.Sprintf("(%s)", node.SubSelect.SelectStatementString(false))
 	}
 	return fieldName
 }
 func (node *NodeCondition) string(prev string, fields map[string]schema.DataType,
-	outerTableName string, getview GetUserConditionViewDefineFunc, buildComment bool) string {
+	outerTableName string, getview GetUserConditionViewDefineFunc, buildComment, transform bool) string {
 	if node == nil {
 		return ""
 	}
@@ -338,7 +338,7 @@ func (node *NodeCondition) string(prev string, fields map[string]schema.DataType
 				cop = "NOT EXISTS"
 			}
 			return fmt.Sprintf("(%s(%s))", cop,
-				SelectStatementString(node.SubSelect, fields, outerTableName, getview, buildComment))
+				node.SubSelect.SelectStatementString(transform))
 		}
 		from := node.From
 		if getview != nil {
@@ -380,7 +380,7 @@ func (node *NodeCondition) string(prev string, fields map[string]schema.DataType
 				cop = "not in"
 			}
 			return fmt.Sprintf("(%s %s (%s))", node.Field, cop,
-				SelectStatementString(node.SubSelect, fields, outerTableName, getview, buildComment))
+				node.SubSelect.SelectStatementString(transform))
 		}
 		from := node.From
 		if getview != nil {
@@ -411,13 +411,13 @@ func (node *NodeCondition) string(prev string, fields map[string]schema.DataType
 	case ConditionNodeAnd:
 		list := []string{}
 		for _, one := range node.Children {
-			list = append(list, one.string("\t"+prev, fields, outerTableName, getview, buildComment))
+			list = append(list, one.string("\t"+prev, fields, outerTableName, getview, buildComment, transform))
 		}
 		return prev + "(\n" + strings.Join(list, " AND\n") + "\n" + prev + ")"
 	case ConditionNodeOr:
 		list := []string{}
 		for _, one := range node.Children {
-			list = append(list, one.string("\t"+prev, fields, outerTableName, getview, buildComment))
+			list = append(list, one.string("\t"+prev, fields, outerTableName, getview, buildComment, transform))
 		}
 		// list[0] = strings.Repeat("\t", level+1) + "(" + strings.TrimSpace(list[0])
 		// list[len(list)-1] = list[len(list)-1] + ")"
@@ -634,8 +634,11 @@ func (node *NodeCondition) isNumberField(dat schema.DataType) bool {
 
 // WhereString 返回规范化的where条件,传入视图列表，用于关联表查询的语句
 func (node *NodeCondition) WhereString(fields map[string]schema.DataType, outerTableName string,
-	getview GetUserConditionViewDefineFunc, buildComment bool) string {
-	return node.string("", fields, outerTableName, getview, buildComment)
+	getview GetUserConditionViewDefineFunc, buildComment, transform bool) string {
+	if fields == nil && node != nil {
+		fields = node.Fields
+	}
+	return node.string("", fields, outerTableName, getview, buildComment, transform)
 }
 
 // ReferToColumns 条件中涉及到的列
@@ -860,12 +863,12 @@ func ProcessComment(define string) (rev string, vars map[string]interface{}) {
 }
 
 // ConditionLines 遍历树，返回条件数组
-func (node *NodeCondition) ConditionLines(fields map[string]schema.DataType, outerTableName string, getview GetUserConditionViewDefineFunc) []*pageselect.ConditionLine {
+func (node *NodeCondition) ConditionLines(fields map[string]schema.DataType, outerTableName string, getview GetUserConditionViewDefineFunc, transform bool) []*pageselect.ConditionLine {
 	rev := []*pageselect.ConditionLine{}
 	switch node.NodeType {
 	case ConditionNodeAnd:
 		for _, one := range node.Children {
-			subConts := one.ConditionLines(fields, outerTableName, getview)
+			subConts := one.ConditionLines(fields, outerTableName, getview, transform)
 			//如果已经有条件，且子条件是多行，则需要加上括号和and
 			if len(rev) > 0 && len(subConts) > 1 {
 				subConts[0].LeftBrackets += "("
@@ -878,7 +881,7 @@ func (node *NodeCondition) ConditionLines(fields map[string]schema.DataType, out
 		}
 	case ConditionNodeOr:
 		for _, one := range node.Children {
-			subConts := one.ConditionLines(fields, outerTableName, getview)
+			subConts := one.ConditionLines(fields, outerTableName, getview, transform)
 			//如果已经有条件，且子条件是多行，则需要加上括号和and
 			if len(rev) > 0 && len(subConts) > 1 {
 				subConts[0].LeftBrackets += "("
@@ -919,7 +922,7 @@ func (node *NodeCondition) ConditionLines(fields map[string]schema.DataType, out
 	// 关联
 	case ConditionNodeCount, ConditionNodeExists, ConditionNodeInTable:
 		rev = append(rev, &pageselect.ConditionLine{
-			PlainText: node.WhereString(fields, outerTableName, getview, false),
+			PlainText: node.WhereString(fields, outerTableName, getview, false, transform),
 		})
 
 	}

@@ -189,25 +189,25 @@ func TestSelectStatement(t *testing.T) {
 
 	spew.Dump(node)
 	println("========================")
-	println(SelectStatementString(node, nil, "wholesql", nil, true))
+	println(node.SelectStatementString(false))
 }
 func TestJoin(t *testing.T) {
 	node := parserNodeJoin(`LEFT JOIN 规上月度1_as b on a.流水号 = b.流水号 INNER JOIN (select 流水号 from 学生表 cc) C on a.流水号 = C.流水号`)
 
 	spew.Dump(node)
 	println("========================")
-	println(joinClauseString(node, nil, "wholesql", nil, true))
+	println(joinClauseString(node, nil, false))
 }
 func TestTableSources(t *testing.T) {
 	var sql = `规上月度1 a,规上月度1_as b`
 	// sql = `e$自动化流程管理,规上月度1 a,规上月度1_as b,(select 名称 from 学生表) c`
-	// sql = `e$自动化流程管理`
+	sql = `e$自动化流程管理 a`
 	nodes := parserNodeTableSources(sql)
 
 	spew.Dump(nodes)
 	println("========================")
 	for _, v := range nodes {
-		println(tableSourceString(v, nil, "wholesql", nil, true))
+		println(tableSourceString(v, nil, false))
 	}
 }
 
@@ -248,11 +248,11 @@ end) as 专业标识`
 	END) as 专业标识,'1' as 数值,a.字段 as 字段a`
 	sql = `(select min(统计局代码) from t$法人单位表 d where (d.状态 is null or d.状态 <> '剔除') and a.归属法人组织机构代码 = d.组织机构代码) as 法人_统计局代码`
 	sql = `substr(名字,1,2) as 字段`
-	sql = `((select 1 from 表a)) as 字段`
+	sql = `(select 1 from 表a) as 字段`
 	node := parserNodeSelectelements(sql)
 	spew.Dump(node)
 	// spew.Dump(node.ColumnName (nil, "wholesql", nil))
 	println("========================")
-	println(selectElementsString(node, nil, "wholesql", nil, true))
+	println(selectElementsString(node, false))
 
 }

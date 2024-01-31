@@ -110,31 +110,19 @@ func (s *sqlWhereVisitorImpl) VisitWhereClause(ctx *parser.WhereClauseContext) i
 //		return expr.(*parser.ExprContext).ColumnName() != nil
 //	}
 //
-// 识别SelectStatement,去除多余括号
-func dealExprBracket(expr parser.IExprContext) (parser.IExprContext, *NodeCondition) {
-	if haveBracket := reBracket.MatchString(expr.GetText()); haveBracket {
-		for {
-			if !haveBracket {
-				break
-			}
-			if len(expr.AllExpr()) > 0 {
-				expr = expr.Expr(0)
-			}
-			if expr.SelectStatement() != nil {
-				visitor := new(sqlSelectStatementVisitorImpl)
-				subSelect := visitor.Visit(expr.SelectStatement()).(*NodeSelectStatement)
-				return expr, NewSubSelectNode(subSelect)
-			}
-			haveBracket = reBracket.MatchString(expr.GetText())
-		}
+// 识别SelectStatement
+func processSubSelect(expr parser.IExprContext) *NodeCondition {
+	if expr.SelectStatement() != nil {
+		visitor := new(sqlSelectStatementVisitorImpl)
+		subSelect := visitor.Visit(expr.SelectStatement()).(*NodeSelectStatement)
+		return NewSubSelectNode(subSelect)
 	}
-	return expr, nil
+	return nil
 }
 
 // 将运算符左边的表达式转换成node的name和func
 func expr2NodeName(expr parser.IExprContext) *NodeCondition {
-	var subSelectNode *NodeCondition
-	expr, subSelectNode = dealExprBracket(expr)
+	subSelectNode := processSubSelect(expr)
 	if subSelectNode != nil {
 		return subSelectNode
 	}
@@ -180,8 +168,8 @@ func ParseLogicExpression(s antlr.ParseTreeVisitor, ctx *parser.LogicExpressionC
 	}
 	//两边表达式都是子查询，PlainNode
 	if expr1, expr2 := ctx.Expr(0), ctx.Expr(1); expr1 != nil && expr2 != nil {
-		_, subSelectNode1 := dealExprBracket(expr1)
-		_, subSelectNode2 := dealExprBracket(expr2)
+		subSelectNode1 := processSubSelect(expr1)
+		subSelectNode2 := processSubSelect(expr2)
 		if subSelectNode1 != nil && subSelectNode2 != nil {
 			return NewPlainNode(getText(ctx))
 		}

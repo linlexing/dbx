@@ -45,24 +45,6 @@ func (s *sqlSelectelementsVisitorImpl) VisitSelectElement(ctx *parser.SelectElem
 	var tableAlias, columnName, exprStr, asStr, aliaStr string
 	var subquery *NodeSelectStatement
 	expr, as, alias := ctx.Expr(), ctx.AS(), ctx.Alias()
-	//判断有无括号
-	haveBracket := reBracket.MatchString(expr.GetText())
-	bracket := haveBracket
-	//去除多余的括号
-	if haveBracket {
-		for {
-			if !haveBracket {
-				break
-			}
-			if len(expr.AllExpr()) > 0 {
-				expr = expr.Expr(0)
-			}
-			if expr.SelectStatement() != nil {
-				break
-			}
-			haveBracket = reBracket.MatchString(expr.GetText())
-		}
-	}
 	if expr != nil {
 		//分隔a.xx，识别表别名
 		if expr.ColumnName() != nil {
@@ -86,7 +68,7 @@ func (s *sqlSelectelementsVisitorImpl) VisitSelectElement(ctx *parser.SelectElem
 						if len(expr.AllLogicExpression()) > k {
 							addStr = fmt.Sprintf("WHEN %s THEN %s ",
 								//这里不深入视图列表、关联表查询了
-								expr.AllLogicExpression()[k].Accept(new(SqlLogicExpressionVisitorImpl)).(*NodeCondition).WhereString(nil, "wholesql", nil, true),
+								expr.AllLogicExpression()[k].Accept(new(SqlLogicExpressionVisitorImpl)).(*NodeCondition).WhereString(nil, "", nil, false, false),
 								expr.Expr(k).GetText())
 						}
 						//有ELSE最后一个给ELSE
@@ -123,9 +105,6 @@ func (s *sqlSelectelementsVisitorImpl) VisitSelectElement(ctx *parser.SelectElem
 				exprStr = ""
 			}
 		}
-	}
-	if bracket && len(exprStr) > 0 {
-		exprStr = "(" + exprStr + ")"
 	}
 	if as != nil {
 		asStr = as.GetText()
