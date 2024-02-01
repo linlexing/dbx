@@ -20,9 +20,9 @@ import (
 func LogicTestEasy(t *testing.T) {
 	node := parserLogicNode(`length(abc)>0 AND qwe like '456%'`)
 	spew.Dump(node)
-	spew.Dump(node.ConditionLines(nil, "wholesql", nil, false))
+	spew.Dump(node.ConditionLines(nil, "wholesql", nil))
 	println("========================")
-	println(node.WhereString(nil, "wholesql", nil, true, false))
+	println(node.WhereString(nil, "wholesql", nil, true))
 }
 func LogicTestMain(t *testing.T) {
 	t.Log("start")
@@ -73,9 +73,9 @@ where=wholesql.aaa) > 0) AND
         f = '1'
 )`)
 	spew.Dump(node)
-	spew.Dump(node.ConditionLines(nil, "wholesql", nil, false))
+	spew.Dump(node.ConditionLines(nil, "wholesql", nil))
 	println("========================")
-	println(node.WhereString(nil, "wholesql", nil, true, false))
+	println(node.WhereString(nil, "wholesql", nil, true))
 	// t.Log(tree.ToStringTree(nil, p))
 	// antlr.ParseTreeWalkerDefault.Walk(NewTreeShapeListener(), tree)
 }

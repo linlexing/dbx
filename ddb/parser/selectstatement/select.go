@@ -7,7 +7,6 @@ import (
 
 	"github.com/antlr/antlr4/runtime/Go/antlr/v4"
 	"github.com/linlexing/dbx/ddb/parser"
-	"github.com/linlexing/dbx/schema"
 )
 
 func ParserSelectNode(val string) *NodeSelectStatement {
@@ -34,11 +33,7 @@ func parseBySelectStatementContext(ctx parser.ISelectStatementContext, vars map[
 	return visitor.Visit(ctx).(*NodeSelectStatement)
 }
 
-func (node *NodeSelectStatement) SelectStatementString(transform bool) string {
-	var fields map[string]schema.DataType
-	if node.WhereClause != nil {
-		fields = node.WhereClause.Fields
-	}
+func (node *NodeSelectStatement) SelectStatementString(getview GetUserConditionViewDefineFunc) string {
 	var sql string
 	if len(node.UnionSelect) > 0 {
 		var selects []string
@@ -47,7 +42,7 @@ func (node *NodeSelectStatement) SelectStatementString(transform bool) string {
 			unionStr = " UNION ALL "
 		}
 		for k := range node.UnionSelect {
-			selects = append(selects, node.UnionSelect[k].SelectStatementString(transform))
+			selects = append(selects, node.UnionSelect[k].SelectStatementString(getview))
 		}
 		sql = strings.Join(selects, unionStr)
 		return sql
@@ -58,16 +53,16 @@ func (node *NodeSelectStatement) SelectStatementString(transform bool) string {
 		if len(alias) == 0 {
 			alias = v.Alias
 		}
-		tableSources = append(tableSources, tableSourceString(v, node.GetView, transform))
+		tableSources = append(tableSources, tableSourceString(v, getview))
 	}
-	whereStr := node.WhereClause.WhereString(fields, alias, nil, true, transform)
+	whereStr := node.WhereClause.WhereString(nil, alias, getview, true)
 	if len(whereStr) > 0 {
 		whereStr = "WHERE " + whereStr
 	}
 	sql = strings.TrimSpace(fmt.Sprintf(`SELECT %s FROM %s %s %s`,
-		selectElementsString(node.SelectElements, transform),
+		selectElementsString(node.SelectElements, getview),
 		strings.Join(tableSources, ","),
-		joinClauseString(node.JoinClause, node.GetView, transform),
+		joinClauseString(node.JoinClause, getview),
 		whereStr,
 	))
 	return sql
@@ -95,12 +90,12 @@ func parseByJoinContext(ctx parser.IJoinClauseContext, vars map[string]interface
 	visitor.vars = vars
 	return visitor.Visit(ctx).([]*NodeJoinClause)
 }
-func joinClauseString(nodes []*NodeJoinClause, getview GetUserConditionViewDefineFunc, transform bool) string {
+func joinClauseString(nodes []*NodeJoinClause, getview GetUserConditionViewDefineFunc) string {
 	var joins []string
 	for _, v := range nodes {
 		joins = append(joins, fmt.Sprintf("%s %s ON %s",
-			v.JoinType, tableSourceString(v.TableSource, getview, transform),
-			v.OnExpress.WhereString(nil, v.TableSource.Alias, nil, true, transform)))
+			v.JoinType, tableSourceString(v.TableSource, getview),
+			v.OnExpress.WhereString(nil, v.TableSource.Alias, getview, true)))
 	}
 	return strings.Join(joins, " ")
 }
@@ -127,9 +122,9 @@ func parseByTableSourcesContext(ctx parser.ITableSourcesContext, vars map[string
 	visitor.vars = vars
 	return visitor.Visit(ctx).([]*NodeTableSource)
 }
-func tableSourceString(node *NodeTableSource, getview GetUserConditionViewDefineFunc, transform bool) string {
+func tableSourceString(node *NodeTableSource, getview GetUserConditionViewDefineFunc) string {
 	if len(node.Source.TableName) > 0 {
-		if transform {
+		if getview != nil {
 			str, err := getview(node.Source.TableName)
 			if err != nil {
 				log.Panic(err)
@@ -141,7 +136,7 @@ func tableSourceString(node *NodeTableSource, getview GetUserConditionViewDefine
 		return fmt.Sprintf("%s %s", node.Source.TableName, node.Alias)
 	}
 	return fmt.Sprintf("(%s) %s",
-		node.Source.SelectStatement.SelectStatementString(transform),
+		node.Source.SelectStatement.SelectStatementString(getview),
 		node.Alias)
 }
 func parserNodeSelectelements(val string) *NodeSelectelements {
@@ -167,13 +162,13 @@ func parseBySelectElementsContext(ctx parser.ISelectElementsContext, vars map[st
 	return visitor.Visit(ctx).(*NodeSelectelements)
 }
 
-func selectElementsString(node *NodeSelectelements, transform bool) string {
+func selectElementsString(node *NodeSelectelements, getview GetUserConditionViewDefineFunc) string {
 	var elements []string
 	if node != nil {
 		for _, v := range node.Elements {
 			col := v.Express
 			if v.Subquery != nil {
-				col = "(" + v.Subquery.SelectStatementString(transform) + ")"
+				col = "(" + v.Subquery.SelectStatementString(getview) + ")"
 			}
 			var as, alias string
 			if len(v.ColumnName) > 0 {

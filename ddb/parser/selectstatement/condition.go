@@ -74,9 +74,9 @@ type NodeCondition struct {
 	NodeType  NodeType
 	Reverse   bool //条件是否反转，即是否加上not，对于 and or节点无效
 	Field     string
-	Fields    map[string]schema.DataType //字段类型
-	Func      string                     //针对字段处理的函数,第一个参数是字段名
-	Args      []string                   //函数的参数
+	Type      schema.DataType //字段类型
+	Func      string          //针对字段处理的函数,第一个参数是字段名
+	Args      []string        //函数的参数
 	Operate   pageselect.Operator
 	Value     string
 	Value2    string           //用于区间运算符，尾值
@@ -247,7 +247,7 @@ func ifels[T string](b bool, v1, v2 T) T {
 	}
 	return v2
 }
-func (node *NodeCondition) fieldName() string {
+func (node *NodeCondition) fieldName(getview GetUserConditionViewDefineFunc) string {
 	fieldName := node.Field
 	if len(node.Func) > 0 {
 		args := ""
@@ -257,12 +257,12 @@ func (node *NodeCondition) fieldName() string {
 		fieldName = fmt.Sprintf("%s(%s%s)", node.Func, node.Field, args)
 	}
 	if node.SubSelect != nil {
-		fieldName = fmt.Sprintf("(%s)", node.SubSelect.SelectStatementString(false))
+		fieldName = fmt.Sprintf("(%s)", node.SubSelect.SelectStatementString(getview))
 	}
 	return fieldName
 }
 func (node *NodeCondition) string(prev string, fields map[string]schema.DataType,
-	outerTableName string, getview GetUserConditionViewDefineFunc, buildComment, transform bool) string {
+	outerTableName string, getview GetUserConditionViewDefineFunc, buildComment bool) string {
 	if node == nil {
 		return ""
 	}
@@ -338,7 +338,7 @@ func (node *NodeCondition) string(prev string, fields map[string]schema.DataType
 				cop = "NOT EXISTS"
 			}
 			return fmt.Sprintf("(%s(%s))", cop,
-				node.SubSelect.SelectStatementString(transform))
+				node.SubSelect.SelectStatementString(getview))
 		}
 		from := node.From
 		if getview != nil {
@@ -380,7 +380,7 @@ func (node *NodeCondition) string(prev string, fields map[string]schema.DataType
 				cop = "not in"
 			}
 			return fmt.Sprintf("(%s %s (%s))", node.Field, cop,
-				node.SubSelect.SelectStatementString(transform))
+				node.SubSelect.SelectStatementString(getview))
 		}
 		from := node.From
 		if getview != nil {
@@ -411,13 +411,13 @@ func (node *NodeCondition) string(prev string, fields map[string]schema.DataType
 	case ConditionNodeAnd:
 		list := []string{}
 		for _, one := range node.Children {
-			list = append(list, one.string("\t"+prev, fields, outerTableName, getview, buildComment, transform))
+			list = append(list, one.string("\t"+prev, fields, outerTableName, getview, buildComment))
 		}
 		return prev + "(\n" + strings.Join(list, " AND\n") + "\n" + prev + ")"
 	case ConditionNodeOr:
 		list := []string{}
 		for _, one := range node.Children {
-			list = append(list, one.string("\t"+prev, fields, outerTableName, getview, buildComment, transform))
+			list = append(list, one.string("\t"+prev, fields, outerTableName, getview, buildComment))
 		}
 		// list[0] = strings.Repeat("\t", level+1) + "(" + strings.TrimSpace(list[0])
 		// list[len(list)-1] = list[len(list)-1] + ")"
@@ -456,39 +456,39 @@ func (node *NodeCondition) string(prev string, fields map[string]schema.DataType
 			}
 
 			return prev +
-				fmt.Sprintf("%s %s %s", node.fieldName(),
+				fmt.Sprintf("%s %s %s", node.fieldName(getview),
 					ifels(op == pageselect.OperatorNotEqu, "<>", op.String()), v)
 
 		//OperatorLike 包含
 		case pageselect.OperatorLike:
 			return prev +
-				fmt.Sprintf("%s LIKE %s", node.fieldName(), ifels(ifExpr(node.Value),
+				fmt.Sprintf("%s LIKE %s", node.fieldName(getview), ifels(ifExpr(node.Value),
 					decodeExpr(node.Value), signString("%"+node.Value+"%")))
 		//OperatorNotLike 不包含
 		case pageselect.OperatorNotLike:
 			return prev +
-				fmt.Sprintf("%s NOT LIKE %s", node.fieldName(), ifels(ifExpr(node.Value),
+				fmt.Sprintf("%s NOT LIKE %s", node.fieldName(getview), ifels(ifExpr(node.Value),
 					decodeExpr(node.Value), signString("%"+node.Value+"%")))
 
 			//OperatorPrefix 前缀
 		case pageselect.OperatorPrefix:
 			return prev +
-				fmt.Sprintf("%s LIKE %s", node.fieldName(), ifels(ifExpr(node.Value),
+				fmt.Sprintf("%s LIKE %s", node.fieldName(getview), ifels(ifExpr(node.Value),
 					decodeExpr(node.Value), signString(node.Value+"%")))
 			//OperatorNotPrefix 非前缀
 		case pageselect.OperatorNotPrefix:
 			return prev +
-				fmt.Sprintf("%s NOT LIKE %s", node.fieldName(), ifels(ifExpr(node.Value),
+				fmt.Sprintf("%s NOT LIKE %s", node.fieldName(getview), ifels(ifExpr(node.Value),
 					decodeExpr(node.Value), signString(node.Value+"%")))
 			//OperatorSuffix 后缀
 		case pageselect.OperatorSuffix:
 			return prev +
-				fmt.Sprintf("%s LIKE %s", node.fieldName(), ifels(ifExpr(node.Value),
+				fmt.Sprintf("%s LIKE %s", node.fieldName(getview), ifels(ifExpr(node.Value),
 					decodeExpr(node.Value), signString("%"+node.Value)))
 			//OperatorNotSuffix 非后缀
 		case pageselect.OperatorNotSuffix:
 			return prev +
-				fmt.Sprintf("%s NOT LIKE %s", node.fieldName(), ifels(ifExpr(node.Value),
+				fmt.Sprintf("%s NOT LIKE %s", node.fieldName(getview), ifels(ifExpr(node.Value),
 					decodeExpr(node.Value), signString("%"+node.Value)))
 			//OperatorIn 在列表
 		case pageselect.OperatorIn:
@@ -503,7 +503,7 @@ func (node *NodeCondition) string(prev string, fields map[string]schema.DataType
 				list = append(list, v)
 			}
 			return prev +
-				fmt.Sprintf("%s IN (%s)", node.fieldName(), encodeCSV(list))
+				fmt.Sprintf("%s IN (%s)", node.fieldName(getview), encodeCSV(list))
 			//OperatorNotIn 不在列表
 		case pageselect.OperatorNotIn:
 			list := []string{}
@@ -517,15 +517,15 @@ func (node *NodeCondition) string(prev string, fields map[string]schema.DataType
 				list = append(list, v)
 			}
 			return prev +
-				fmt.Sprintf("%s NOT IN (%s)", node.fieldName(), encodeCSV(list))
+				fmt.Sprintf("%s NOT IN (%s)", node.fieldName(getview), encodeCSV(list))
 		//OperatorIsNull 为空
 		case pageselect.OperatorIsNull:
 			return prev +
-				fmt.Sprintf("%s IS NULL", node.fieldName())
+				fmt.Sprintf("%s IS NULL", node.fieldName(getview))
 			//OperatorIsNotNull is not null
 		case pageselect.OperatorIsNotNull:
 			return prev +
-				fmt.Sprintf("%s IS NOT NULL", node.fieldName())
+				fmt.Sprintf("%s IS NOT NULL", node.fieldName(getview))
 
 			//OperatorLengthEqu 长度等于
 		case pageselect.OperatorLengthEqu:
@@ -535,7 +535,7 @@ func (node *NodeCondition) string(prev string, fields map[string]schema.DataType
 				v = "0"
 			}
 			return prev +
-				fmt.Sprintf("LENGTH(%s) = %s", node.fieldName(), ifels(ifExpr(v), decodeExpr(v), v))
+				fmt.Sprintf("LENGTH(%s) = %s", node.fieldName(getview), ifels(ifExpr(v), decodeExpr(v), v))
 
 			//OperatorLengthNotEqu 长度不等于
 		case pageselect.OperatorLengthNotEqu:
@@ -602,7 +602,7 @@ func (node *NodeCondition) string(prev string, fields map[string]schema.DataType
 					ifels(ifExpr(node.Value2), decodeExpr(node.Value2), node.Value2)
 			}
 			return prev +
-				fmt.Sprintf("%s between %s and %s", node.fieldName(), v, v2)
+				fmt.Sprintf("%s between %s and %s", node.fieldName(getview), v, v2)
 		case pageselect.OperatorNotBetween:
 			var v, v2 string
 			if node.isNumberField(fields[node.Field]) {
@@ -619,7 +619,7 @@ func (node *NodeCondition) string(prev string, fields map[string]schema.DataType
 					ifels(ifExpr(node.Value2), decodeExpr(node.Value2), node.Value2)
 			}
 			return prev +
-				fmt.Sprintf("%s not between %s and %s", node.fieldName(), v, v2)
+				fmt.Sprintf("%s not between %s and %s", node.fieldName(getview), v, v2)
 		default:
 			panic("not impl " + node.Operate.String())
 		}
@@ -634,11 +634,11 @@ func (node *NodeCondition) isNumberField(dat schema.DataType) bool {
 
 // WhereString 返回规范化的where条件,传入视图列表，用于关联表查询的语句
 func (node *NodeCondition) WhereString(fields map[string]schema.DataType, outerTableName string,
-	getview GetUserConditionViewDefineFunc, buildComment, transform bool) string {
+	getview GetUserConditionViewDefineFunc, buildComment bool) string {
 	if fields == nil && node != nil {
-		fields = node.Fields
+		fields = map[string]schema.DataType{node.Field: node.Type}
 	}
-	return node.string("", fields, outerTableName, getview, buildComment, transform)
+	return node.string("", fields, outerTableName, getview, buildComment)
 }
 
 // ReferToColumns 条件中涉及到的列
@@ -863,12 +863,12 @@ func ProcessComment(define string) (rev string, vars map[string]interface{}) {
 }
 
 // ConditionLines 遍历树，返回条件数组
-func (node *NodeCondition) ConditionLines(fields map[string]schema.DataType, outerTableName string, getview GetUserConditionViewDefineFunc, transform bool) []*pageselect.ConditionLine {
+func (node *NodeCondition) ConditionLines(fields map[string]schema.DataType, outerTableName string, getview GetUserConditionViewDefineFunc) []*pageselect.ConditionLine {
 	rev := []*pageselect.ConditionLine{}
 	switch node.NodeType {
 	case ConditionNodeAnd:
 		for _, one := range node.Children {
-			subConts := one.ConditionLines(fields, outerTableName, getview, transform)
+			subConts := one.ConditionLines(fields, outerTableName, getview)
 			//如果已经有条件，且子条件是多行，则需要加上括号和and
 			if len(rev) > 0 && len(subConts) > 1 {
 				subConts[0].LeftBrackets += "("
@@ -881,7 +881,7 @@ func (node *NodeCondition) ConditionLines(fields map[string]schema.DataType, out
 		}
 	case ConditionNodeOr:
 		for _, one := range node.Children {
-			subConts := one.ConditionLines(fields, outerTableName, getview, transform)
+			subConts := one.ConditionLines(fields, outerTableName, getview)
 			//如果已经有条件，且子条件是多行，则需要加上括号和and
 			if len(rev) > 0 && len(subConts) > 1 {
 				subConts[0].LeftBrackets += "("
@@ -922,7 +922,7 @@ func (node *NodeCondition) ConditionLines(fields map[string]schema.DataType, out
 	// 关联
 	case ConditionNodeCount, ConditionNodeExists, ConditionNodeInTable:
 		rev = append(rev, &pageselect.ConditionLine{
-			PlainText: node.WhereString(fields, outerTableName, getview, false, transform),
+			PlainText: node.WhereString(fields, outerTableName, getview, true),
 		})
 
 	}

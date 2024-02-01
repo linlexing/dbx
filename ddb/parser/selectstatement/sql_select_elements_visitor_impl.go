@@ -68,7 +68,7 @@ func (s *sqlSelectelementsVisitorImpl) VisitSelectElement(ctx *parser.SelectElem
 						if len(expr.AllLogicExpression()) > k {
 							addStr = fmt.Sprintf("WHEN %s THEN %s ",
 								//这里不深入视图列表、关联表查询了
-								expr.AllLogicExpression()[k].Accept(new(SqlLogicExpressionVisitorImpl)).(*NodeCondition).WhereString(nil, "", nil, false, false),
+								expr.AllLogicExpression()[k].Accept(new(SqlLogicExpressionVisitorImpl)).(*NodeCondition).WhereString(nil, "", nil, false),
 								expr.Expr(k).GetText())
 						}
 						//有ELSE最后一个给ELSE

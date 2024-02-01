@@ -2,11 +2,13 @@ package selectstatement
 
 import (
 	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/antlr/antlr4/runtime/Go/antlr/v4"
 	"github.com/linlexing/dbx/ddb/parser"
 	"github.com/linlexing/dbx/pageselect"
+	"github.com/linlexing/dbx/schema"
 )
 
 var (
@@ -42,6 +44,7 @@ var (
 	regExists  = regexp.MustCompile(`(?ms)^from\s+(.*)\s+on\s+(.*?)\s+where\s+(.*)$`)
 	regInTable = regexp.MustCompile(`(?ms)^(.*)\s+in\s+(.*)\((.*)\)\s+where\s+(.*)$`)
 	regCount   = regexp.MustCompile(`(?ms)^COUNT\(from\s+(.*)\s+on\s+(.*?)\s+where\s+(.*)\)\s+(.*)\s+(.*)$`)
+	regQuote   = regexp.MustCompile(`^'([^']*)'$`)
 )
 
 const (
@@ -121,7 +124,19 @@ func processSubSelect(expr parser.IExprContext) *NodeCondition {
 }
 
 // 将运算符左边的表达式转换成node的name和func
-func expr2NodeName(expr parser.IExprContext) *NodeCondition {
+func expr2NodeName(expr, expr2 parser.IExprContext) *NodeCondition {
+	var fieldType schema.DataType
+	if expr2 != nil {
+		exprTxt := expr2.GetText()
+		if !regQuote.MatchString(exprTxt) {
+			if _, err := strconv.ParseFloat(exprTxt, 64); err == nil {
+				fieldType = schema.TypeFloat
+			}
+			if _, err := strconv.Atoi(exprTxt); err == nil {
+				fieldType = schema.TypeInt
+			}
+		}
+	}
 	subSelectNode := processSubSelect(expr)
 	if subSelectNode != nil {
 		return subSelectNode
@@ -142,7 +157,7 @@ func expr2NodeName(expr parser.IExprContext) *NodeCondition {
 			panic("invalid function " + tv.GetText())
 		}
 	}
-	return &NodeCondition{Field: expr.GetText(), NodeType: ConditionNodeCondition}
+	return &NodeCondition{Field: expr.GetText(), Type: fieldType, NodeType: ConditionNodeCondition}
 }
 func (s *sqlWhereVisitorImpl) VisitLogicExpression(ctx *parser.LogicExpressionContext) interface{} {
 	return ParseLogicExpression(s, ctx, s.vars)
@@ -176,7 +191,7 @@ func ParseLogicExpression(s antlr.ParseTreeVisitor, ctx *parser.LogicExpressionC
 	}
 	//运算符隔开的单个条件
 	if expr1, operate, expr2 := ctx.Expr(0), ctx.ComparisonOperator(), ctx.Expr(1); expr1 != nil && operate != nil && expr2 != nil {
-		node := expr2NodeName(expr1)
+		node := expr2NodeName(expr1, expr2)
 		//长度返回整型，特殊处理
 		if strings.EqualFold(node.Func, "LENGTH") {
 			var ope pageselect.Operator
@@ -275,7 +290,7 @@ func ParseLogicExpression(s antlr.ParseTreeVisitor, ctx *parser.LogicExpressionC
 	if not, expr1, between, expr2, expr3 :=
 		ctx.NOT(), ctx.Expr(0), ctx.BETWEEN(), ctx.Expr(1), ctx.Expr(2); expr1 != nil &&
 		between != nil && expr2 != nil && expr3 != nil {
-		node := expr2NodeName(expr1)
+		node := expr2NodeName(expr1, expr2)
 		if not != nil {
 			node.Operate = pageselect.OperatorNotBetween
 		} else {
@@ -297,7 +312,7 @@ func ParseLogicExpression(s antlr.ParseTreeVisitor, ctx *parser.LogicExpressionC
 
 	//IN/NOT IN
 	if not, in, expr := ctx.NOT(), ctx.IN(), ctx.AllExpr(); in != nil && len(expr) > 1 {
-		node := expr2NodeName(expr[0])
+		node := expr2NodeName(expr[0], expr[1])
 		if not != nil {
 			node.Operate = pageselect.OperatorNotIn
 		} else {
@@ -317,7 +332,7 @@ func ParseLogicExpression(s antlr.ParseTreeVisitor, ctx *parser.LogicExpressionC
 	if not, like, field, val :=
 		ctx.NOT(), ctx.LIKE(), ctx.Expr(0), ctx.Expr(1); like != nil &&
 		field != nil && val != nil {
-		node := expr2NodeName(field)
+		node := expr2NodeName(field, nil)
 
 		str := decodeExprOrConst(val)
 		var first, last byte
@@ -366,7 +381,7 @@ func ParseLogicExpression(s antlr.ParseTreeVisitor, ctx *parser.LogicExpressionC
 	//IS NULL/IS NOT NULL
 	if is, not, null, field :=
 		ctx.IS(), ctx.NOT(), ctx.NULL(), ctx.Expr(0); is != nil && null != nil && field != nil {
-		node := expr2NodeName(field)
+		node := expr2NodeName(field, nil)
 
 		if not != nil {
 			node.Operate = pageselect.OperatorIsNotNull

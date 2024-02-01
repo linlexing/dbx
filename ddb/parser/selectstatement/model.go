@@ -16,7 +16,6 @@ type NodeSelectStatement struct {
 	WhereClause    *NodeCondition
 	UnionSelect    []*NodeSelectStatement
 	UnionAll       bool
-	GetView        GetUserConditionViewDefineFunc
 	// 	GroupByClause
 	// 	HavingClause
 	// 	OrderByClause

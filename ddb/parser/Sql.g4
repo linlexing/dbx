@@ -77,8 +77,10 @@ fragment Z : [zZ] ;
 fragment DEC_DIGIT : [0-9] ;  //10
 fragment HEX_DIGIT : [0-9A-F] ;  //16
 fragment LETTER : [a-zA-Z] ;
+fragment EXPONENT : [eE] [+-]? DECIMAL_LITERAL ;
 
 DECIMAL_LITERAL: DEC_DIGIT+ ;  //10
+FLOAT_LITERAL : DECIMAL_LITERAL '.' DECIMAL_LITERAL? EXPONENT? | '.' DECIMAL_LITERAL EXPONENT? | DECIMAL_LITERAL EXPONENT ;
 
 ID : ('a'..'z' | 'A'..'Z' | '\u4E00'..'\u9FA5')
  ('a'..'z' | 'A'..'Z' | '\u4E00'..'\u9FA5' | '\uFF08'..'\uFF09' | '0'..'9' | '.' | '_' | '*' | '$')* ;

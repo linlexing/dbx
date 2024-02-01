@@ -185,18 +185,20 @@ func TestSelectStatement(t *testing.T) {
 	t$产业活动单位表 a LEFT JOIN 行业代码表 b ON a.行业代码 = b.代码
   where
 	a.状态 is null or a.状态<> '剔除'`
+	sql = `select * from 表 where 字段1 > .123e+10`
+	// sql = `select * from 表 where 字段1 = 123`
 	node := ParserSelectNode(sql)
 
 	spew.Dump(node)
 	println("========================")
-	println(node.SelectStatementString(false))
+	println(node.SelectStatementString(nil))
 }
 func TestJoin(t *testing.T) {
 	node := parserNodeJoin(`LEFT JOIN 规上月度1_as b on a.流水号 = b.流水号 INNER JOIN (select 流水号 from 学生表 cc) C on a.流水号 = C.流水号`)
 
 	spew.Dump(node)
 	println("========================")
-	println(joinClauseString(node, nil, false))
+	println(joinClauseString(node, nil))
 }
 func TestTableSources(t *testing.T) {
 	var sql = `规上月度1 a,规上月度1_as b`
@@ -207,7 +209,7 @@ func TestTableSources(t *testing.T) {
 	spew.Dump(nodes)
 	println("========================")
 	for _, v := range nodes {
-		println(tableSourceString(v, nil, false))
+		println(tableSourceString(v, nil))
 	}
 }
 
@@ -253,6 +255,6 @@ end) as 专业标识`
 	spew.Dump(node)
 	// spew.Dump(node.ColumnName (nil, "wholesql", nil))
 	println("========================")
-	println(selectElementsString(node, false))
+	println(selectElementsString(node, nil))
 
 }
