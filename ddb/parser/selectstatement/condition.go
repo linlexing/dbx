@@ -261,8 +261,8 @@ func (node *NodeCondition) fieldName(getview GetUserConditionViewDefineFunc) str
 	}
 	return fieldName
 }
-func (node *NodeCondition) string(prev string, fields map[string]schema.DataType,
-	outerTableName string, getview GetUserConditionViewDefineFunc, buildComment bool) string {
+func (node *NodeCondition) string(prev, outerTableName string, getview GetUserConditionViewDefineFunc,
+	buildComment bool) string {
 	if node == nil {
 		return ""
 	}
@@ -411,13 +411,13 @@ func (node *NodeCondition) string(prev string, fields map[string]schema.DataType
 	case ConditionNodeAnd:
 		list := []string{}
 		for _, one := range node.Children {
-			list = append(list, one.string("\t"+prev, fields, outerTableName, getview, buildComment))
+			list = append(list, one.string("\t"+prev, outerTableName, getview, buildComment))
 		}
 		return prev + "(\n" + strings.Join(list, " AND\n") + "\n" + prev + ")"
 	case ConditionNodeOr:
 		list := []string{}
 		for _, one := range node.Children {
-			list = append(list, one.string("\t"+prev, fields, outerTableName, getview, buildComment))
+			list = append(list, one.string("\t"+prev, outerTableName, getview, buildComment))
 		}
 		// list[0] = strings.Repeat("\t", level+1) + "(" + strings.TrimSpace(list[0])
 		// list[len(list)-1] = list[len(list)-1] + ")"
@@ -445,7 +445,7 @@ func (node *NodeCondition) string(prev string, fields map[string]schema.DataType
 			if ifExpr(v) {
 				v = v[1 : len(v)-1]
 			} else {
-				if node.isNumberField(fields[node.Field]) {
+				if node.isNumberField(node.Type) {
 					//数值型的，空值自动转换成0
 					if len(v) == 0 {
 						v = "0"
@@ -495,7 +495,7 @@ func (node *NodeCondition) string(prev string, fields map[string]schema.DataType
 			list := []string{}
 			for _, one := range decodeCSV(node.Value) {
 				var v string
-				if node.isNumberField(fields[node.Field]) {
+				if node.isNumberField(node.Type) {
 					v = one
 				} else {
 					v = signString(one)
@@ -509,7 +509,7 @@ func (node *NodeCondition) string(prev string, fields map[string]schema.DataType
 			list := []string{}
 			for _, one := range decodeCSV(node.Value) {
 				var v string
-				if node.isNumberField(fields[node.Field]) {
+				if node.isNumberField(node.Type) {
 					v = one
 				} else {
 					v = signString(one)
@@ -589,7 +589,7 @@ func (node *NodeCondition) string(prev string, fields map[string]schema.DataType
 				fmt.Sprintf("LENGTH(%s) <= %s", node.Field, ifels(ifExpr(v), decodeExpr(v), v))
 		case pageselect.OperatorBetween:
 			var v, v2 string
-			if node.isNumberField(fields[node.Field]) {
+			if node.isNumberField(node.Type) {
 				v, v2 = node.Value, node.Value2
 				if len(v) == 0 {
 					v = "0"
@@ -605,7 +605,7 @@ func (node *NodeCondition) string(prev string, fields map[string]schema.DataType
 				fmt.Sprintf("%s between %s and %s", node.fieldName(getview), v, v2)
 		case pageselect.OperatorNotBetween:
 			var v, v2 string
-			if node.isNumberField(fields[node.Field]) {
+			if node.isNumberField(node.Type) {
 				v, v2 = node.Value, node.Value2
 				if len(v) == 0 {
 					v = "0"
@@ -635,10 +635,20 @@ func (node *NodeCondition) isNumberField(dat schema.DataType) bool {
 // WhereString 返回规范化的where条件,传入视图列表，用于关联表查询的语句
 func (node *NodeCondition) WhereString(fields map[string]schema.DataType, outerTableName string,
 	getview GetUserConditionViewDefineFunc, buildComment bool) string {
-	if fields == nil && node != nil {
-		fields = map[string]schema.DataType{node.Field: node.Type}
+	node.setType(fields)
+	return node.string("", outerTableName, getview, buildComment)
+}
+func (node *NodeCondition) setType(fields map[string]schema.DataType) {
+	if node != nil {
+		for str, typ := range fields {
+			if node.Field == str {
+				node.Type = typ
+			}
+		}
+		for _, one := range node.Children {
+			one.setType(fields)
+		}
 	}
-	return node.string("", fields, outerTableName, getview, buildComment)
 }
 
 // ReferToColumns 条件中涉及到的列
