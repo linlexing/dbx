@@ -55,7 +55,7 @@ func (node *NodeSelectStatement) SelectStatementString(getview GetUserConditionV
 		}
 		tableSources = append(tableSources, tableSourceString(v, getview))
 	}
-	var tableSourceString, joinString string
+	var tableSourceString, joinString, whereStr string
 	tableSourceString = strings.Join(tableSources, ",")
 	joinString = joinClauseString(node.JoinClause, getview)
 	if len(tableSourceString) > 0 {
@@ -64,7 +64,6 @@ func (node *NodeSelectStatement) SelectStatementString(getview GetUserConditionV
 	if len(joinString) > 0 {
 		joinString = " " + joinString
 	}
-	var whereStr string
 	if node.WhereClause != nil {
 		whereStr = node.WhereClause.WhereString(nil, alias, getview, true)
 	}
