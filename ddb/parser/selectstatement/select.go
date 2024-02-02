@@ -55,17 +55,26 @@ func (node *NodeSelectStatement) SelectStatementString(getview GetUserConditionV
 		}
 		tableSources = append(tableSources, tableSourceString(v, getview))
 	}
+	var tableSourceString, joinString string
+	tableSourceString = strings.Join(tableSources, ",")
+	joinString = joinClauseString(node.JoinClause, getview)
+	if len(tableSourceString) > 0 {
+		tableSourceString = " FROM " + tableSourceString
+	}
+	if len(joinString) > 0 {
+		joinString = " " + joinString
+	}
 	var whereStr string
 	if node.WhereClause != nil {
 		whereStr = node.WhereClause.WhereString(nil, alias, getview, true)
 	}
 	if len(whereStr) > 0 {
-		whereStr = "WHERE " + whereStr
+		whereStr = " WHERE " + whereStr
 	}
-	sql = strings.TrimSpace(fmt.Sprintf(`SELECT %s FROM %s %s %s`,
+	sql = strings.TrimSpace(fmt.Sprintf(`SELECT %s%s%s%s`,
 		selectElementsString(node.SelectElements, getview),
-		strings.Join(tableSources, ","),
-		joinClauseString(node.JoinClause, getview),
+		tableSourceString,
+		joinString,
 		whereStr,
 	))
 	return sql
