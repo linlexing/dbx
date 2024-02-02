@@ -639,15 +639,9 @@ func (node *NodeCondition) WhereString(fields map[string]schema.DataType, outerT
 	return node.string("", outerTableName, getview, buildComment)
 }
 func (node *NodeCondition) setType(fields map[string]schema.DataType) {
-	if node != nil {
-		for str, typ := range fields {
-			if node.Field == str {
-				node.Type = typ
-			}
-		}
-		for _, one := range node.Children {
-			one.setType(fields)
-		}
+	node.Type = fields[node.Field]
+	for _, one := range node.Children {
+		one.setType(fields)
 	}
 }
 
