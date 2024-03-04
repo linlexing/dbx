@@ -589,34 +589,39 @@ func (node *NodeCondition) string(prev, outerTableName string, getview GetUserCo
 				fmt.Sprintf("LENGTH(%s) <= %s", node.Field, ifels(ifExpr(v), decodeExpr(v), v))
 		case pageselect.OperatorBetween:
 			var v, v2 string
+			v, v2 = node.Value, node.Value2
+			if len(v) == 0 {
+				v = "0"
+			}
+			if len(v2) == 0 {
+				v2 = "0"
+			}
+
 			if node.isNumberField(node.Type) {
-				v, v2 = node.Value, node.Value2
-				if len(v) == 0 {
-					v = "0"
-				}
-				if len(v2) == 0 {
-					v2 = "0"
-				}
+				v, v2 = ifels(ifExpr(v), decodeExpr(v), v),
+					ifels(ifExpr(v2), decodeExpr(v2), v2)
 			} else {
-				v, v2 = ifels(ifExpr(node.Value), decodeExpr(node.Value), node.Value),
-					ifels(ifExpr(node.Value2), decodeExpr(node.Value2), node.Value2)
+				v, v2 = ifels(ifExpr(v), decodeExpr(v), signString(v)),
+					ifels(ifExpr(node.Value2), decodeExpr(v2), signString(v2))
 			}
 			return prev +
 				fmt.Sprintf("%s between %s and %s", node.fieldName(getview), v, v2)
 		case pageselect.OperatorNotBetween:
 			var v, v2 string
-			if node.isNumberField(node.Type) {
-				v, v2 = node.Value, node.Value2
-				if len(v) == 0 {
-					v = "0"
-				}
-				if len(v2) == 0 {
-					v2 = "0"
-				}
+			v, v2 = node.Value, node.Value2
+			if len(v) == 0 {
+				v = "0"
+			}
+			if len(v2) == 0 {
+				v2 = "0"
+			}
 
+			if node.isNumberField(node.Type) {
+				v, v2 = ifels(ifExpr(v), decodeExpr(v), v),
+					ifels(ifExpr(v2), decodeExpr(v2), v2)
 			} else {
-				v, v2 = ifels(ifExpr(node.Value), decodeExpr(node.Value), node.Value),
-					ifels(ifExpr(node.Value2), decodeExpr(node.Value2), node.Value2)
+				v, v2 = ifels(ifExpr(v), decodeExpr(v), signString(v)),
+					ifels(ifExpr(node.Value2), decodeExpr(v2), signString(v2))
 			}
 			return prev +
 				fmt.Sprintf("%s not between %s and %s", node.fieldName(getview), v, v2)
