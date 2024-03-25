@@ -39,7 +39,7 @@ func (m *meta) UpdateFrom(destTable, srcDataSQL, additionSet string, pks, column
 	return fmt.Sprintf("update %s set %s from (%s) %s where %s",
 		destTable, setStr, srcDataSQL, dataAligs, strings.Join(links, " and "))
 }
-func (m *meta) Merge(destTable, srcDataSQL string, pks, columns []string) string {
+func (m *meta) Merge(destTable, srcDataSQL string, pks, columns []string, skipCheckCols ...string) string {
 
 	updateSet := []string{}
 	pkMap := map[string]bool{}

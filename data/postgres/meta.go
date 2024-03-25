@@ -42,7 +42,7 @@ func (m *meta) UpdateFrom(destTable, srcDataSQL, additionSet string, pks, column
 	return fmt.Sprintf("update %s set %s from (%s) %s where %s",
 		destTable, setStr, srcDataSQL, dataAligs, strings.Join(links, " and "))
 }
-func (m *meta) Merge(destTable, srcDataSQL string, pks, columns []string) string {
+func (m *meta) Merge(destTable, srcDataSQL string, pks, columns []string, skipCheckCols ...string) string {
 	updateSet := []string{}
 	pkMap := map[string]bool{}
 	onConflict := "ON CONFLICT(" + strings.Join(pks, ",") + ")"
@@ -51,11 +51,18 @@ func (m *meta) Merge(destTable, srcDataSQL string, pks, columns []string) string
 		pkMap[v] = true
 	}
 	valNotEquWhereList := []string{}
+	skipCheckColsMap := map[string]struct{}{}
+	for _, v := range skipCheckCols {
+		skipCheckColsMap[strings.ToUpper(v)] = struct{}{}
+	}
 	for _, field := range columns {
 		//非主键的才更新
 		if _, ok := pkMap[field]; !ok {
 			updateSet = append(updateSet, fmt.Sprintf("%s = excluded.%[1]s", field))
-			valNotEquWhereList = append(valNotEquWhereList, fmt.Sprintf("dest.%s is distinct from excluded.%[1]s", field))
+			//非跳过检查的，才进行值判断，一般是最后合并时间这类字段不需要检查，防止生成多余的日志
+			if _, skip := skipCheckColsMap[strings.ToUpper(field)]; !skip {
+				valNotEquWhereList = append(valNotEquWhereList, fmt.Sprintf("dest.%s is distinct from excluded.%[1]s", field))
+			}
 		}
 	}
 	//如果只有主键字段，则省略WHEN MATCHED THEN子句

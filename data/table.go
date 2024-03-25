@@ -913,7 +913,7 @@ func (t *Table) Replace(oldRows, newRows []map[string]interface{}) (insCount, up
 	err = t.Insert(insertRows)
 	return
 }
-func (t *Table) pgMergeForNotNull(tabName string, cols ...string) error {
+func (t *Table) pgMergeForNotNull(tabName string, cols, skipCheckCols []string) error {
 	updateCols := []string{}
 	linkCols := []string{}
 	insertNotExistsLink := []string{}
@@ -923,10 +923,22 @@ func (t *Table) pgMergeForNotNull(tabName string, cols ...string) error {
 		linkCols = append(linkCols, fmt.Sprintf("%s.%s=t.%[2]s", t.Name, c))
 		insertNotExistsLink = append(insertNotExistsLink, fmt.Sprintf("dest.%s=src.%[1]s", c))
 	}
+	skipCheckColsMap := map[string]struct{}{}
+	valNotEquWhereList := []string{}
+	for _, v := range skipCheckCols {
+		skipCheckColsMap[strings.ToUpper(v)] = struct{}{}
+	}
 	for _, col := range cols {
 		if _, ok := pkMap[col]; !ok {
 			updateCols = append(updateCols, fmt.Sprintf("%s=t.%[1]s", col))
+			if _, skip := skipCheckColsMap[strings.ToUpper(col)]; !skip {
+				valNotEquWhereList = append(valNotEquWhereList,
+					fmt.Sprintf("%s.%s is distinct from t.%[2]s", t.Name, col))
+			}
 		}
+	}
+	if len(valNotEquWhereList) > 0 {
+		linkCols = append(linkCols, "("+strings.Join(valNotEquWhereList, " or ")+")")
 	}
 	updateSQL := fmt.Sprintf("update %s set %s from %s t where %s",
 		t.Name, strings.Join(updateCols, ","), tabName, strings.Join(linkCols, " and "))
@@ -943,7 +955,7 @@ func (t *Table) pgMergeForNotNull(tabName string, cols ...string) error {
 }
 
 // Merge 将另一个表中的数据合并进本表，要求两个表的主键相同,相同主键的被覆盖
-func (t *Table) Merge(tabName string, cols ...string) error {
+func (t *Table) Merge(tabName string, cols, skipCheckCols []string) error {
 	colMap := map[string]struct{}{}
 	for _, c := range cols {
 		colMap[c] = struct{}{}
@@ -960,10 +972,10 @@ func (t *Table) Merge(tabName string, cols ...string) error {
 		}
 		if hasNotNull {
 			//改用分离的update和insert
-			return t.pgMergeForNotNull(tabName, cols...)
+			return t.pgMergeForNotNull(tabName, cols, skipCheckCols)
 		}
 	}
-	strSQL := Find(t.Driver).Merge(t.FullName(), "select * from "+tabName, t.PrimaryKeys, cols)
+	strSQL := Find(t.Driver).Merge(t.FullName(), "select * from "+tabName, t.PrimaryKeys, cols, skipCheckCols...)
 	_, err := t.DB.Exec(strSQL)
 	return err
 }

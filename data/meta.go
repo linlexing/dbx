@@ -12,8 +12,10 @@ type ColMap struct {
 
 // Accesser 不同数据库驱动需要实现的数据访问类
 type Accesser interface {
-	//merge操作，目标和源数据中的字段名要一致
-	Merge(destTable, srcDataSQL string, pks, columns []string) string
+	//merge操作，目标和源数据中的字段名要一致，
+	//skipCheckCols指明跳过值相等判断的字段，一般是最后合并时间等无条件更新的字段，防止生成多余的修改日志
+	//目前仅pg系列支持
+	Merge(destTable, srcDataSQL string, pks, columns []string, skipCheckCols ...string) string
 	//关联更新，目标和源数据中的字段名要一致
 	UpdateFrom(destTable, srcDataSQL, additionSet string, pk, columns []ColMap) string
 	Minus(table1, where1, table2, where2 string, primaryKeys, cols []string) string

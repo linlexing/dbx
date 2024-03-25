@@ -45,7 +45,7 @@ func (m *meta) UpdateFrom(destTable, srcDataSQL, additionSet string, pks, column
 
 // Merge 将另一个表中的数据合并进本表，要求两个表的主键相同,相同主键的被覆盖
 // columns指定字段清单,不在清单内的字段不会被update
-func (m *meta) Merge(destTable, srcDataSQL string, pks, columns []string) string {
+func (m *meta) Merge(destTable, srcDataSQL string, pks, columns []string, skipCheckCols ...string) string {
 	join := []string{}
 	updateSet := []string{}
 	insertColumns := []string{}

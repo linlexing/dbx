@@ -44,7 +44,7 @@ func (m *meta) UpdateFrom(destTable, srcDataSQL, additionSet string, pks, column
 
 // Merge 将另一个表中的数据合并进本表，要求两个表的主键相同,相同主键的被覆盖
 // columns指定字段清单,不在清单内的字段不会被update
-func (m *meta) Merge(destTable, srcDataSQL string, pks, columns []string) string {
+func (m *meta) Merge(destTable, srcDataSQL string, pks, columns []string, skipCheckCols ...string) string {
 	join := []string{}
 	updateSet := []string{}
 	insertColumns := []string{}
@@ -55,11 +55,18 @@ func (m *meta) Merge(destTable, srcDataSQL string, pks, columns []string) string
 		join = append(join, fmt.Sprintf("dest.%s = src.%s", v, v))
 	}
 	valNotEquWhereList := []string{}
+	skipCheckColsMap := map[string]struct{}{}
+	for _, v := range skipCheckCols {
+		skipCheckColsMap[strings.ToUpper(v)] = struct{}{}
+	}
 	for _, field := range columns {
 		//非主键的才更新
 		if _, ok := pkMap[field]; !ok {
 			updateSet = append(updateSet, fmt.Sprintf("dest.%s = src.%[1]s", field))
-			valNotEquWhereList = append(valNotEquWhereList, fmt.Sprintf("dest.%s is distinct from src.%[1]s", field))
+			//非跳过检查的，才进行值判断，一般是最后合并时间这类字段不需要检查，防止生成多余的日志
+			if _, skip := skipCheckColsMap[strings.ToUpper(field)]; !skip {
+				valNotEquWhereList = append(valNotEquWhereList, fmt.Sprintf("dest.%s is distinct from excluded.%[1]s", field))
+			}
 		}
 		insertColumns = append(insertColumns, fmt.Sprintf("dest.%s", field))
 		insertValues = append(insertValues, fmt.Sprintf("src.%s", field))
