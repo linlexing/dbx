@@ -65,7 +65,7 @@ func (m *meta) Merge(destTable, srcDataSQL string, pks, columns []string, skipCh
 			updateSet = append(updateSet, fmt.Sprintf("dest.%s = src.%[1]s", field))
 			//非跳过检查的，才进行值判断，一般是最后合并时间这类字段不需要检查，防止生成多余的日志
 			if _, skip := skipCheckColsMap[strings.ToUpper(field)]; !skip {
-				valNotEquWhereList = append(valNotEquWhereList, fmt.Sprintf("dest.%s is distinct from excluded.%[1]s", field))
+				valNotEquWhereList = append(valNotEquWhereList, fmt.Sprintf("dest.%s is distinct from src.%[1]s", field))
 			}
 		}
 		insertColumns = append(insertColumns, fmt.Sprintf("dest.%s", field))
