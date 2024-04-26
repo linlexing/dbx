@@ -39,17 +39,17 @@ const (
 )
 
 // encodeCSV 压缩一个字符串数组成csv数据，没有换行
-func encodeCSV(val []string) string {
-	bys := bytes.NewBuffer(nil)
-	csvW := csv.NewWriter(bys)
-	if err := csvW.Write(val); err != nil {
-		log.Panic(err)
-	}
-	csvW.Flush()
-	buf := bys.Bytes()
-	//去掉尾部的回车
-	return string(buf[0 : len(buf)-1])
-}
+// func encodeCSV(val []string) string {
+// 	bys := bytes.NewBuffer(nil)
+// 	csvW := csv.NewWriter(bys)
+// 	if err := csvW.Write(val); err != nil {
+// 		log.Panic(err)
+// 	}
+// 	csvW.Flush()
+// 	buf := bys.Bytes()
+// 	//去掉尾部的回车
+// 	return string(buf[0 : len(buf)-1])
+// }
 
 // decodeCSV 解开一个csv
 func decodeCSV(val string) []string {
@@ -503,7 +503,7 @@ func (node *NodeCondition) string(prev, outerTableName string, getview GetUserCo
 				list = append(list, v)
 			}
 			return prev +
-				fmt.Sprintf("%s IN (%s)", node.fieldName(getview), encodeCSV(list))
+				fmt.Sprintf("%s IN (%s)", node.fieldName(getview), strings.Join(list, ","))
 			//OperatorNotIn 不在列表
 		case pageselect.OperatorNotIn:
 			list := []string{}
@@ -517,7 +517,7 @@ func (node *NodeCondition) string(prev, outerTableName string, getview GetUserCo
 				list = append(list, v)
 			}
 			return prev +
-				fmt.Sprintf("%s NOT IN (%s)", node.fieldName(getview), encodeCSV(list))
+				fmt.Sprintf("%s NOT IN (%s)", node.fieldName(getview), strings.Join(list, ","))
 		//OperatorIsNull 为空
 		case pageselect.OperatorIsNull:
 			return prev +
