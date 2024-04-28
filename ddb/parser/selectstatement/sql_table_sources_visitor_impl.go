@@ -1,6 +1,8 @@
 package selectstatement
 
 import (
+	"strings"
+
 	"github.com/antlr/antlr4/runtime/Go/antlr/v4"
 	"github.com/linlexing/dbx/ddb/parser"
 )
@@ -59,8 +61,12 @@ func (s *sqlTableSourceVisitorImpl) Visit(tree antlr.ParseTree) interface{} {
 
 func (s *sqlTableSourceVisitorImpl) VisitTableSource(ctx *parser.TableSourceContext) interface{} {
 	visitor := new(sqlSelectStatementVisitorImpl)
-	var tableName string
+	var comment, tableName string
 	var nodeSS *NodeSelectStatement
+	if ctx.COMMENT() != nil {
+		comment = strings.TrimPrefix(ctx.COMMENT().GetText(), "/*")
+		comment = strings.TrimSuffix(comment, "*/")
+	}
 	if ctx.TableName() != nil {
 		tableName = ctx.TableName().GetText()
 	}
@@ -68,6 +74,7 @@ func (s *sqlTableSourceVisitorImpl) VisitTableSource(ctx *parser.TableSourceCont
 		nodeSS = visitor.Visit(ctx.SelectStatement()).(*NodeSelectStatement)
 	}
 	return &Source{
+		Comment:         comment,
 		TableName:       tableName,
 		SelectStatement: nodeSS,
 	}

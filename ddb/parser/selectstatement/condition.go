@@ -864,8 +864,9 @@ func ProcessComment(define string) (rev string, vars map[string]interface{}) {
 			rev += addDynamicNode(processIn(comment))
 			continue
 		}
-		//普通的注释删除；保留则加上：rev += comment
 		wait = wait[positions[3]:]
+		//保留其它注释
+		rev += comment
 	}
 	rev += wait
 	return

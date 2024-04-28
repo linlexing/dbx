@@ -163,8 +163,8 @@ functionArg : expr (',' expr)* ;
 tableSources : tableSource alias? (',' tableSource alias?)* ;
 
 tableSource
- : tableName
- | '(' selectStatement ')'
+ : COMMENT? tableName
+ | COMMENT? '(' selectStatement ')'
  ;
 
 joinClause : (join tableSource alias ON logicExpression)* ;

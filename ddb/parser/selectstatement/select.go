@@ -134,6 +134,10 @@ func parseByTableSourcesContext(ctx parser.ITableSourcesContext, vars map[string
 	return visitor.Visit(ctx).([]*NodeTableSource)
 }
 func tableSourceString(node *NodeTableSource, getview GetUserConditionViewDefineFunc) string {
+	var comment string
+	if len(node.Source.Comment) > 0 {
+		comment = fmt.Sprintf("/*%s*/ ", node.Source.Comment)
+	}
 	if len(node.Source.TableName) > 0 {
 		if getview != nil {
 			str, err := getview(node.Source.TableName)
@@ -141,12 +145,13 @@ func tableSourceString(node *NodeTableSource, getview GetUserConditionViewDefine
 				log.Panic(err)
 			}
 			if len(str) > 0 {
-				return fmt.Sprintf("(%s) %s", str, node.Alias)
+				return fmt.Sprintf("%s(%s) %s", comment, str, node.Alias)
 			}
 		}
-		return fmt.Sprintf("%s %s", node.Source.TableName, node.Alias)
+		return fmt.Sprintf("%s%s %s", comment, node.Source.TableName, node.Alias)
 	}
-	return fmt.Sprintf("(%s) %s",
+	return fmt.Sprintf("%s(%s) %s",
+		comment,
 		node.Source.SelectStatement.SelectStatementString(getview),
 		node.Alias)
 }

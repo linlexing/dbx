@@ -39,6 +39,7 @@ type NodeTableSource struct {
 	Alias  string
 }
 type Source struct {
+	Comment         string
 	TableName       string
 	SelectStatement *NodeSelectStatement
 }
