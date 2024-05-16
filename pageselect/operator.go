@@ -68,6 +68,9 @@ const (
 	//to_tsquery
 	OperatorQuery
 	OperatorNotQuery
+	OperatorInMini
+	OperatorNotInMini
+	InMiniNum = 1000
 )
 
 var (
@@ -132,6 +135,7 @@ func makeOpMap() (map[Operator]Operator, map[Operator]Operator) {
 		//OperatorNotLikeArray not like array
 		OperatorNotLikeArray,
 		OperatorNotQuery: OperatorQuery,
+		OperatorInMini:   OperatorNotInMini,
 	}
 	revReverse := map[Operator]Operator{}
 	for k, v := range rev {
@@ -286,6 +290,10 @@ func ParseOperatorFromString(str string) (Operator, error) {
 		return OperatorQuery, nil
 	case "!@":
 		return OperatorNotQuery, nil
+	case "InMini":
+		return OperatorInMini, nil
+	case "!InMini":
+		return OperatorNotInMini, nil
 	default:
 		return 0, ErrInvalidOperator
 	}
@@ -355,6 +363,10 @@ func (o Operator) String() string {
 		return "@"
 	case OperatorNotQuery:
 		return "!@"
+	case OperatorInMini:
+		return "InMini"
+	case OperatorNotInMini:
+		return "!InMini"
 	default:
 		panic(ErrInvalidOperator)
 	}
@@ -423,6 +435,10 @@ func (o Operator) ChineseString() string {
 		return "查询"
 	case OperatorNotQuery:
 		return "查询不到"
+	case OperatorInMini:
+		return "在列表mini"
+	case OperatorNotInMini:
+		return "不在列表mini"
 	default:
 		panic(ErrInvalidOperator)
 	}

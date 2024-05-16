@@ -154,6 +154,21 @@ func NewInTableNode(column, from, inColumn, where string, reverse bool) *NodeCon
 	}
 }
 
+// NewInMiniNode 分配一个InMini条件节点
+func NewInMiniNode(column, value string, reverse bool) *NodeCondition {
+	nodeCondition := &NodeCondition{
+		NodeType: ConditionNodeCondition,
+		Field:    column,
+		Value:    value,
+	}
+	if reverse {
+		nodeCondition.Operate = pageselect.OperatorNotInMini
+	} else {
+		nodeCondition.Operate = pageselect.OperatorInMini
+	}
+	return nodeCondition
+}
+
 // NewInSubSelectNode 分配一个InTable子查询条件节点
 func NewInSubSelectNode(field string, subSelect *NodeSelectStatement, reverse bool) *NodeCondition {
 	return &NodeCondition{
@@ -625,6 +640,50 @@ func (node *NodeCondition) string(prev, outerTableName string, getview GetUserCo
 			}
 			return prev +
 				fmt.Sprintf("%s not between %s and %s", node.fieldName(getview), v, v2)
+		//OperatorInMini 在列表迷你 限制1000条
+		case pageselect.OperatorInMini:
+			list := []string{}
+			nodeValueList := decodeCSV(node.Value)
+			if len(nodeValueList) > pageselect.InMiniNum {
+				nodeValueList = nodeValueList[:pageselect.InMiniNum]
+			}
+			for _, one := range nodeValueList {
+				var v string
+				if node.isNumberField(node.Type) {
+					v = one
+				} else {
+					v = signString(one)
+				}
+				list = append(list, v)
+			}
+			comment := ""
+			if buildComment {
+				comment = prev + commentInMini + fmt.Sprintf("%s in (%s))", node.Field, strings.Join(nodeValueList, ",")) + "*/\n"
+			}
+			return comment + prev +
+				fmt.Sprintf("(%s IN (%s))", node.fieldName(getview), strings.Join(list, ","))
+		//OperatorNotInMini 不在列表迷你 限制1000条
+		case pageselect.OperatorNotInMini:
+			list := []string{}
+			nodeValueList := decodeCSV(node.Value)
+			if len(nodeValueList) > pageselect.InMiniNum {
+				nodeValueList = nodeValueList[:pageselect.InMiniNum]
+			}
+			for _, one := range nodeValueList {
+				var v string
+				if node.isNumberField(node.Type) {
+					v = one
+				} else {
+					v = signString(one)
+				}
+				list = append(list, v)
+			}
+			comment := ""
+			if buildComment {
+				comment = prev + commentNotInMini + fmt.Sprintf("%s in (%s))", node.Field, strings.Join(nodeValueList, ",")) + "*/\n"
+			}
+			return comment + prev +
+				fmt.Sprintf("(%s NOT IN (%s))", node.fieldName(getview), strings.Join(list, ","))
 		default:
 			panic("not impl " + node.Operate.String())
 		}
@@ -822,6 +881,27 @@ func processIn(comment string) *NodeCondition {
 	panic("invalid intable format:" + txt)
 }
 
+func processInMini(comment string) *NodeCondition {
+	var txt string
+	reverse := false
+	if strings.HasPrefix(comment, commentNotInMini) {
+		//去除 /*NotInMini( 前缀
+		txt = comment[12 : len(comment)-3]
+		reverse = true
+	} else {
+		txt = comment[9 : len(comment)-3]
+	}
+	if ps := regInMini.FindStringSubmatchIndex(txt); len(ps) == 6 {
+		field := strings.TrimSpace(txt[ps[2]:ps[3]])
+		value := strings.TrimSpace(txt[ps[4]:ps[5]])
+		if valueList := decodeCSV(value); len(valueList) > pageselect.InMiniNum {
+			value = strings.Join(valueList[:pageselect.InMiniNum], ",")
+		}
+		return NewInMiniNode(field, value, reverse)
+	}
+	panic("invalid inmini format:" + txt)
+}
+
 // 处理注释，识别关联查询并生成node列表
 func ProcessComment(define string) (rev string, vars map[string]interface{}) {
 	wait := define
@@ -862,6 +942,11 @@ func ProcessComment(define string) (rev string, vars map[string]interface{}) {
 		if strings.HasPrefix(comment, commentIn) || strings.HasPrefix(comment, commentNotIn) {
 			_, wait = findBracketExpr(strings.TrimSpace(wait[positions[3]:]))
 			rev += addDynamicNode(processIn(comment))
+			continue
+		}
+		if strings.HasPrefix(comment, commentInMini) || strings.HasPrefix(comment, commentNotInMini) {
+			_, wait = findBracketExpr(strings.TrimSpace(wait[positions[3]:]))
+			rev += addDynamicNode(processInMini(comment))
 			continue
 		}
 		wait = wait[positions[3]:]

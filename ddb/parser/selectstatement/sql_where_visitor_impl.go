@@ -45,6 +45,7 @@ var (
 	regInTable = regexp.MustCompile(`(?ms)^(.*)\s+in\s+(.*)\((.*)\)\s+where\s+(.*)$`)
 	regCount   = regexp.MustCompile(`(?ms)^COUNT\(from\s+(.*)\s+on\s+(.*?)\s+where\s+(.*)\)\s+(.*)\s+(.*)$`)
 	regQuote   = regexp.MustCompile(`^'([^']*)'$`)
+	regInMini  = regexp.MustCompile(`(?ms)^(.*)\s+in\s+\((.*)\)$`)
 )
 
 const (
@@ -60,6 +61,8 @@ const (
 	commentCount = "/*COUNT("
 	//特殊的，临时被替换的动态node
 	commentDynamicNode = "/*DYNAMIC-NODE*/"
+	commentInMini      = "/*InMini("
+	commentNotInMini   = "/*NotInMini("
 )
 
 // sqlWhereVisitorImpl 完成条件串的转换，只支持简单的 字段名 运算符 值 条件
