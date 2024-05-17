@@ -15,7 +15,7 @@ func init() {
 	m := new(meta)
 	data.Register(driverName, m)
 	data.Register("pgx", m)
-
+	data.Register("pgx-un", m)
 }
 func (m *meta) Concat(vals ...string) string {
 	return fmt.Sprintf("CONCAT(%s)", strings.Join(vals, ","))

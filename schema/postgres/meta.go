@@ -17,6 +17,7 @@ const driverName = "postgres"
 const driverNamePgx = "pgx"
 const driverNameGauss = "opengauss"
 const driverNamePgxGauss = "pgx-opengauss"
+const driverNamePgxUnify = "pgx-un"
 
 type meta struct {
 	driverName string
@@ -36,6 +37,7 @@ func init() {
 	schema.Register(driverNamePgx, &meta{driverNamePgx})
 	schema.Register(driverNameGauss, &meta{driverNameGauss})
 	schema.Register(driverNamePgxGauss, &meta{driverNamePgxGauss})
+	schema.Register(driverNamePgxUnify, &meta{driverNamePgxUnify})
 }
 
 // 执行create table as select语句

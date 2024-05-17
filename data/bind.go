@@ -32,7 +32,7 @@ func IsPostgres(driver string) bool {
 }
 func ParseDriverType(driver string) DriverType {
 	switch driver {
-	case "postgres", "pgx-opengauss", "opengauss", "pgx", "pq-timeouts", "cloudsqlpostgres":
+	case "postgres", "pgx-opengauss", "opengauss", "pgx", "pq-timeouts", "cloudsqlpostgres", "pgx-un":
 		return Postgres
 	case "oci8", "dmdb", "oracle", "godror":
 		return Oracle
