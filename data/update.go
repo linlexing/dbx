@@ -1,6 +1,7 @@
 package data
 
 import (
+	"database/sql"
 	"fmt"
 	"strings"
 	"text/template"
@@ -140,14 +141,25 @@ func (u *Update) ExecLog(nt NotifyAndKill, db common.DB, tmpTableName string, pa
 		funcmap["DataSQL"] = func() string {
 			return u.DataSQL
 		}
+		funcmap["tmpTableName"] = func() string {
+			return tmpTableName
+		}
 		strBefore, err = render.RenderSQL(u.BeforeSQL, u.SQLRenderArgs, funcmap)
 		if err != nil {
 			return
 		}
 		nt.AddProgress("执行Before脚本...", nil)
-		if _, err = db.Exec(strBefore, param...); err != nil {
+		var br sql.Result
+		br, err = db.Exec(strBefore, param...)
+		if err != nil {
 			return
 		}
+		var brCount int64
+		brCount, err = br.RowsAffected()
+		if err != nil {
+			return
+		}
+		nt.AddProgress(fmt.Sprintf("%d 条记录受执行Before脚本影响", brCount), nil)
 	}
 	nt.AddProgress(fmt.Sprintf("从临时表[%s]更新到[%s]中...", tmpTableName, u.Table.FullName()), nil)
 	sr, err = db.Exec(strSQL, param...)
