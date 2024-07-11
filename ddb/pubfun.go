@@ -2,6 +2,8 @@ package ddb
 
 import (
 	"database/sql"
+	"fmt"
+	"log/slog"
 
 	"github.com/linlexing/dbx/common"
 )
@@ -10,6 +12,7 @@ import (
 func RunAtTx(db TxDB, callback func(Txer) error) (err error) {
 	tx, err := db.Beginx()
 	if err != nil {
+		err = fmt.Errorf("RunAtTx.Beginx error:%w", err)
 		return
 	}
 
@@ -18,13 +21,18 @@ func RunAtTx(db TxDB, callback func(Txer) error) (err error) {
 		//如果没有设置，说明是中途跳出，发生了异常
 		//这里不捕获异常是要保留现场
 		if !finish {
-			tx.Rollback()
+			if er := tx.Rollback(); er != nil {
+				slog.Error(er.Error())
+			}
 		}
 	}()
 	if err = callback(tx); err != nil {
 		tx.Rollback()
 	} else {
-		err = tx.Commit()
+		if err = tx.Commit(); err != nil {
+			err = fmt.Errorf("RunAtTx.Commit error:%w", err)
+		}
+
 	}
 	finish = true
 	return
