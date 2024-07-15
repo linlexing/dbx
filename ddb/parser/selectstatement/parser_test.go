@@ -188,6 +188,7 @@ func TestSelectStatement(t *testing.T) {
 	  )
 	) wholesql) exists_inner0 where 名称=wholesql.名称))`
 	//sql = `select * from 表1 a LEFT JOIN /*TableSources注释测试*/ 规上月度1_as b on a.流水号 = b.流水号`
+	sql = `SELECT 书籍id,名称,类别,归属方式,创建用户,归属部门,有模板文件,模板文件大小,模板文件时间 FROM /*cr(20,20,320,360)*/ e$mng-book`
 	node := ParserSelectNode(sql)
 
 	spew.Dump(node)
