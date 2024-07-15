@@ -167,7 +167,7 @@ tableSource
  | COMMENT? '(' selectStatement ')'
  ;
 
-joinClause : (join tableSource alias ON logicExpression)* ;
+joinClause : (join tableSource alias? ON logicExpression)* ;
 
 whereClause : WHERE logicExpression ;
 

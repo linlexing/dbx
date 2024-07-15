@@ -47,10 +47,14 @@ func (s *sqlJoinClauseVisitorImpl) VisitJoinClause(ctx *parser.JoinClauseContext
 		if ctx.AllJoin()[k].INNER() != nil {
 			joinType = InnerJoin
 		}
+		var aliasName string
+		if len(ctx.AllAlias()) > 0 {
+			aliasName = ctx.AllAlias()[k].GetText()
+		}
 		tmp := []interface{}{
 			joinType,
 			new(sqlTableSourceVisitorImpl).Visit(ctx.AllTableSource()[k]),
-			ctx.AllAlias()[k].GetText(),
+			aliasName,
 			new(SqlLogicExpressionVisitorImpl).Visit(ctx.AllLogicExpression()[k]),
 		}
 		res = append(res, tmp)

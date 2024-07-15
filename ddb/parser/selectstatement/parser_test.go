@@ -189,6 +189,10 @@ func TestSelectStatement(t *testing.T) {
 	) wholesql) exists_inner0 where 名称=wholesql.名称))`
 	//sql = `select * from 表1 a LEFT JOIN /*TableSources注释测试*/ 规上月度1_as b on a.流水号 = b.流水号`
 	sql = `SELECT 书籍id,名称,类别,归属方式,创建用户,归属部门,有模板文件,模板文件大小,模板文件时间 FROM /*cr(20,20,320,360)*/ e$mng-book`
+	sql = `SELECT e$汇总分组管理.流水号,e$汇总分组管理.名称,e$汇总分组管理.部门代码,e$汇总分组管理.创建用户,e$汇总分组管理.最后修改时间,e$汇总分组管理.归属方式,e$汇总值映射数据源.流水号,e$汇总值映射数据源.名称,e$汇总值映射数据源.归属,e$汇总值映射数据源.用户名,e$汇总值映射数据源.部门代码,e$汇总值映射数据源.最后修改时间 FROM /*cr(20,20,320,360)*/ e$汇总分组管理  LEFT JOIN /*cr(450,80,320,360)*/ e$汇总值映射数据源  ON e$汇总分组管理.流水号 = e$汇总值映射数据源.流水号 WHERE (
+	e$汇总分组管理.归属方式 IS NULL AND
+	e$汇总分组管理.创建用户 IS NULL
+)`
 	node := ParserSelectNode(sql)
 
 	spew.Dump(node)
