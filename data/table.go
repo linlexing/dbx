@@ -919,7 +919,7 @@ func (t *Table) pgMergeForNotNull(tabName string, cols, skipCheckCols []string) 
 	insertNotExistsLink := []string{}
 	pkMap := map[string]struct{}{}
 	for _, c := range t.PrimaryKeys {
-		pkMap[c] = struct{}{}
+		pkMap[strings.ToUpper(c)] = struct{}{}
 		linkCols = append(linkCols, fmt.Sprintf("%s.%s=t.%[2]s", t.Name, c))
 		insertNotExistsLink = append(insertNotExistsLink, fmt.Sprintf("dest.%s=src.%[1]s", c))
 	}
@@ -929,7 +929,7 @@ func (t *Table) pgMergeForNotNull(tabName string, cols, skipCheckCols []string) 
 		skipCheckColsMap[strings.ToUpper(v)] = struct{}{}
 	}
 	for _, col := range cols {
-		if _, ok := pkMap[col]; !ok {
+		if _, ok := pkMap[strings.ToUpper(col)]; !ok {
 			updateCols = append(updateCols, fmt.Sprintf("%s=t.%[1]s", col))
 			if _, skip := skipCheckColsMap[strings.ToUpper(col)]; !skip {
 				valNotEquWhereList = append(valNotEquWhereList,
