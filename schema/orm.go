@@ -419,7 +419,7 @@ func fieldsFromStruct(vtype reflect.Type, conv converFieldName, parentName strin
 				sf.childName = tags[0]
 				sf.childFormerName = strings.Fields(formerNameTag)
 			} else {
-				sf.define, err = columnDefine(defineTag, trueTypeTag, formerNameTag, extends)
+				sf.define, err = columnDefine(sf.fieldName, defineTag, trueTypeTag, formerNameTag, extends)
 				if err != nil {
 					return
 				}
@@ -433,7 +433,7 @@ func fieldsFromStruct(vtype reflect.Type, conv converFieldName, parentName strin
 			sf.childName = name
 			sf.childFormerName = strings.Fields(formerNameTag)
 		} else {
-			sf.define, err = columnDefine(name+" "+defineTag, trueTypeTag, formerNameTag, extends)
+			sf.define, err = columnDefine(sf.fieldName, name+" "+defineTag, trueTypeTag, formerNameTag, extends)
 			if err != nil {
 				return
 			}

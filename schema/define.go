@@ -43,10 +43,12 @@ func stringifyColumn(c *Column, isPk bool) (rev string, err error) {
 	return line, nil
 }
 
-func columnDefine(line, trueTypeLine, formerNameTag, extendsTag string) (result *colDef, err error) {
+func columnDefine(propertyName string, line, trueTypeLine, formerNameTag, extendsTag string) (result *colDef, err error) {
 	//先去除注释
 	result = &colDef{
-		Column: &Column{},
+		Column: &Column{
+			PropertyName: propertyName,
+		},
 	}
 	if len(formerNameTag) > 0 {
 		result.FormerName = strings.Fields(formerNameTag)

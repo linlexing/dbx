@@ -13,26 +13,27 @@ const (
 
 //Column 字段定义
 type Column struct {
-	Name        string
-	Type        DataType
-	MaxLength   int            `json:",omitempty"`
-	Null        bool           `json:",omitempty"`
-	TrueType    string         `json:",omitempty"`
-	FetchDriver string         `json:",omitempty"` //上次获取字段信息时，数据库驱动的名称
-	Index       string         `json:",omitempty"`
-	IndexName   string         `json:",omitempty"` //如果该字段有索引，存放数据库中索引的名称
-	FormerName  []string       `json:",omitempty"` //曾用名，可以放多个，一个字段改名后，旧名称应当永久不使用，方便从任意版本更新到最新版本
-	Extended    map[string]any `json:",omitempty"` //扩展属性，内部没有使用，自由引用
+	Name         string
+	Type         DataType
+	MaxLength    int            `json:",omitempty"`
+	Null         bool           `json:",omitempty"`
+	TrueType     string         `json:",omitempty"`
+	FetchDriver  string         `json:",omitempty"` //上次获取字段信息时，数据库驱动的名称
+	Index        string         `json:",omitempty"`
+	IndexName    string         `json:",omitempty"` //如果该字段有索引，存放数据库中索引的名称
+	FormerName   []string       `json:",omitempty"` //曾用名，可以放多个，一个字段改名后，旧名称应当永久不使用，方便从任意版本更新到最新版本
+	PropertyName string         `json:",omitempty"` //属性名称，只有从struct转换来时才有，一般是原样大小写的名称
+	Extended     map[string]any `json:",omitempty"` //扩展属性，内部没有使用，自由引用
 }
 
 //Eque 判定两个字段定义是否相等
 func (f *Column) Eque(src *Column) bool {
-	if strings.ToUpper(f.Name) != strings.ToUpper(src.Name) {
+	if strings.EqualFold(f.Name, src.Name) {
 		return false
 	}
 	// FetchDriver为空，则说明是内存定义，不是从数据库取回，truetype是手工赋予，可以适用更新数据库
 	if (len(f.FetchDriver) == 0 || len(src.FetchDriver) == 0 ||
-		strings.ToLower(f.FetchDriver) == strings.ToLower(src.FetchDriver)) &&
+		strings.EqualFold(f.FetchDriver, src.FetchDriver)) &&
 		len(f.TrueType) > 0 && len(src.TrueType) > 0 {
 		return f.TrueType == src.TrueType &&
 			f.Index == src.Index
@@ -97,5 +98,5 @@ func (f *Column) Clone() *Column {
 	}
 
 	return &Column{f.Name, f.Type, f.MaxLength, f.Null,
-		f.TrueType, f.FetchDriver, f.Index, f.IndexName, fns, cpmap}
+		f.TrueType, f.FetchDriver, f.Index, f.IndexName, fns, f.PropertyName, cpmap}
 }

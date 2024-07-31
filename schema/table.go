@@ -241,7 +241,7 @@ func (t *Table) DefineScript(src string) error {
 				pks = append(pks, strings.TrimSpace(v))
 			}
 		} else {
-			col, err := columnDefine(line, "", "", "")
+			col, err := columnDefine("", line, "", "", "")
 			if err != nil {
 				return fmt.Errorf("line %d,%s", i, err)
 			}
