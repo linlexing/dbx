@@ -181,6 +181,8 @@ func (s *structField) isZero(val reflect.Value) bool {
 			return val.Bool() == false
 		case reflect.Int64:
 			return val.Interface().(int64) == 0
+		case reflect.Uint64:
+			return val.Interface().(uint64) == 0
 		}
 		panic("invalid dbtype")
 	default:
