@@ -7,9 +7,10 @@ import (
 
 	"database/sql"
 
+	"slices"
+
 	"github.com/linlexing/dbx/common"
 	"github.com/linlexing/dbx/schema"
-	"golang.org/x/exp/slices"
 )
 
 func dbType(dataType schema.DataType, maxLength int) string {
@@ -83,7 +84,7 @@ func addTablePrimaryKeySQL(tableName string, pks []string) []string {
 func colDBType(c *schema.Column) string {
 
 	if (len(c.FetchDriver) == 0 || //内存中直接定义
-		slices.Index[string](driverName, strings.ToLower(c.FetchDriver)) >= 0) && //从oracle数据库中取回
+		slices.Index(driverName, strings.ToLower(c.FetchDriver)) >= 0) && //从oracle数据库中取回
 		len(c.TrueType) > 0 {
 		return c.TrueType
 	}
