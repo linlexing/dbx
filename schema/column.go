@@ -11,7 +11,7 @@ const (
 	UniqueIndex = "ui"
 )
 
-//Column 字段定义
+// Column 字段定义
 type Column struct {
 	Name         string
 	Type         DataType
@@ -26,9 +26,9 @@ type Column struct {
 	Extended     map[string]any `json:",omitempty"` //扩展属性，内部没有使用，自由引用
 }
 
-//Eque 判定两个字段定义是否相等
+// Eque 判定两个字段定义是否相等
 func (f *Column) Eque(src *Column) bool {
-	if strings.EqualFold(f.Name, src.Name) {
+	if !strings.EqualFold(f.Name, src.Name) {
 		return false
 	}
 	// FetchDriver为空，则说明是内存定义，不是从数据库取回，truetype是手工赋予，可以适用更新数据库
@@ -56,7 +56,7 @@ func (f *Column) Eque(src *Column) bool {
 	}
 }
 
-//EqueNoIndexAndName 不判断索引和名称
+// EqueNoIndexAndName 不判断索引和名称
 func (f *Column) EqueNoIndexAndName(src *Column) bool {
 	if !f.EqueType(src) {
 		return false
@@ -85,7 +85,7 @@ func (f *Column) EqueType(src *Column) bool {
 	}
 }
 
-//Clone 复制一个字段
+// Clone 复制一个字段
 func (f *Column) Clone() *Column {
 	var fns []string
 	if len(f.FormerName) > 0 {
