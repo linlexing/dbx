@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"slices"
 
 	"github.com/linlexing/dbx/common"
 	"github.com/linlexing/dbx/schema"
@@ -112,7 +113,11 @@ func (m *meta) TablePK(db common.DB, tableName string) ([]string, error) {
 	return tab.PrimaryKeys, nil
 }
 func (m *meta) OpenTable(db common.DB, tableName string) (*schema.Table, error) {
-	pks := []string{}
+	type pkInfo struct {
+		Name  string
+		Order int
+	}
+	pks := []pkInfo{}
 	columns := []*schema.Column{}
 
 	tabCols, err := getTableInfo(db, tableName)
@@ -121,7 +126,7 @@ func (m *meta) OpenTable(db common.DB, tableName string) (*schema.Table, error) 
 	}
 	for _, col := range tabCols {
 		if col.PK > 0 {
-			pks = append(pks, col.Name)
+			pks = append(pks, pkInfo{Name: col.Name, Order: col.PK})
 		}
 		c := &schema.Column{
 			Name:        col.Name,
@@ -133,7 +138,14 @@ func (m *meta) OpenTable(db common.DB, tableName string) (*schema.Table, error) 
 		c.Type, c.MaxLength = sqliteType(col.Name, col.Type)
 		columns = append(columns, c)
 	}
-
+	//pks必须要排序
+	slices.SortFunc(pks, func(a, b pkInfo) int {
+		return a.Order - b.Order
+	})
+	pksStr := []string{}
+	for _, one := range pks {
+		pksStr = append(pksStr, one.Name)
+	}
 	tabIdxs, err := getTableIndex(db, tableName)
 	if err != nil {
 		return nil, err
@@ -148,7 +160,7 @@ func (m *meta) OpenTable(db common.DB, tableName string) (*schema.Table, error) 
 		}
 		//只找出一个字段的索引,并且不是主键索引
 		if len(idxInfo) == 1 && (len(pks) > 1 ||
-			idxInfo[0].Name != pks[0]) {
+			idxInfo[0].Name != pks[0].Name) {
 			indexColumn[idxInfo[0].Name] = idx
 		}
 	}
@@ -164,7 +176,8 @@ func (m *meta) OpenTable(db common.DB, tableName string) (*schema.Table, error) 
 	}
 	t := schema.NewTable(tableName)
 	t.Columns = columns
-	t.PrimaryKeys = pks
+
+	t.PrimaryKeys = pksStr
 
 	return t, nil
 }
