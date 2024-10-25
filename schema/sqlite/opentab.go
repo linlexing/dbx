@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
-	"slices"
+	"sort"
 
 	"github.com/linlexing/dbx/common"
 	"github.com/linlexing/dbx/schema"
@@ -138,9 +138,12 @@ func (m *meta) OpenTable(db common.DB, tableName string) (*schema.Table, error) 
 		c.Type, c.MaxLength = sqliteType(col.Name, col.Type)
 		columns = append(columns, c)
 	}
-	//pks必须要排序
-	slices.SortFunc(pks, func(a, b pkInfo) int {
-		return a.Order - b.Order
+	//pks必须要排序,暂时不用slices包
+	//slices.SortFunc(pks, func(a, b pkInfo) int {
+	//	return a.Order - b.Order
+	//})
+	sort.Slice(pks, func(i, j int) bool {
+		return pks[i].Order < pks[j].Order
 	})
 	pksStr := []string{}
 	for _, one := range pks {

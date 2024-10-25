@@ -7,8 +7,6 @@ import (
 
 	"database/sql"
 
-	"slices"
-
 	"github.com/linlexing/dbx/common"
 	"github.com/linlexing/dbx/schema"
 )
@@ -82,9 +80,15 @@ func addTablePrimaryKeySQL(tableName string, pks []string) []string {
 	return []string{fmt.Sprintf("alter table %s add constraint %s_pk primary key(%s)", tableName, clearTableName, strings.Join(pks, ","))}
 }
 func colDBType(c *schema.Column) string {
-
+	//以后可以更换为slices.Index
+	driverIdx := -1
+	for i := range driverName {
+		if driverName[i] == strings.ToLower(c.FetchDriver) {
+			driverIdx = i
+		}
+	}
 	if (len(c.FetchDriver) == 0 || //内存中直接定义
-		slices.Index(driverName, strings.ToLower(c.FetchDriver)) >= 0) && //从oracle数据库中取回
+		driverIdx >= 0) && //从oracle数据库中取回
 		len(c.TrueType) > 0 {
 		return c.TrueType
 	}
