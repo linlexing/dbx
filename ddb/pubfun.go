@@ -3,7 +3,8 @@ package ddb
 import (
 	"database/sql"
 	"fmt"
-	"log/slog"
+
+	"github.com/sirupsen/logrus"
 
 	"github.com/linlexing/dbx/common"
 )
@@ -22,7 +23,7 @@ func RunAtTx(db TxDB, callback func(Txer) error) (err error) {
 		//这里不捕获异常是要保留现场
 		if !finish {
 			if er := tx.Rollback(); er != nil {
-				slog.Error(er.Error())
+				logrus.Error(er.Error())
 			}
 		}
 	}()
