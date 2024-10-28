@@ -1,6 +1,7 @@
 package data
 
 import (
+	"context"
 	"log"
 	"strconv"
 	"strings"
@@ -34,8 +35,13 @@ func In(query string, args ...interface{}) (string, []interface{}, error) {
 
 // AsInt 返回整形
 func AsInt(db common.Queryer, strSQL string, args ...interface{}) (r int64, err error) {
+	return AsIntContext(db, context.Background(), strSQL, args)
+}
+
+// AsIntContext 返回整形
+func AsIntContext(db common.Queryer, ctx context.Context, strSQL string, args ...interface{}) (r int64, err error) {
 	c := []byte{}
-	row := db.QueryRow(strSQL, args...)
+	row := db.QueryRowContext(ctx, strSQL, args...)
 	if err = row.Scan(&c); err != nil {
 		log.Println(err)
 		err = common.NewSQLError(err, strSQL)
