@@ -171,14 +171,20 @@ func (m *meta) CreateIndexIfNotExistsSQL(db common.DB, unique bool, indexName, t
 	str := fmt.Sprintf("CREATE %s %s ON %s(%s)", idx, strings.ToLower(indexName), tableName, express)
 	return []string{fmt.Sprintf(
 		`DO $BLOCK$
-BEGIN
-    BEGIN
-        %s;
-    EXCEPTION
-        WHEN duplicate_table
-        THEN RAISE NOTICE 'index ''index_name '' on table_name already exists, skipping';
-    END;
-END;
+	BEGIN
+		BEGIN
+			%s;
+		EXCEPTION
+			WHEN duplicate_table THEN
+				RAISE NOTICE 'index ''index_name '' on table_name already exists, skipping';
+			WHEN OTHERS THEN 
+				IF SQLERRM LIKE '%%already exists%%' THEN
+					RAISE NOTICE 'index ''index_name '' on table_name already exists, skipping';
+				ELSE
+					RAISE;
+				END IF;
+			END;
+		END;
 $BLOCK$;`, str)}, nil
 }
 
