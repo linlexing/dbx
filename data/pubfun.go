@@ -35,7 +35,7 @@ func In(query string, args ...interface{}) (string, []interface{}, error) {
 
 // AsInt 返回整形
 func AsInt(db common.Queryer, strSQL string, args ...interface{}) (r int64, err error) {
-	return AsIntContext(db, context.Background(), strSQL, args)
+	return AsIntContext(db, context.Background(), strSQL, args...)
 }
 
 // AsIntContext 返回整形
