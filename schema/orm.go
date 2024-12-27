@@ -458,9 +458,13 @@ func struct2Table(tableName string, fnames []string, vtype reflect.Type, conv co
 	//剥离出其中的定义
 	result := []*Table{NewTable(tableName)}
 	result[0].FormerName = fnames
+	if conv != nil {
+		result[0].Label = conv.ConvertFieldName("", parentName)
+	} else {
+		result[0].Label = parentName
+	}
 	coldefs := []*colDef{}
 	for _, one := range list {
-
 		//子表递归调用
 		if one.child {
 			tabs, err := struct2Table(one.childName, one.childFormerName, one.st, conv,
