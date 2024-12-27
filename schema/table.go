@@ -25,7 +25,6 @@ func init() {
 type Table struct {
 	Schema      string
 	Name        string
-	Label       string
 	Columns     []*Column
 	FormerName  []string
 	PrimaryKeys []string

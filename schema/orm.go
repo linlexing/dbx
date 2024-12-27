@@ -458,10 +458,16 @@ func struct2Table(tableName string, fnames []string, vtype reflect.Type, conv co
 	//剥离出其中的定义
 	result := []*Table{NewTable(tableName)}
 	result[0].FormerName = fnames
-	if conv != nil {
-		result[0].Label = conv.ConvertFieldName("", parentName)
-	} else {
-		result[0].Label = parentName
+	if len(parentName) > 0 {
+		if result[0].Extended == nil {
+			result[0].Extended = map[string]any{}
+		}
+		result[0].Extended["PropertyName"] = parentName
+		if conv != nil {
+			result[0].Extended["Label"] = conv.ConvertFieldName("", parentName)
+		} else {
+			result[0].Extended["Label"] = parentName
+		}
 	}
 	coldefs := []*colDef{}
 	for _, one := range list {
