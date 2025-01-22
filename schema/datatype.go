@@ -256,7 +256,7 @@ func (d DataType) ToString(v interface{}) (result string, err error) {
 		case string:
 			result = tv
 		default:
-			err = fmt.Errorf("v:%#v can't to string", v)
+			err = fmt.Errorf("v:%#v(%T) can't to string", v, v)
 		}
 	case TypeDatetime:
 		switch tv := v.(type) {
@@ -265,7 +265,7 @@ func (d DataType) ToString(v interface{}) (result string, err error) {
 		case *time.Time:
 			result = tv.Format("2006-01-02 15:04:05")
 		default:
-			err = fmt.Errorf("v:%#v can't to string", v)
+			err = fmt.Errorf("v:%#v(%T) can't to date", v, v)
 		}
 	case TypeInt:
 		switch tv := v.(type) {
@@ -273,14 +273,14 @@ func (d DataType) ToString(v interface{}) (result string, err error) {
 			uint, uint16, uint32, uint64, uint8:
 			result = fmt.Sprintf("%d", tv)
 		default:
-			err = fmt.Errorf("v:%#v can't to string", v)
+			err = fmt.Errorf("v:%#v(%T) can't to int", v, v)
 		}
 	case TypeBytea:
 		switch tv := v.(type) {
 		case []byte:
 			result = base64.StdEncoding.EncodeToString(tv)
 		default:
-			err = fmt.Errorf("v:%#v can't to string", v)
+			err = fmt.Errorf("v:%#v(%T) can't to bytea", v, v)
 		}
 	case TypeFloat:
 		switch tv := v.(type) {
@@ -292,7 +292,7 @@ func (d DataType) ToString(v interface{}) (result string, err error) {
 			uint, uint16, uint32, uint64, uint8:
 			result = fmt.Sprintf("%d", tv)
 		default:
-			err = fmt.Errorf("v:%#v can't to string", v)
+			err = fmt.Errorf("v:%#v(%T) can't to float", v, v)
 		}
 	default:
 		err = newErrInvalidDataType(d)
