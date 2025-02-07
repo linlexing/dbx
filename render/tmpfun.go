@@ -75,6 +75,17 @@ var tempFunc = template.FuncMap{
 		}()
 		return
 	},
+	"contains": func(list any, val string) bool {
+		switch tv := list.(type) {
+		case string:
+			return strings.Contains(tv, val)
+		case nil:
+			return len(val) == 0
+		default:
+			panic(fmt.Errorf("not impl contains,data type :%T", list))
+		}
+
+	},
 }
 
 // AddFunc 增加模板函数，如果前面有同名的函数，将被覆盖
