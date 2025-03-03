@@ -109,7 +109,7 @@ func getTableColumns(db common.DB, schemaName, tableName string) ([]columnType, 
 	strSQL := `select column_name as "DBNAME",
 					(case when is_nullable='YES' then 1 else 0 end) as "DBNULL",
 					(case when data_type in ('text', 'varchar','character varying','json','jsonb','ARRAY','USER-DEFINED',
-						'uuid','boolean','daterange','int8range','numrange','tsrange')
+						'uuid','boolean','daterange','int8range','numrange','tsrange','box','polygon','line','lseg','path','point','circle')
 						then 'STR'
 						when  data_type in ('smallint','integer','bigint')
 						then 'INT'
