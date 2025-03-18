@@ -263,11 +263,24 @@ func (s *structField) set(obj reflect.Value, val interface{}) error {
 	if s.child {
 		list := reflect.New(s.st)
 		for _, row := range val.([]map[string]interface{}) {
-			rv := reflect.New(s.st.Elem())
+			var rv reflect.Value
+			//数组的元素是否是指针
+			arrayElementPtr := false
+			if s.st.Elem().Kind() == reflect.Ptr {
+				arrayElementPtr = true
+				rv = reflect.New(s.st.Elem().Elem())
+			} else {
+				arrayElementPtr = false
+				rv = reflect.New(s.st.Elem())
+			}
 			if err := childRow2Struct(row, rv, s.conv, s.fieldName); err != nil {
 				return err
 			}
-			list.Elem().Set(reflect.Append(list.Elem(), rv.Elem()))
+			if arrayElementPtr {
+				list.Elem().Set(reflect.Append(list.Elem(), rv))
+			} else {
+				list.Elem().Set(reflect.Append(list.Elem(), rv.Elem()))
+			}
 		}
 		s.setv(obj, list.Elem())
 		return nil
