@@ -545,10 +545,10 @@ func mainStruct2Row(vval reflect.Value, conv converFieldName) (main map[string]i
 		}
 		if v.child {
 			if tmpVal != nil {
-				child[v.childName] = tmpVal.([]map[string]interface{})
+				child[v.fieldName] = tmpVal.([]map[string]interface{})
 			} else {
 				//为空的明细表需要保留，否则日志记录会每次重复出现remove
-				child[v.childName] = nil
+				child[v.fieldName] = nil
 			}
 		} else {
 			main[v.define.Name] = tmpVal
@@ -607,7 +607,7 @@ func mainRow2Struct(row map[string]interface{},
 	}*/
 	for _, v := range types {
 		if v.child {
-			if clist, ok := child[v.childName]; ok {
+			if clist, ok := child[v.fieldName]; ok {
 				if err := v.set(vval, clist); err != nil {
 					return err
 				}
