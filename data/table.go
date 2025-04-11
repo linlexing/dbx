@@ -596,20 +596,9 @@ func (t *Table) InsertContext(ctx context.Context, rows []map[string]interface{}
 		return t.insertAsPack(ctx, rows[0])
 
 	}
-	cols := []string{}
-	colMaps := map[string]struct{}{}
-	for k := range rows[0] {
-		colMaps[k] = struct{}{}
-	}
-	//按照现有字段顺序进行排序
-	for _, one := range t.Columns {
-		if _, ok := colMaps[one.Name]; ok {
-			cols = append(cols, one.Name)
-		}
-	}
 	strSQL := fmt.Sprintf("insert into %s(%s)values(%s)",
-		t.FullName(), strings.Join(cols, ","),
-		strings.Join(strings.Split(strings.Repeat("?", len(cols)), ""), ","))
+		t.FullName(), strings.Join(t.ColumnNames, ","),
+		strings.Join(strings.Split(strings.Repeat("?", len(t.ColumnNames)), ""), ","))
 	stmt, err := t.DB.Prepare(strSQL)
 	if err != nil {
 		err = common.NewSQLError(err, strSQL)
@@ -624,8 +613,8 @@ func (t *Table) InsertContext(ctx context.Context, rows []map[string]interface{}
 			return
 		}
 		data := []interface{}{}
-		for _, col := range cols {
-			data = append(data, row[col])
+		for i := range t.ColumnNames {
+			data = append(data, row[t.ColumnNames[i]])
 		}
 		if _, err = stmt.Exec(data...); err != nil {
 			return common.NewSQLError(err, strSQL, data...)
