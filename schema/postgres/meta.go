@@ -138,8 +138,14 @@ func (m *meta) CreateTableSQL(db common.DB, tab *schema.Table) (rev []string, _ 
 	outBuf := bytes.NewBuffer(nil)
 	w := tabwriter.NewWriter(outBuf, 0, 0, 1, ' ', 0)
 	if len(tab.PrimaryKeys) > 0 {
-		fmt.Fprintf(w, "CREATE TABLE %s(\n  %s,\n  CONSTRAINT %s_PKEY PRIMARY KEY(%s)\n)",
-			tab.FullName(), strings.Join(cols, ",\n  "), tab.Name, strings.Join(tab.PrimaryKeys, ","))
+		if m.isGauss() {
+			fmt.Fprintf(w, "CREATE TABLE %s(\n  %s,\n  CONSTRAINT %s_PKEY PRIMARY KEY(%s)\n) DISTRIBUTE BY HASH(%s)",
+				tab.FullName(), strings.Join(cols, ",\n  "), tab.Name, strings.Join(tab.PrimaryKeys, ","),
+				strings.Join(tab.PrimaryKeys, ","))
+		} else {
+			fmt.Fprintf(w, "CREATE TABLE %s(\n  %s,\n  CONSTRAINT %s_PKEY PRIMARY KEY(%s)\n)",
+				tab.FullName(), strings.Join(cols, ",\n  "), tab.Name, strings.Join(tab.PrimaryKeys, ","))
+		}
 		w.Flush()
 		rev = append(rev, outBuf.String())
 	} else {
