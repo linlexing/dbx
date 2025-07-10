@@ -326,6 +326,78 @@ func (m *meta) GetOperatorExpress(ope ps.Operator, dataType schema.DataType, col
 			}
 
 		}
+	case ps.OperatorPrefixArray:
+		if value == "" {
+			if dataType == schema.TypeString {
+				strSQL = fmt.Sprintf("(%s is null or %[1]s ='')", column)
+			} else {
+				strSQL = fmt.Sprintf("%s is null", column)
+			}
+		} else {
+			if array, err := csv.NewReader(strings.NewReader(value)).Read(); err != nil {
+				log.Panic(err)
+			} else {
+				list := []string{}
+				for _, v := range array {
+					list = append(list, valueExpress(dataType, v+"%"))
+				}
+				strSQL = fmt.Sprintf("%s like any (array[%s])", column, strings.Join(list, ",\n"))
+			}
+		}
+	case ps.OperatorNotPrefixArray:
+		if value == "" {
+			if dataType == schema.TypeString {
+				strSQL = fmt.Sprintf("(%s is not null and %[1]s <>'')", column)
+			} else {
+				strSQL = fmt.Sprintf("%s is not null", column)
+			}
+		} else {
+			if array, err := csv.NewReader(strings.NewReader(value)).Read(); err != nil {
+				log.Panic(err)
+			} else {
+				list := []string{}
+				for _, v := range array {
+					list = append(list, valueExpress(dataType, v+"%"))
+				}
+				strSQL = fmt.Sprintf("%s not like all (array[%s])", column, strings.Join(list, ",\n"))
+			}
+		}
+	case ps.OperatorSuffixArray:
+		if value == "" {
+			if dataType == schema.TypeString {
+				strSQL = fmt.Sprintf("(%s is null or %[1]s ='')", column)
+			} else {
+				strSQL = fmt.Sprintf("%s is null", column)
+			}
+		} else {
+			if array, err := csv.NewReader(strings.NewReader(value)).Read(); err != nil {
+				log.Panic(err)
+			} else {
+				list := []string{}
+				for _, v := range array {
+					list = append(list, valueExpress(dataType, "%"+v))
+				}
+				strSQL = fmt.Sprintf("%s like any (array[%s])", column, strings.Join(list, ",\n"))
+			}
+		}
+	case ps.OperatorNotSuffixArray:
+		if value == "" {
+			if dataType == schema.TypeString {
+				strSQL = fmt.Sprintf("(%s is not null and %[1]s <>'')", column)
+			} else {
+				strSQL = fmt.Sprintf("%s is not null", column)
+			}
+		} else {
+			if array, err := csv.NewReader(strings.NewReader(value)).Read(); err != nil {
+				log.Panic(err)
+			} else {
+				list := []string{}
+				for _, v := range array {
+					list = append(list, valueExpress(dataType, "%"+v))
+				}
+				strSQL = fmt.Sprintf("%s not like all (array[%s])", column, strings.Join(list, ",\n"))
+			}
+		}
 	case ps.OperatorRegexp: // "~" 正则
 		if value == "" {
 			if dataType == schema.TypeString {

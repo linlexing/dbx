@@ -455,7 +455,9 @@ func (node *NodeCondition) string(prev, outerTableName string, getview GetUserCo
 			pageselect.OperatorGreaterThanOrEqu, pageselect.OperatorLessThan,
 			pageselect.OperatorLessThanOrEqu, pageselect.OperatorRegexp,
 			pageselect.OperatorNotRegexp, pageselect.OperatorNotEqu,
-			pageselect.OperatorLikeArray, pageselect.OperatorNotLikeArray:
+			pageselect.OperatorLikeArray, pageselect.OperatorNotLikeArray,
+			pageselect.OperatorPrefixArray, pageselect.OperatorNotPrefixArray,
+			pageselect.OperatorSuffixArray, pageselect.OperatorNotSuffixArray:
 			v := node.Value
 			if ifExpr(v) {
 				v = v[1 : len(v)-1]

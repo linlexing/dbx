@@ -312,6 +312,118 @@ func (m *meta) GetOperatorExpress(ope ps.Operator, dataType schema.DataType, col
 			}
 
 		}
+	case ps.OperatorPrefixArray:
+		if value == "" {
+			strSQL = fmt.Sprintf("%s is null", column)
+		} else {
+			if array, err := csv.NewReader(strings.NewReader(value)).Read(); err != nil {
+				log.Panic(err)
+			} else {
+				rList := []string{}
+				var matchItem string
+				for _, v := range array {
+					//正则长度限制
+					if len(v) > 256 { //单个就超长就跳过
+						continue
+					}
+					if len(matchItem)+len(v) > 256 {
+						rList = append(rList, fmt.Sprintf("regexp_like(%s,'^(%s)')", column, matchItem))
+						matchItem = ""
+					}
+					if len(matchItem) > 0 {
+						matchItem = matchItem + fmt.Sprintf("|%s", valueExpressNoQuotes(dataType, v))
+					} else {
+						matchItem = valueExpressNoQuotes(dataType, v)
+					}
+				}
+				rList = append(rList, fmt.Sprintf("regexp_like(%s,'%s')", column, matchItem))
+				strSQL = fmt.Sprintf("(%s)", strings.Join(rList, " or "))
+			}
+		}
+	case ps.OperatorNotPrefixArray:
+		if value == "" {
+			strSQL = fmt.Sprintf("%s is null", column)
+		} else {
+			if array, err := csv.NewReader(strings.NewReader(value)).Read(); err != nil {
+				log.Panic(err)
+			} else {
+				rList := []string{}
+				var matchItem string
+				for _, v := range array {
+					//正则长度限制
+					if len(v) > 256 { //单个就超长就跳过
+						continue
+					}
+					if len(matchItem)+len(v) > 256 {
+						rList = append(rList, fmt.Sprintf("regexp_like(%s,'^(%s)')", column, matchItem))
+						matchItem = ""
+					}
+					if len(matchItem) > 0 {
+						matchItem = matchItem + fmt.Sprintf("|%s", valueExpressNoQuotes(dataType, v))
+					} else {
+						matchItem = valueExpressNoQuotes(dataType, v)
+					}
+				}
+				rList = append(rList, fmt.Sprintf("regexp_like(%s,'%s')", column, matchItem))
+				strSQL = fmt.Sprintf("not (%s)", strings.Join(rList, " or "))
+			}
+		}
+	case ps.OperatorSuffixArray:
+		if value == "" {
+			strSQL = fmt.Sprintf("%s is null", column)
+		} else {
+			if array, err := csv.NewReader(strings.NewReader(value)).Read(); err != nil {
+				log.Panic(err)
+			} else {
+				rList := []string{}
+				var matchItem string
+				for _, v := range array {
+					//正则长度限制
+					if len(v) > 256 { //单个就超长就跳过
+						continue
+					}
+					if len(matchItem)+len(v) > 256 {
+						rList = append(rList, fmt.Sprintf("regexp_like(%s,'(%s)$')", column, matchItem))
+						matchItem = ""
+					}
+					if len(matchItem) > 0 {
+						matchItem = matchItem + fmt.Sprintf("|%s", valueExpressNoQuotes(dataType, v))
+					} else {
+						matchItem = valueExpressNoQuotes(dataType, v)
+					}
+				}
+				rList = append(rList, fmt.Sprintf("regexp_like(%s,'%s')", column, matchItem))
+				strSQL = fmt.Sprintf("(%s)", strings.Join(rList, " or "))
+			}
+		}
+	case ps.OperatorNotSuffixArray:
+		if value == "" {
+			strSQL = fmt.Sprintf("%s is null", column)
+		} else {
+			if array, err := csv.NewReader(strings.NewReader(value)).Read(); err != nil {
+				log.Panic(err)
+			} else {
+				rList := []string{}
+				var matchItem string
+				for _, v := range array {
+					//正则长度限制
+					if len(v) > 256 { //单个就超长就跳过
+						continue
+					}
+					if len(matchItem)+len(v) > 256 {
+						rList = append(rList, fmt.Sprintf("regexp_like(%s,'(%s)$')", column, matchItem))
+						matchItem = ""
+					}
+					if len(matchItem) > 0 {
+						matchItem = matchItem + fmt.Sprintf("|%s", valueExpressNoQuotes(dataType, v))
+					} else {
+						matchItem = valueExpressNoQuotes(dataType, v)
+					}
+				}
+				rList = append(rList, fmt.Sprintf("regexp_like(%s,'%s')", column, matchItem))
+				strSQL = fmt.Sprintf("not (%s)", strings.Join(rList, " or "))
+			}
+		}
 	case ps.OperatorRegexp: // "~" 正则
 		if value == "" {
 			strSQL = fmt.Sprintf("%s is null", column)

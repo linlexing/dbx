@@ -280,6 +280,14 @@ func ParseLogicExpression(s antlr.ParseTreeVisitor, ctx *parser.LogicExpressionC
 			ope = pageselect.OperatorLikeArray
 		case "!?[]":
 			ope = pageselect.OperatorNotLikeArray
+		case "?>[]":
+			ope = pageselect.OperatorPrefixArray
+		case "!?>[]":
+			ope = pageselect.OperatorNotPrefixArray
+		case "<?[]":
+			ope = pageselect.OperatorSuffixArray
+		case "!<?[]":
+			ope = pageselect.OperatorNotSuffixArray
 		default:
 			panic("invalid opereate " + operate.GetText())
 		}

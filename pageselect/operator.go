@@ -65,6 +65,14 @@ const (
 	OperatorLikeArray
 	//OperatorNotLikeArray 不包含列表
 	OperatorNotLikeArray
+	//OperatorPrefixArray 前缀列表
+	OperatorPrefixArray
+	//OperatorNotPrefixArray 非前缀含列表
+	OperatorNotPrefixArray
+	//OperatorSuffixArray 后缀列表
+	OperatorSuffixArray
+	//OperatorNotSuffixArray 非后缀列表
+	OperatorNotSuffixArray
 	//to_tsquery
 	OperatorQuery
 	OperatorNotQuery
@@ -134,6 +142,14 @@ func makeOpMap() (map[Operator]Operator, map[Operator]Operator) {
 		OperatorLikeArray:
 		//OperatorNotLikeArray not like array
 		OperatorNotLikeArray,
+		//OperatorPrefixArray 前缀列表
+		OperatorPrefixArray:
+		//OperatorNotPrefixArray 非前缀含列表
+		OperatorNotPrefixArray,
+		//OperatorSuffixArray 后缀列表
+		OperatorSuffixArray:
+		//OperatorNotSuffixArray 非后缀列表
+		OperatorNotSuffixArray,
 		OperatorNotQuery: OperatorQuery,
 		OperatorInMini:   OperatorNotInMini,
 	}
@@ -217,6 +233,10 @@ func (o Operator) RemoveReverse() (Operator, bool) {
 		OperatorLengthNotEqu,
 		OperatorLikeArray,
 		OperatorNotLikeArray,
+		OperatorPrefixArray,
+		OperatorNotPrefixArray,
+		OperatorSuffixArray,
+		OperatorNotSuffixArray,
 		OperatorQuery:
 		return o, false
 
@@ -286,6 +306,14 @@ func ParseOperatorFromString(str string) (Operator, error) {
 		return OperatorLikeArray, nil
 	case "!?[]":
 		return OperatorNotLikeArray, nil
+	case "?>[]":
+		return OperatorPrefixArray, nil
+	case "!?>[]":
+		return OperatorNotPrefixArray, nil
+	case "<?[]":
+		return OperatorSuffixArray, nil
+	case "!<?[]":
+		return OperatorNotSuffixArray, nil
 	case "@":
 		return OperatorQuery, nil
 	case "!@":
@@ -359,6 +387,14 @@ func (o Operator) String() string {
 		return "?[]"
 	case OperatorNotLikeArray:
 		return "!?[]"
+	case OperatorPrefixArray:
+		return "?>[]"
+	case OperatorNotPrefixArray:
+		return "!?>[]"
+	case OperatorSuffixArray:
+		return "<?[]"
+	case OperatorNotSuffixArray:
+		return "!<?[]"
 	case OperatorQuery:
 		return "@"
 	case OperatorNotQuery:
@@ -431,6 +467,14 @@ func (o Operator) ChineseString() string {
 		return "包含列表"
 	case OperatorNotLikeArray:
 		return "不包含列表"
+	case OperatorPrefixArray:
+		return "前缀列表"
+	case OperatorNotPrefixArray:
+		return "非前缀列表"
+	case OperatorSuffixArray:
+		return "后缀列表"
+	case OperatorNotSuffixArray:
+		return "非后缀列表"
 	case OperatorQuery:
 		return "查询"
 	case OperatorNotQuery:
