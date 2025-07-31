@@ -336,7 +336,7 @@ func (m *meta) GetOperatorExpress(ope ps.Operator, dataType schema.DataType, col
 						matchItem = valueExpressNoQuotes(dataType, v)
 					}
 				}
-				rList = append(rList, fmt.Sprintf("regexp_like(%s,'%s')", column, matchItem))
+				rList = append(rList, fmt.Sprintf("regexp_like(%s,'^(%s)')", column, matchItem))
 				strSQL = fmt.Sprintf("(%s)", strings.Join(rList, " or "))
 			}
 		}
@@ -364,7 +364,7 @@ func (m *meta) GetOperatorExpress(ope ps.Operator, dataType schema.DataType, col
 						matchItem = valueExpressNoQuotes(dataType, v)
 					}
 				}
-				rList = append(rList, fmt.Sprintf("regexp_like(%s,'%s')", column, matchItem))
+				rList = append(rList, fmt.Sprintf("regexp_like(%s,'^(%s)')", column, matchItem))
 				strSQL = fmt.Sprintf("not (%s)", strings.Join(rList, " or "))
 			}
 		}
@@ -392,7 +392,7 @@ func (m *meta) GetOperatorExpress(ope ps.Operator, dataType schema.DataType, col
 						matchItem = valueExpressNoQuotes(dataType, v)
 					}
 				}
-				rList = append(rList, fmt.Sprintf("regexp_like(%s,'%s')", column, matchItem))
+				rList = append(rList, fmt.Sprintf("regexp_like(%s,'(%s)$')", column, matchItem))
 				strSQL = fmt.Sprintf("(%s)", strings.Join(rList, " or "))
 			}
 		}
@@ -420,7 +420,7 @@ func (m *meta) GetOperatorExpress(ope ps.Operator, dataType schema.DataType, col
 						matchItem = valueExpressNoQuotes(dataType, v)
 					}
 				}
-				rList = append(rList, fmt.Sprintf("regexp_like(%s,'%s')", column, matchItem))
+				rList = append(rList, fmt.Sprintf("regexp_like(%s,'(%s)$')", column, matchItem))
 				strSQL = fmt.Sprintf("not (%s)", strings.Join(rList, " or "))
 			}
 		}
