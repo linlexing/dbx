@@ -52,7 +52,7 @@ func dbType(dataType schema.DataType) string {
 	case schema.TypeFloat:
 		return "DOUBLE"
 	case schema.TypeInt:
-		return "INTEGER"
+		return "BIGINT"
 	case schema.TypeString:
 		return "TEXT"
 	}
