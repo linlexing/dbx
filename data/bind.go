@@ -23,6 +23,7 @@ const (
 	SqlServer
 	DBWeb
 	Hive
+	DuckDB
 	Unknown
 )
 
@@ -46,6 +47,8 @@ func ParseDriverType(driver string) DriverType {
 		return Sqlite
 	case "hive":
 		return Hive
+	case "duckdb":
+		return DuckDB
 	default:
 		if strings.HasPrefix(driver, "sqlite3") {
 			return Sqlite
