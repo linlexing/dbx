@@ -31,13 +31,8 @@ func (nt *NullTime) Scan(value interface{}) error {
 			return nil
 		}
 	}
-	//UTC时区的，需要转换成当前时区
-	// println(nt.Time.Location().String())
-	if nt.Time.Location().String() == "UTC" {
-		nt.Time = time.Date(nt.Time.Year(), nt.Time.Month(), nt.Time.Day(),
-			nt.Time.Hour(), nt.Time.Minute(), nt.Time.Second(),
-			nt.Time.Nanosecond(), time.Local)
-	}
+	//转换成当前时区
+	nt.Time = nt.Time.Local()
 	return nil
 }
 
