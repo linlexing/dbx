@@ -49,7 +49,7 @@ func processColumnSQL(tabName string, oldCol, newCol *schema.Column, newPKS []st
 		} else if newCol.Index == schema.UniqueIndex {
 			rev = append(rev, createColumnIndexSQL(tabName, true, newCol.Name)...)
 		}
-		return nil
+		return rev
 	}
 	//如果是更名，需要先处理
 	if strings.ToUpper(oldCol.Name) != strings.ToUpper(newCol.Name) {
