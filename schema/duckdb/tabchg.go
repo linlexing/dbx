@@ -2,6 +2,7 @@ package duckdb
 
 import (
 	"fmt"
+	"github.com/linlexing/dbx/ddb"
 	"strings"
 
 	"github.com/linlexing/dbx/common"
@@ -15,21 +16,85 @@ func (m *meta) ChangeTableSQL(db common.DB, change *schema.TableSchemaChange) ([
 	if !strings.EqualFold(change.OldName, change.NewName) {
 		rev = append(rev, tableRenameSQL(change.OldName, change.NewName)...)
 	}
+	//主键类型变了也需要重建表
+	pkTypeChange := false
+	pksMap := make(map[string]any, len(change.PK))
+	for i := range change.PK {
+		pksMap[change.PK[i]] = nil
+	}
+	for _, col := range change.ChangeFields {
+		_, ok := pksMap[col.NewField.Name]
+		if ok && col.NewField.Type != col.OldField.Type {
+			pkTypeChange = true
+			break
+		}
+	}
+	//如果主键变更，则需要重新建表
+	if change.PKChange || pkTypeChange {
+		//先创建新表
+		tmpTableName, err := ddb.GetTempTableName("tu__")
+		if err != nil {
+			return nil, err
+		}
+		tab := schema.NewTable(tmpTableName)
+		cols := []*schema.Column{}
+		selFields := []string{} //select 的列名
+		intoFields := []string{}
+		for _, one := range change.OriginFields {
+			//如果是删除，忽略这列
+			needContinue := false
+			for _, rmFieldName := range change.RemoveFields {
+				if strings.EqualFold(rmFieldName, one.Name) {
+					needContinue = true
+					break
+				}
+			}
+			if needContinue {
+				continue
+			}
 
-	//如果主键变更，则需要先除去主键
-	if change.PKChange {
-		rev = append(rev, dropTablePrimaryKeySQL(tabName)...)
-	}
-	//逐个处理字段，每处理一个字段，旧表字段就标上标记，最后删除没有标记的字段
-	for _, cf := range change.ChangeFields {
-		rev = append(rev, processColumnSQL(tabName, cf.OldField, cf.NewField, change.PK)...)
-	}
-	if len(change.RemoveFields) > 0 {
-		rev = append(rev, removeColumnsSQL(tabName, change.RemoveFields)...)
-	}
-	//如果主键变过，则新增主键
-	if change.PKChange {
-		rev = append(rev, addTablePrimaryKeySQL(tabName, change.PK)...)
+			col := one
+			selFields = append(selFields, one.Name)
+			//找出修改后的新列，如有
+			for _, upField := range change.ChangeFields {
+				if upField.OldField == one {
+					col = upField.NewField
+					break
+				}
+			}
+			intoFields = append(intoFields, col.Name)
+			cols = append(cols, col)
+		}
+		//加上新增的列
+		for _, insField := range change.ChangeFields {
+			if insField.OldField == nil {
+				cols = append(cols, insField.NewField)
+			}
+		}
+		tab.Columns = cols
+		tab.PrimaryKeys = change.PK
+		list, err := m.CreateTableSQL(db, tab)
+		if err != nil {
+			return nil, err
+		}
+		rev = append(rev, list...)
+		//如果有intoFields，则再复制数据
+		if len(intoFields) > 0 {
+			rev = append(rev, fmt.Sprintf("insert into %s(%s)select %s from %s",
+				tmpTableName, strings.Join(intoFields, ","),
+				strings.Join(selFields, ","), tabName))
+		}
+		//然后drop 旧表
+		rev = append(rev, "drop table "+tabName)
+		rev = append(rev, tableRenameSQL(tmpTableName, tabName)...)
+	} else {
+		//逐个处理字段，每处理一个字段，旧表字段就标上标记，最后删除没有标记的字段
+		for _, cf := range change.ChangeFields {
+			rev = append(rev, processColumnSQL(tabName, cf.OldField, cf.NewField, change.PK)...)
+		}
+		if len(change.RemoveFields) > 0 {
+			rev = append(rev, removeColumnsSQL(tabName, change.RemoveFields)...)
+		}
 	}
 	return rev, nil
 }

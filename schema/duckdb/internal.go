@@ -33,10 +33,11 @@ func dropColumnIndexSQL(tableName, indexName string) []string {
 	return []string{fmt.Sprintf("drop index %s on \"%s\"", indexName, tableName)}
 }
 
+// duckdb不支持
 // dropTablePrimaryKeySQL 删除主键
-func dropTablePrimaryKeySQL(tableName string) []string {
-	return []string{fmt.Sprintf("ALTER TABLE \"%s\" DROP PRIMARY KEY", tableName)}
-}
+//func dropTablePrimaryKeySQL(tableName string) []string {
+//	return []string{fmt.Sprintf("ALTER TABLE \"%s\" DROP PRIMARY KEY", tableName)}
+//}
 
 // addTablePrimaryKeySQL 新增主键
 func addTablePrimaryKeySQL(tableName string, pks []string) []string {
