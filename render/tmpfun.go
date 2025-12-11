@@ -13,6 +13,9 @@ import (
 )
 
 var tempFunc = template.FuncMap{
+	"list": func(list ...any) []any {
+		return list
+	},
 	"guid64": func() string {
 		return base64.RawURLEncoding.EncodeToString(uuid.NewUUID())
 	},
