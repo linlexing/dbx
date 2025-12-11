@@ -151,8 +151,8 @@ func processColumnSQL(tabName string, oldCol, newCol *schema.Column) (rev []stri
 			//如果类型变过，现在类型是数值或者日期，则需要加using子句
 			if newCol.Type == schema.TypeFloat ||
 				newCol.Type == schema.TypeInt ||
-				newCol.Type == schema.TypeDatetime {
-
+				newCol.Type == schema.TypeDatetime ||
+				strings.ToUpper(newCol.TrueType) == "JSONB" {
 				if oldCol.Type == schema.TypeString {
 					rev = append(rev, fmt.Sprintf(
 						"ALTER TABLE %s ALTER COLUMN %s TYPE %s using(trim(%[2]s)::%[3]s)",

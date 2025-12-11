@@ -2,10 +2,7 @@ package postgres
 
 import (
 	"fmt"
-	"log"
 	"strings"
-
-	"database/sql"
 
 	"github.com/linlexing/dbx/common"
 	"github.com/linlexing/dbx/data"
@@ -64,19 +61,21 @@ func dbType(dataType schema.DataType, maxLength int) string {
 }
 
 func dropTablePrimaryKeySQL(db common.DB, tableName string) ([]string, error) {
-	strSQL := fmt.Sprintf(
-		"select b.relname from  pg_index a inner join pg_class b on a.indexrelid =b.oid where indisprimary and indrelid='%s'::regclass",
-		tableName)
-	var pkCons string
-	if err := db.QueryRow(strSQL).Scan(&pkCons); err != nil {
-		if err == sql.ErrNoRows {
-			return nil, nil
-		}
-		err = common.NewSQLError(err, strSQL)
-		log.Println(err)
-		return nil, err
-	}
-	return []string{fmt.Sprintf("ALTER TABLE %s DROP CONSTRAINT %s", tableName, pkCons)}, nil
+	return []string{fmt.Sprintf(`
+		DO $$
+		DECLARE
+			constraint_name text;
+		BEGIN
+			select b.relname INTO constraint_name 
+			from pg_index a 
+			inner join pg_class b on a.indexrelid =b.oid 
+			where indisprimary and indrelid='%s'::regclass;
+		
+			IF constraint_name IS NOT NULL THEN
+				EXECUTE 'ALTER TABLE %[1]s DROP CONSTRAINT ' || constraint_name;
+			END IF;
+		END;
+		$$;`, tableName)}, nil
 }
 
 // addTablePrimaryKey 新增主键
