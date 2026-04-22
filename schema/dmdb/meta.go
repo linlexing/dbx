@@ -16,13 +16,12 @@ const driverName = "dmdb"
 type meta struct {
 }
 
-//CreateTableAs 执行create table as select语句
-func (m *meta) CreateTableAsSQL(db common.DB, tableName, strSQL string, param []interface{},
-	pks []string) ([]string, error) {
+// CreateTableAs 执行create table as select语句
+func (m *meta) CreateTableAsSQL(db common.DB, tableName, strSQL string, param []interface{}, pks []string) ([]string, [][]any, error) {
 	return []string{
 		fmt.Sprintf("CREATE TABLE %s as %s", tableName, strSQL),
 		fmt.Sprintf("ALTER TABLE %s ADD PRIMARY KEY(%s)", tableName, strings.Join(pks, ",")),
-	}, nil
+	}, [][]any{param, nil}, nil
 }
 func (m *meta) TableEmpty(db common.DB, tableName string) (bool, error) {
 	var a int
@@ -90,7 +89,7 @@ func (m *meta) CreateTableSQL(db common.DB, tab *schema.Table) (rev []string, er
 	return
 }
 
-//DropIndexIfExistsSQL 删除一个存在的索引，不存在返回nil
+// DropIndexIfExistsSQL 删除一个存在的索引，不存在返回nil
 func (m *meta) DropIndexIfExistsSQL(db common.DB, indexName, tableName string) ([]string, error) {
 	return []string{fmt.Sprintf(`
 		DECLARE
@@ -129,10 +128,10 @@ func (m *meta) CreateIndexIfNotExistsSQL(db common.DB, unique bool, indexName, t
 }
 
 /*
-	创建用户
-	创建表空间
-	修改用户默认表空间
-	为用户赋权
+创建用户
+创建表空间
+修改用户默认表空间
+为用户赋权
 */
 func (m *meta) CreateSchemaSQL(db common.DB, dbInfo schema.DataBaseInfo) ([]string, error) {
 	// createUser := fmt.Sprintf("CREATE USER %s IDENTIFIED BY %s", dbInfo.UserName, dbInfo.PassWord)
@@ -146,7 +145,7 @@ func (m *meta) CreateSchemaSQL(db common.DB, dbInfo schema.DataBaseInfo) ([]stri
 }
 
 /*
-	删除用户 表空间
+删除用户 表空间
 */
 func (m *meta) DropSchemaSQL(db common.DB, dbInfo schema.DataBaseInfo) ([]string, error) {
 	// deleteUser := fmt.Sprintf("DROP USER %s CASCADE", dbInfo.UserName)

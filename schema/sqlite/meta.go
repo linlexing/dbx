@@ -23,8 +23,7 @@ func init() {
 
 // CreateTableAs 执行create table as select语句
 // todo:不支持date类型，会转换成num类型，需要整改
-func (m *meta) CreateTableAsSQL(db common.DB, tableName, strSQL string,
-	param []interface{}, pks []string) (rev []string, err error) {
+func (m *meta) CreateTableAsSQL(db common.DB, tableName, strSQL string, param []interface{}, pks []string) (rev []string, i [][]any, err error) {
 	tmpTableName, err := ddb.GetTempTableName("t_")
 	if err != nil {
 		return
@@ -34,7 +33,7 @@ func (m *meta) CreateTableAsSQL(db common.DB, tableName, strSQL string,
 	if _, err := db.Exec(s, param...); err != nil {
 		err = common.NewSQLError(err, s)
 		log.Println(err)
-		return nil, err
+		return nil, nil, err
 	}
 	s = "SELECT sql FROM sqlite_master WHERE type = 'table' AND name = ?"
 
@@ -43,7 +42,7 @@ func (m *meta) CreateTableAsSQL(db common.DB, tableName, strSQL string,
 	if err := db.QueryRow(s, tmpTableName).Scan(&createSQL); err != nil {
 		err = common.NewSQLError(err, s, tmpTableName)
 		log.Println(err)
-		return nil, err
+		return nil, nil, err
 	}
 	s = strings.Replace(createSQL,
 		"CREATE TABLE "+tmpTableName,
@@ -56,6 +55,7 @@ func (m *meta) CreateTableAsSQL(db common.DB, tableName, strSQL string,
 	rev = []string{s,
 		"drop table " + tmpTableName,
 		fmt.Sprintf("insert into %s %s", tableName, strSQL)}
+	i = [][]any{param, nil, param}
 	return
 }
 func (m *meta) TableEmpty(db common.DB, tableName string) (bool, error) {

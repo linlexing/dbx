@@ -30,8 +30,7 @@ type TableSchemaChange struct {
 
 // Meta 是数据库操作元数据的接口，任意go标准的sql驱动，实现了这个接口就可以使用dbx
 type Meta interface {
-	CreateTableAsSQL(db common.DB, tableName, strSQL string, param []interface{},
-		pks []string) ([]string, error)
+	CreateTableAsSQL(db common.DB, tableName, strSQL string, param []interface{}, pks []string) ([]string, [][]any, error)
 	TableExists(db common.DB, tableName string) (bool, error)
 	TableEmpty(db common.DB, tableName string) (bool, error)
 	// TablePK(db common.DB, tableName string) ([]string, error)
