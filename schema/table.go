@@ -119,6 +119,15 @@ func (t *Table) Update(driver string, db common.DB) error {
 	}
 	return common.BatchRunAndPrint(db, list)
 }
+
+// UpdateNoPrint 更新一个表结构到数据库中,不打印语句
+func (t *Table) UpdateNoPrint(driver string, db common.DB) error {
+	list, err := t.Extract(driver, db)
+	if err != nil {
+		return err
+	}
+	return common.BatchRun(db, list)
+}
 func (t *Table) extract(driver string, db common.DB) (*tableSchema, error) {
 	mt := Find(driver)
 	sch := &tableSchema{

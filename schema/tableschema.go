@@ -1,19 +1,18 @@
 package schema
 
 import (
-	"errors"
 	"fmt"
 	"strings"
 
 	"github.com/linlexing/dbx/common"
 )
 
-//tableSchema 该结构完成表结构的调整，自动处理
-//1.表改名
-//2.主键更改
-//3.字段改名
-//4.字段调整
-//5.单字段的索引调整
+// tableSchema 该结构完成表结构的调整，自动处理
+// 1.表改名
+// 2.主键更改
+// 3.字段改名
+// 4.字段调整
+// 5.单字段的索引调整
 type tableSchema struct {
 	oldTable *Table
 	newTable *Table
@@ -21,13 +20,13 @@ type tableSchema struct {
 	db       common.DB
 }
 
-//CheckTableColumns 检查新表的字段定义是否合法：
-//1.字段名（含曾用名）不能重复
-//2.必须有主键
+// CheckTableColumns 检查新表的字段定义是否合法：
+// 1.字段名（含曾用名）不能重复
+// 2.主键可选
 func (t *tableSchema) checkTableColumns(tab *Table) error {
-	if len(tab.PrimaryKeys) == 0 {
-		return errors.New("primary key is null")
-	}
+	// if len(tab.PrimaryKeys) == 0 {
+	// 	return errors.New("primary key is null")
+	// }
 	uname := map[string]bool{}
 	for _, c := range tab.Columns {
 		if _, ok := uname[c.Name]; ok {
@@ -70,7 +69,7 @@ func (t *tableSchema) pkIsChanged() bool {
 	return false
 }
 
-//extract 提取修改数据库结构的sql语句
+// extract 提取修改数据库结构的sql语句
 func (t *tableSchema) extract() ([]string, error) {
 	//先检查字段名称是否合法
 	if err := t.checkTableColumns(t.newTable); err != nil {
