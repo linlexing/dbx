@@ -87,7 +87,9 @@ var tempFunc = template.FuncMap{
 		default:
 			panic(fmt.Errorf("not impl contains,data type :%T", list))
 		}
-
+	},
+	"hasPrefix": func(s string, prev string) bool {
+		return strings.HasPrefix(s, prev)
 	},
 }
 
