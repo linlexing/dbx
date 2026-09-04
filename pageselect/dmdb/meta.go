@@ -15,6 +15,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+// 达梦数据库，基于odbc
 const driverName = "dmdb"
 
 type meta struct{}

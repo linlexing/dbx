@@ -8,6 +8,7 @@ import (
 	"github.com/linlexing/dbx/schema"
 )
 
+// 达梦数据库，基于odbc
 func (m *meta) ChangeTableSQL(db common.DB, change *schema.TableSchemaChange) (rev []string, err error) {
 	tabName := change.NewName
 	//处理表更名,处理过后，所有后续操作都在新表名上进行

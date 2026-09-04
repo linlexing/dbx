@@ -8,6 +8,7 @@ import (
 	"github.com/linlexing/dbx/schema"
 )
 
+// 达梦数据库，基于odbc
 // 获取主键字段
 func (m *meta) TablePK(db common.DB, tableName string) ([]string, error) {
 	ns := strings.Split(tableName, ".")
