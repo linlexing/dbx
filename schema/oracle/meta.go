@@ -19,7 +19,7 @@ type meta struct {
 }
 
 // CreateTableAs 执行create table as select语句
-func (m *meta) CreateTableAsSQL(db common.DB, tableName, strSQL string, param []interface{}, pks []string) ([]string, [][]any, error) {
+func (m *meta) CreateTableAsSQL(db common.DB, _ bool, tableName, strSQL string, param []interface{}, pks []string) ([]string, [][]any, error) {
 	return []string{
 		fmt.Sprintf("CREATE TABLE %s as %s", tableName, strSQL),
 		fmt.Sprintf("ALTER TABLE %s ADD PRIMARY KEY(%s)", tableName, strings.Join(pks, ",")),

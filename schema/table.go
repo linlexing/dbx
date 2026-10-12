@@ -28,7 +28,18 @@ type Table struct {
 	Columns     []*Column
 	FormerName  []string
 	PrimaryKeys []string
-	Extended    map[string]any //扩展属性，内部没有使用，自由引用
+	/*
+		仅postgresql、高斯支持，表示该表为unlogged表，
+		unlogged表的数据在系统崩溃时可能丢失，
+		其他数据库不支持，设置无效果，默认为false，
+		取回表结构时，该属性不会取回，
+		因为unlogged表设计上就是临时表用途，建一次就丢弃。
+		不用临时表是因为临时表跨事务数据清空。
+		一般用在导入、数据处理明确标注临时表的场合。
+		注意：如果表已经存在，则该选项被忽略。
+	*/
+	Unlogged bool
+	Extended map[string]any //扩展属性，内部没有使用，自由引用
 }
 
 // NewTable 返回一个新表，名称会自动依据句点拆分为shcema和name

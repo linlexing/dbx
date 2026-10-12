@@ -22,7 +22,7 @@ func init() {
 
 // CreateTableAs 执行create table as select语句
 // todo:不支持date类型，会转换成num类型，需要整改
-func (m *meta) CreateTableAsSQL(db common.DB, tableName, strSQL string, param []interface{}, pks []string) (rev []string, i [][]any, err error) {
+func (m *meta) CreateTableAsSQL(db common.DB, _ bool, tableName, strSQL string, param []interface{}, pks []string) (rev []string, i [][]any, err error) {
 	return []string{
 		fmt.Sprintf("CREATE TABLE %s as %s", tableName, strSQL),
 		fmt.Sprintf("ALTER TABLE %s ADD PRIMARY KEY(%s)", tableName, strings.Join(pks, ",")),

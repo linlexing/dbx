@@ -27,7 +27,7 @@ func (m *meta) TablePK(db common.DB, tableName string) ([]string, error) {
 }
 
 // CreateTableAsSQL 生成create table as select语句
-func (m *meta) CreateTableAsSQL(db common.DB, tableName, strSQL string, param []interface{}, pks []string) ([]string, [][]any, error) {
+func (m *meta) CreateTableAsSQL(db common.DB, _ bool, tableName, strSQL string, param []interface{}, pks []string) ([]string, [][]any, error) {
 	panic("not impl")
 }
 func (m *meta) ChangeTableSQL(db common.DB, change *schema.TableSchemaChange) ([]string, error) {

@@ -41,17 +41,21 @@ func init() {
 }
 
 // 执行create table as select语句
-func (m *meta) CreateTableAsSQL(db common.DB, tableName, strSQL string, param []interface{}, pks []string) ([]string, [][]any, error) {
+func (m *meta) CreateTableAsSQL(db common.DB, unlogged bool, tableName, strSQL string, param []interface{}, pks []string) ([]string, [][]any, error) {
+	unloggedStr := ""
+	if unlogged {
+		unloggedStr = "UNLOGGED "
+	}
 	if m.isGauss() {
-		return []string{fmt.Sprintf("CREATE TABLE %s DISTRIBUTE BY HASH(%s) as %s",
-			tableName, strings.Join(pks, ","), strSQL),
+		return []string{fmt.Sprintf("CREATE %sTABLE %s DISTRIBUTE BY HASH(%s) as %s",
+			unloggedStr, tableName, strings.Join(pks, ","), strSQL),
 			fmt.Sprintf("ALTER TABLE %s ADD PRIMARY KEY(%s)", tableName, strings.Join(pks, ",")),
 		}, [][]any{param, nil}, nil
 
 	} else {
-		return []string{fmt.Sprintf("CREATE TABLE %s as %s", tableName, strSQL),
-			fmt.Sprintf("ALTER TABLE %s ADD PRIMARY KEY(%s)", tableName, strings.Join(pks, ",")),
-		}, [][]any{param, nil}, nil
+		return []string{fmt.Sprintf("CREATE %sTABLE %s as %s", unloggedStr, tableName, strSQL),
+			fmt.Sprintf("ALTER TABLE %s ADD PRIMARY KEY(%s)", tableName,
+				strings.Join(pks, ","))}, [][]any{param, nil}, nil
 	}
 }
 func (m *meta) TableEmpty(db common.DB, tableName string) (bool, error) {
@@ -130,6 +134,10 @@ func (m *meta) TableExists(db common.DB, tabName string) (bool, error) {
 	return iCount > 0, nil
 }
 func (m *meta) CreateTableSQL(db common.DB, tab *schema.Table) (rev []string, _ error) {
+	unloggedStr := ""
+	if tab.Unlogged {
+		unloggedStr = "UNLOGGED "
+	}
 	cols := []string{}
 	for _, v := range tab.Columns {
 		cols = append(cols, dbDefine(v))
@@ -138,12 +146,12 @@ func (m *meta) CreateTableSQL(db common.DB, tab *schema.Table) (rev []string, _ 
 	w := tabwriter.NewWriter(outBuf, 0, 0, 1, ' ', 0)
 	if len(tab.PrimaryKeys) > 0 {
 		if m.isGauss() {
-			fmt.Fprintf(w, "CREATE TABLE %s(\n  %s,\n  CONSTRAINT %s_PKEY PRIMARY KEY(%s)\n) DISTRIBUTE BY HASH(%s)",
-				tab.FullName(), strings.Join(cols, ",\n  "), tab.Name, strings.Join(tab.PrimaryKeys, ","),
+			fmt.Fprintf(w, "CREATE %sTABLE %s(\n  %s,\n  CONSTRAINT %s_PKEY PRIMARY KEY(%s)\n) DISTRIBUTE BY HASH(%s)",
+				unloggedStr, tab.FullName(), strings.Join(cols, ",\n  "), tab.Name, strings.Join(tab.PrimaryKeys, ","),
 				strings.Join(tab.PrimaryKeys, ","))
 		} else {
-			fmt.Fprintf(w, "CREATE TABLE %s(\n  %s,\n  CONSTRAINT %s_PKEY PRIMARY KEY(%s)\n)",
-				tab.FullName(), strings.Join(cols, ",\n  "), tab.Name, strings.Join(tab.PrimaryKeys, ","))
+			fmt.Fprintf(w, "CREATE %sTABLE %s(\n  %s,\n  CONSTRAINT %s_PKEY PRIMARY KEY(%s)\n)",
+				unloggedStr, tab.FullName(), strings.Join(cols, ",\n  "), tab.Name, strings.Join(tab.PrimaryKeys, ","))
 		}
 		w.Flush()
 		rev = append(rev, outBuf.String())
@@ -155,9 +163,10 @@ func (m *meta) CreateTableSQL(db common.DB, tab *schema.Table) (rev []string, _ 
 	}
 	//最后处理索引
 	for _, col := range tab.Columns {
-		if col.Index == schema.Index {
+		switch col.Index {
+		case schema.Index:
 			rev = append(rev, createColumnIndexSQL(tab.FullName(), false, col.Name)...)
-		} else if col.Index == schema.UniqueIndex {
+		case schema.UniqueIndex:
 			rev = append(rev, createColumnIndexSQL(tab.FullName(), true, col.Name)...)
 		}
 	}
