@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"path/filepath"
 	"strings"
 
 	"github.com/linlexing/dbx/common"
@@ -25,6 +26,33 @@ type tableIndex struct {
 	Columns []string
 }
 
+func getParquetTableInfo(db common.DB, fileName string) ([]tableColumn, error) {
+	strSQL := fmt.Sprintf(
+		"select column_name,column_type from(DESCRIBE SELECT * FROM '%s')", fileName)
+	rows, err := db.Query(strSQL)
+	if err != nil {
+		err = common.NewSQLError(err, strSQL)
+		log.Println(err)
+		return nil, err
+	}
+	defer rows.Close()
+	rev := []tableColumn{}
+	for rows.Next() {
+		var colName, colType string
+		if err = rows.Scan(&colName, &colType); err != nil {
+			return nil, err
+		}
+		rev = append(rev, tableColumn{
+			Name: colName,
+			Type: colType,
+		})
+	}
+	if rows.Err() != nil {
+		return nil, rows.Err()
+	}
+
+	return rev, nil
+}
 func getTableInfo(db common.DB, tableName string) ([]tableColumn, error) {
 	strSQL := fmt.Sprintf("PRAGMA table_info(%s)", tableName)
 	tabCols := []tableColumn{}
@@ -91,7 +119,47 @@ func (m *meta) TablePK(db common.DB, tableName string) ([]string, error) {
 	}
 	return tab.PrimaryKeys, nil
 }
+func (m *meta) openTableParquet(db common.DB, fileName string) (*schema.Table, error) {
+	tabCols, err := getParquetTableInfo(db, fileName)
+	if err != nil {
+		return nil, err
+	}
+	columns := []*schema.Column{}
+	for _, col := range tabCols {
+		c := &schema.Column{
+			Name:        col.Name,
+			FetchDriver: driverName,
+			TrueType:    col.Type,
+			Null:        !col.NotNull,
+			Extended:    map[string]any{},
+			MaxLength:   0,
+		}
+		c.Type = DuckDBType(col.Type)
+		columns = append(columns, c)
+	}
+	bname := filepath.Base(fileName)
+	bname = strings.TrimSuffix(bname, filepath.Ext(bname))
+	t := schema.NewTable(bname)
+	t.Columns = columns
+	//获取主键
+	var keys string
+	strSQL := fmt.Sprintf(
+		"SELECT value FROM parquet_kv_metadata('%s') where key='primary_keys'",
+		fileName)
+	if err := db.QueryRow(strSQL).Scan(&keys); err != nil {
+		//没有主键，也可以返回
+		if errors.Is(err, sql.ErrNoRows) {
+			return t, nil
+		}
+		return nil, err
+	}
+	t.PrimaryKeys = strings.Split(keys, ",")
+	return t, nil
+}
 func (m *meta) OpenTable(db common.DB, tableName string) (*schema.Table, error) {
+	if strings.HasSuffix(tableName, ".parquet") {
+		return m.openTableParquet(db, tableName)
+	}
 	type pkInfo struct {
 		Name  string
 		Order int

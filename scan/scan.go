@@ -2,13 +2,41 @@ package scan
 
 import (
 	"database/sql"
+	"encoding/json"
 	"errors"
+	"fmt"
 
 	"github.com/linlexing/dbx/common"
 	"github.com/linlexing/dbx/schema"
 )
 
-//ColumnType 表示一个列，带有类型，主要是go1.8的规范，还很少有driver实现，后期可去掉类型
+type AnyString struct {
+	String string
+	Valid  bool
+}
+
+func (a *AnyString) Scan(src interface{}) error {
+	if src == nil {
+		a.Valid = false
+		a.String = ""
+		return nil
+	}
+	a.Valid = true
+	switch v := src.(type) {
+	case string:
+		a.String = v
+	case []byte:
+		a.String = string(v)
+	case []interface{}:
+		b, _ := json.Marshal(v)
+		a.String = string(b)
+	default:
+		a.String = fmt.Sprintf("%v", v)
+	}
+	return nil
+}
+
+// ColumnType 表示一个列，带有类型，主要是go1.8的规范，还很少有driver实现，后期可去掉类型
 type ColumnType struct {
 	Name string
 	Type schema.DataType
@@ -26,7 +54,7 @@ func TypeScan(s common.Scaner, cols []*ColumnType) ([]interface{}, error) {
 		var newV interface{}
 		switch v.Type {
 		case schema.TypeString:
-			newV = new(sql.NullString)
+			newV = new(AnyString)
 		case schema.TypeInt:
 			newV = new(sql.NullInt64)
 		case schema.TypeDatetime:
@@ -49,7 +77,7 @@ func TypeScan(s common.Scaner, cols []*ColumnType) ([]interface{}, error) {
 		var outV interface{}
 		switch v.Type {
 		case schema.TypeString:
-			tv := outList[i].(*sql.NullString)
+			tv := outList[i].(*AnyString)
 			if tv.Valid {
 				outV = tv.String
 			}

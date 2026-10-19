@@ -63,7 +63,7 @@ func BindType(driverName string) int {
 	switch ParseDriverType(driverName) {
 	case Postgres:
 		return DOLLAR
-	case Mysql, Sqlite:
+	case Mysql, Sqlite, DuckDB:
 		return QUESTION
 	case Oracle:
 		return NAMED
